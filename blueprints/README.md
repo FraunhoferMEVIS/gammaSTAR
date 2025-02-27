@@ -9,6 +9,7 @@ This repository includes the sequence database used in the gammaSTAR frontend at
 # Usage of scripts
 
 The sequence database consists of a single JSON file with all blueprints. For better versioning we publish the blueprints as separate files.
+Additionally, we provide a file that list all blueprints names and IDs to make it easier to find a specific blueprint: [Mapping File](exported_blueprints/name_to_id_mapping.md).
 
 ## Export
 From a single database file you can export all blueprints to separate files by running 
