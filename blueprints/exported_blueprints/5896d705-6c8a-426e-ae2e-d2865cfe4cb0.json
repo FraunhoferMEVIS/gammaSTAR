@@ -1,0 +1,118 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return math.max(read_tend,phase_tend)",
+      "sources": {
+        "phase_tend": "phase.tend",
+        "read_tend": "read.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "matrix_eff": {
+      "name": "matrix_eff",
+      "script": "return shape.Theta_last * number_spirals / math.pi",
+      "sources": {
+        "number_spirals": "number_spirals",
+        "shape": "shape"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalADCsamples": {
+      "name": "minimalADCsamples",
+      "script": "return gamma * fov[1] * shape.max_amp * nom_adc_dur",
+      "sources": {
+        "fov": "fov",
+        "gamma": "sys_gamma",
+        "nom_adc_dur": "nom_adc_duration",
+        "shape": "shape"
+      },
+      "type": "parameter_definition"
+    },
+    "moments": {
+      "name": "moments",
+      "script": "return {read_m0, phase_m0}",
+      "sources": {
+        "phase_m0": "phase.m0",
+        "read_m0": "read.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "phase": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "phase",
+      "type": "sequence_element_definition"
+    },
+    "phase.direction": {
+      "name": "phase.direction",
+      "script": "return phase_dir",
+      "sources": {
+        "phase_dir": "orientation_info_phase_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.samples": {
+      "name": "phase.samples",
+      "script": "return shape.samples_y",
+      "sources": {
+        "shape": "shape"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.tstart": {
+      "name": "phase.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.direction": {
+      "name": "read.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read.samples": {
+      "name": "read.samples",
+      "script": "return shape.samples_x",
+      "sources": {
+        "shape": "shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tstart": {
+      "name": "read.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "shape": {
+      "name": "shape",
+      "script": "--from Bernstein page 935\nlocal raster_time = grad_set.raster_time\nlocal num_samples = math.ceil(readout_dur / raster_time)\nlocal lambda = number_spirals/(2 * math.pi * fov[1])\nlocal beta = gamma * slew / lambda\nlocal a2 = (9 * beta / 4)^(1/3)\nlocal Ts = (3 * gamma * amp / (2 * lambda * a2^2))^3 -- time until slew-rate limited\nlocal samples1 = math.floor(Ts/raster_time+0.5)\nlocal adj = 1 -- determines slew rate at t=0\nlocal max_amp, Theta, t, h = 0\nlocal samples_x = {t={0}, v={0}}\nlocal samples_y = {t={0}, v={0}}\n--slew rate limited\nfor i = 1, math.min(samples1, num_samples) do\n  t = i * raster_time\n  h = adj + beta / (2 * a2) * t^(4/3)\n  Theta = 0.5 * beta * t^2 / h\n  Theta_dot = (beta * t * h - 0.5 * beta * t^2 * (4/3 * beta / (2 * a2) * t^(1/3))) / (h^2)\n  local v_x = 1 / gamma * lambda * Theta_dot * (math.cos(Theta) - Theta * math.sin(Theta))\n  local v_y = 1 / gamma * lambda * Theta_dot * (math.sin(Theta) + Theta * math.cos(Theta))\n  table.insert(samples_x.t, t)\n  table.insert(samples_x.v, v_x)\n  table.insert(samples_y.t, t)\n  table.insert(samples_y.v, v_y)\n  max_amp = math.max(max_amp, math.sqrt(v_x * v_x + v_y * v_y))\nend\n--amplitude limited\nif samples1 < num_samples then\n  local ThetaTs = 0.5 * beta * Ts^2 / (adj + beta / (2 * a2) * Ts^(4/3))\n  for i = samples1+1, num_samples do\n    t = i * raster_time\n    h = 2 * gamma / lambda * amp\n    Theta = math.sqrt(ThetaTs^2 + h * (t - Ts))\n    Theta_dot = 0.5 / math.sqrt(ThetaTs^2 + h * (t-Ts)) * h\n    local v_x = 1 / gamma * lambda * Theta_dot * (math.cos(Theta) - Theta * math.sin(Theta))\n    local v_y = 1 / gamma * lambda * Theta_dot * (math.sin(Theta) + Theta * math.cos(Theta))\n    table.insert(samples_x.t, t)\n    table.insert(samples_x.v, v_x)\n    table.insert(samples_y.t, t)\n    table.insert(samples_y.v, v_y)\n    max_amp = math.max(max_amp, math.sqrt(v_x * v_x + v_y * v_y))\n  end\nend\n--ramp down\nlocal last_amp_x = samples_x.v[#samples_x.v]\nlocal last_amp_y = samples_y.v[#samples_y.v]\nlocal shape_max = math.max(math.abs(last_amp_x), math.abs(last_amp_y))\nlocal ramp_samples = math.ceil(1e5 * shape_max / grad_set.max_grad_slew)\nfor i = 1, ramp_samples do\n  t2 = t + i * raster_time\n  table.insert(samples_x.t, t2)\n  table.insert(samples_x.v, last_amp_x - i * last_amp_x / ramp_samples)\n  table.insert(samples_y.t, t2)\n  table.insert(samples_y.v, last_amp_y - i * last_amp_y / ramp_samples)\nend\nreturn {samples_x=samples_x, samples_y=samples_y, Theta_last=Theta, max_amp=max_amp}",
+      "sources": {
+        "amp": "amp",
+        "fov": "fov",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "number_spirals": "number_spirals",
+        "readout_dur": "readout_duration",
+        "slew": "slew"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "5896d705-6c8a-426e-ae2e-d2865cfe4cb0",
+  "name": "Gradient spiral 2D",
+  "properties": {}
+}

@@ -1,0 +1,1218 @@
+{
+  "definitions": {
+    "amp_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "if m0_ft == 0 and ft == 0 then\n  return 0\nend\nreturn m0_ft / ft",
+              "sources": {
+                "ft": "ft",
+                "m0_ft": "m0_ft"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "ft",
+                "m0_ft"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "if m0_rut == 0 and rut == 0 then\n  return 0\nend\nreturn 2 * m0_rut / rut",
+              "sources": {
+                "m0_rut": "m0_rut",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_rut",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "if m0_rdt == 0 and rdt == 0 then\n  return 0\nend\nreturn 2 * m0_rdt / rdt",
+              "sources": {
+                "m0_rdt": "m0_rdt",
+                "rdt": "rdt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_rdt",
+                "rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "if m0 == 0 and rut == 0 and rdt == 0 and ft == 0 then\n  return 0\nend\nreturn m0/(0.5*(rut+rdt)+ft)",
+              "sources": {
+                "ft": "ft",
+                "m0": "m0",
+                "rdt": "rdt",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "ft",
+                "m0",
+                "rdt",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "if m0 == 0 then\n  return 0\nend\nlocal amp = m0 / duration\nlocal rt = math.abs(amp) / grad_set.max_grad_slew\nlocal rastered_ramp = math.ceil(rt/grad_set.raster_time) * grad_set.raster_time\nlocal amp = m0/(duration-rastered_ramp)\nwhile (math.abs(amp)/rastered_ramp > grad_set.max_grad_slew) and (2*rastered_ramp <= duration) do\n  rastered_ramp = rastered_ramp + grad_set.raster_time\n  amp = m0/(duration-rastered_ramp)\nend\nreturn amp\n",
+              "sources": {
+                "duration": "duration",
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "amp",
+              "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nif m0 == 0 then\n  return 0\nend\nlocal rt = math.sqrt(math.abs(m0)/max_grad_slew)\nrastered_ramp = math.ceil(rt/raster_time) * raster_time\namp = m0 / rastered_ramp\nif (math.abs(amp) > max_grad_amp) then\n  rt = max_grad_amp / max_grad_slew\n  rastered_ramp = math.ceil(rt/raster_time) * raster_time\n  local flat_time = (math.abs(m0) - rastered_ramp * max_grad_amp) / max_grad_amp\n  rastered_ft = math.ceil(flat_time/raster_time) * raster_time\n  amp = m0 / (rastered_ramp + rastered_ft)\nend\nreturn amp",
+              "sources": {
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "amp_conditional",
+      "type": "conditional_definition"
+    },
+    "duration_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "duration",
+              "script": "return rut+ft+rdt",
+              "sources": {
+                "ft": "ft",
+                "rdt": "rdt",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "ft",
+                "rdt",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "duration_conditional",
+      "type": "conditional_definition"
+    },
+    "ft_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "ft"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "ft",
+              "script": "return duration - rut - rdt",
+              "sources": {
+                "duration": "duration",
+                "rdt": "rdt",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "rdt",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "ft",
+              "script": "if amp == 0 and m0_ft == 0 then\n  return 0\nend\nreturn math.floor(m0_ft/amp/grad_set.raster_time+0.5)*grad_set.raster_time",
+              "sources": {
+                "amp": "amp",
+                "grad_set": "gradient_settings",
+                "m0_ft": "m0_ft"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "m0_ft"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "ft_conditional",
+      "type": "conditional_definition"
+    },
+    "grad": {
+      "blueprint_id": "GradPulse",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return direction",
+      "sources": {
+        "direction": "direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.samples": {
+      "name": "grad.samples",
+      "script": "if rut+ft+rdt > 0 then  \n  return {t={0,rut,rut+ft,rut+ft+rdt}, v={0,amp,amp,0}}\nend\nreturn {t={}, v={}}",
+      "sources": {
+        "amp": "amp",
+        "ft": "ft",
+        "rdt": "rdt",
+        "rut": "rut"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_ft_nonnegative_test": {
+      "name": "is_ft_nonnegative_test",
+      "test_parameter_definition": {
+        "name": "is_ft_nonnegative",
+        "script": "return ft >= 0",
+        "sources": {
+          "ft": "ft"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_rdt_nonnegative_test": {
+      "name": "is_rdt_nonnegative_test",
+      "test_parameter_definition": {
+        "name": "is_rdt_nonnegative",
+        "script": "return rdt >= 0",
+        "sources": {
+          "rdt": "rdt"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_rut_nonnegative_test": {
+      "name": "is_rut_nonnegative_test",
+      "test_parameter_definition": {
+        "name": "is_rut_nonnegative",
+        "script": "return rut >= 0",
+        "sources": {
+          "rut": "rut"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "m0_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0",
+              "script": "return m0_rut + m0_ft + m0_rdt",
+              "sources": {
+                "m0_ft": "m0_ft",
+                "m0_rdt": "m0_rdt",
+                "m0_rut": "m0_rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_ft",
+                "m0_rdt",
+                "m0_rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "m0_conditional",
+      "type": "conditional_definition"
+    },
+    "m0_ft_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_ft"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_ft",
+              "script": "return amp * ft",
+              "sources": {
+                "amp": "amp",
+                "ft": "ft"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "ft"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_ft",
+              "script": "return m0 - m0_rut - m0_rdt",
+              "sources": {
+                "m0": "m0",
+                "m0_rdt": "m0_rdt",
+                "m0_rut": "m0_rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0",
+                "m0_rdt",
+                "m0_rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "m0_ft_conditional",
+      "type": "conditional_definition"
+    },
+    "m0_rdt_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_rdt",
+              "script": "return amp * .5 * rdt",
+              "sources": {
+                "amp": "amp",
+                "rdt": "rdt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_rdt",
+              "script": "return m0 - m0_rut - m0_ft",
+              "sources": {
+                "m0": "m0",
+                "m0_ft": "m0_ft",
+                "m0_rut": "m0_rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0",
+                "m0_ft",
+                "m0_rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "m0_rdt_conditional",
+      "type": "conditional_definition"
+    },
+    "m0_rut_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0_rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_rut",
+              "script": "return amp * .5 * rut",
+              "sources": {
+                "amp": "amp",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "m0_rut",
+              "script": "return m0 - m0_ft - m0_rdt",
+              "sources": {
+                "m0": "m0",
+                "m0_ft": "m0_ft",
+                "m0_rdt": "m0_rdt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0",
+                "m0_ft",
+                "m0_rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "m0_rut_conditional",
+      "type": "conditional_definition"
+    },
+    "rdt_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "return rt",
+              "sources": {
+                "rt": "rt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "rt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "return duration - rut - ft",
+              "sources": {
+                "duration": "duration",
+                "ft": "ft",
+                "rut": "rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "ft",
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "if m0_rdt == 0 and amp == 0 then\n  return 0\nend\nreturn math.floor(2*m0_rdt/amp/grad_set.raster_time+0.5)*grad_set.raster_time",
+              "sources": {
+                "amp": "amp",
+                "grad_set": "gradient_settings",
+                "m0_rdt": "m0_rdt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "m0_rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "if m0 == 0 then\n  return 0\nend\nlocal amp = m0 / duration\nlocal rt = math.abs(amp) / grad_set.max_grad_slew\nlocal rastered_ramp = math.ceil(rt/grad_set.raster_time) * grad_set.raster_time\nlocal amp = m0/(duration-rastered_ramp)\nwhile (math.abs(amp)/rastered_ramp > grad_set.max_grad_slew) and (2*rastered_ramp <= duration) do\n  rastered_ramp = rastered_ramp + grad_set.raster_time\n  amp = m0/(duration-rastered_ramp)\nend\nreturn rastered_ramp\n",
+              "sources": {
+                "duration": "duration",
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nif m0 == 0 then\n  return 0\nend\nlocal rt = math.sqrt(math.abs(m0)/max_grad_slew)\nrastered_ramp = math.ceil(rt/raster_time) * raster_time\namp = m0 / rastered_ramp\nif (math.abs(amp) > max_grad_amp) then\n  rt = max_grad_amp / max_grad_slew\n  rastered_ramp = math.ceil(rt/raster_time) * raster_time\nend\nreturn rastered_ramp",
+              "sources": {
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rdt",
+              "script": "return math.ceil(math.abs(amp)/grad_set.max_grad_slew/grad_set.raster_time)*grad_set.raster_time",
+              "sources": {
+                "amp": "amp",
+                "grad_set": "gradient_settings"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "rdt_conditional",
+      "type": "conditional_definition"
+    },
+    "rut_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "return rt",
+              "sources": {
+                "rt": "rt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "rt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "return duration - ft - rdt",
+              "sources": {
+                "duration": "duration",
+                "ft": "ft",
+                "rdt": "rdt"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "ft",
+                "rdt"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "if m0_rut == 0 and amp == 0 then\n  return 0\nend\nreturn math.floor(2*m0_rut/amp/grad_set.raster_time+0.5)*grad_set.raster_time",
+              "sources": {
+                "amp": "amp",
+                "grad_set": "gradient_settings",
+                "m0_rut": "m0_rut"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp",
+                "m0_rut"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "if m0 == 0 then\n  return 0\nend\nlocal amp = m0 / duration\nlocal rt = math.abs(amp) / grad_set.max_grad_slew\nlocal rastered_ramp = math.ceil(rt/grad_set.raster_time) * grad_set.raster_time\nlocal amp = m0/(duration-rastered_ramp)\nwhile (math.abs(amp)/rastered_ramp > grad_set.max_grad_slew) and (2*rastered_ramp <= duration) do\n  rastered_ramp = rastered_ramp + grad_set.raster_time\n  amp = m0/(duration-rastered_ramp)\nend\nreturn rastered_ramp\n",
+              "sources": {
+                "duration": "duration",
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration",
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nif m0 == 0 then\n  return 0\nend\nlocal rt = math.sqrt(math.abs(m0)/max_grad_slew)\nrastered_ramp = math.ceil(rt/raster_time) * raster_time\namp = m0 / rastered_ramp\nif (math.abs(amp) > max_grad_amp) then\n  rt = max_grad_amp / max_grad_slew\n  rastered_ramp = math.ceil(rt/raster_time) * raster_time\nend\nreturn rastered_ramp",
+              "sources": {
+                "grad_set": "gradient_settings",
+                "m0": "m0"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "m0"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "rut",
+              "script": "return math.ceil(math.abs(amp)/grad_set.max_grad_slew/grad_set.raster_time)*grad_set.raster_time",
+              "sources": {
+                "amp": "amp",
+                "grad_set": "gradient_settings"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "amp"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "rut_conditional",
+      "type": "conditional_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + rut + .5 * ft",
+              "sources": {
+                "ft": "ft",
+                "rut": "rut",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "tftend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tftend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tftend",
+              "script": "return tstart + rut + ft",
+              "sources": {
+                "ft": "ft",
+                "rut": "rut",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tftend_conditional",
+      "type": "conditional_definition"
+    },
+    "tftstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tftstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tftstart",
+              "script": "return tstart + rut",
+              "sources": {
+                "rut": "rut",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tftstart_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - .5 * ft - rut",
+              "sources": {
+                "ft": "ft",
+                "rut": "rut",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tftstart - rut",
+              "sources": {
+                "rut": "rut",
+                "tftstart": "tftstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tftstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tftend - ft - rut",
+              "sources": {
+                "ft": "ft",
+                "rut": "rut",
+                "tftend": "tftend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tftend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+  "name": "Gradient trapezoidal",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

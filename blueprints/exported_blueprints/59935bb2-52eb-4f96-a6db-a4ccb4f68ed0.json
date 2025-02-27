@@ -1,0 +1,153 @@
+{
+  "definitions": {
+    "TE_seg_act": {
+      "name": "TE_seg_act",
+      "script": "return TE[1]",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "TE_seg_min": {
+      "name": "TE_seg_min",
+      "script": "local TE_before = t_since_exc + freqcorr_tstart + freqcorr_dur + t_pause_freqcorr + se_t_before_center\nlocal TE_after = se_t_after_center + t_before_te\nlocal TE_before2 = t_after_te + se_t_before_center\nreturn math.ceil(2 * math.max(TE_before, TE_after, TE_before2) / 1e-4) * 1e-4",
+      "sources": {
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "se_t_after_center": "echo.partition.spinecho.t_after_center",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_after_te": "t_after_te",
+        "t_before_te": "t_before_te",
+        "t_pause_freqcorr": "t_pause_freqcorr",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return t_first_ro + par_length * TE_seg_act + TE[#TE] - TE[1]",
+      "sources": {
+        "TE": "TE",
+        "TE_seg_act": "TE_seg_act",
+        "echo_length": "echo.length",
+        "par_length": "echo.partition.length",
+        "t_first_ro": "t_first_readout"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.last_echo": {
+      "name": "echo.last_echo",
+      "script": "if echo_counter == 0 then\n  return 0\nend\nreturn TE[echo_counter] + (par_length - 1) * TE_seg_act",
+      "sources": {
+        "TE": "TE",
+        "TE_seg_act": "TE_seg_act",
+        "echo_counter": "echo.counter",
+        "par_length": "echo.partition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.tstart": {
+      "name": "echo.partition.deph.tstart",
+      "script": "if par_counter == 0 then\n  return 0.5 * (TE[echo_counter+1] - last_echo) + se_t_before_center - t_before_te\nend\nreturn TE_seg_act/2 + se_t_before_center - t_before_te",
+      "sources": {
+        "TE": "TE",
+        "TE_seg_act": "TE_seg_act",
+        "echo_counter": "echo.counter",
+        "last_echo": "echo.last_echo",
+        "par_counter": "echo.partition.counter",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.spinecho": {
+      "blueprint_id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+      "name": "echo.partition.spinecho",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.spinecho.is_atomic": {
+      "name": "echo.partition.spinecho.is_atomic",
+      "type": "atomic_definition"
+    },
+    "echo.partition.spinecho.tstart": {
+      "name": "echo.partition.spinecho.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.partition.tstart": {
+      "name": "echo.partition.tstart",
+      "script": "if par_counter == 0 then\n  return 0\nend\nreturn 0.5 * (TE[echo_counter+1] - last_echo) + (0.5 + (par_counter-1)) * TE_seg_act",
+      "sources": {
+        "TE": "TE",
+        "TE_seg_act": "TE_seg_act",
+        "echo_counter": "echo.counter",
+        "last_echo": "echo.last_echo",
+        "par_counter": "echo.partition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "return 0.5 * (TE[echo_counter+1] + last_echo) - t_since_exc - se_t_before_center",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter",
+        "last_echo": "echo.last_echo",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "epi_readout": {
+      "blueprint_id": "d2cdb902-f82b-413c-b180-d806e1e98e44",
+      "name": "epi_readout",
+      "type": "extending_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local first_TE_before = ge(t_first_ro, freqcorr_tstart + freqcorr_dur + t_pause_freqcorr)\nlocal first_TE_after = ge(TE[1]/2 - se_after_center - t_before_te, 0)\nif #TE > 1 then\n  for cTE=2,#TE do\n    local last_echo = TE[cTE-1] + (par_length - 1) * TE_seg_act\n    local first_par_se = 0.5 * (TE[cTE] + last_echo)\n    local TE_before = lt(first_par_se - se_before_center, last_echo + t_after_te)\n    local TE_after = lt(TE[cTE] - first_par_se - se_after_center - t_before_te, 0)\n    if TE_before or TE_after then\n      return false\n    end\n  end\nend\nreturn first_TE_before and first_TE_after",
+      "sources": {
+        "TE": "TE",
+        "TE_seg_act": "TE_seg_act",
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "par_length": "echo.partition.length",
+        "se_after_center": "echo.partition.spinecho.t_after_center",
+        "se_before_center": "echo.partition.spinecho.t_before_center",
+        "t_after_te": "t_after_te",
+        "t_before_te": "t_before_te",
+        "t_first_ro": "t_first_readout",
+        "t_pause_freqcorr": "t_pause_freqcorr"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_times = {}\nfor cTE = 1, number_TE do\n  table.insert(TE_times, TE_seg_min * (1 + (cTE - 1) *  par_length))\nend\nreturn TE_times",
+      "sources": {
+        "TE_seg_min": "TE_seg_min",
+        "number_TE": "number_TE",
+        "par_length": "echo.partition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "t_first_readout": {
+      "name": "t_first_readout",
+      "script": "return TE[1]/2 - t_since_exc - se_t_before_center",
+      "sources": {
+        "TE": "TE",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "59935bb2-52eb-4f96-a6db-a4ccb4f68ed0",
+  "name": "SE EPI readout",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

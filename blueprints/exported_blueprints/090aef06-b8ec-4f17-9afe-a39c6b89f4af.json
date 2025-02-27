@@ -1,0 +1,197 @@
+{
+  "definitions": {
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return math.ceil(adc_samples*(1+OS)/2)*2",
+      "sources": {
+        "OS": "read_oversampling",
+        "adc_samples": "read.minimalADCsamples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.phase": {
+      "name": "adc.phase",
+      "script": "Phase = spoilphase\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.sample_time": {
+      "name": "adc.sample_time",
+      "script": "local min_dwell_time = adc_settings.min_dwell_time\nreturn math.floor(nom_adc_dur / num_samples / min_dwell_time) * min_dwell_time",
+      "sources": {
+        "adc_settings": "adc_settings",
+        "nom_adc_dur": "read.nom_adc_duration",
+        "num_samples": "adc.number_of_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc_delay": {
+      "name": "adc_delay",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "add_reph_moment": {
+      "name": "add_reph_moment",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return reph_tstart + reph_dur",
+      "sources": {
+        "reph_dur": "reph.duration",
+        "reph_tstart": "reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "read": {
+      "blueprint_id": "5c507fd9-5498-41a8-b54d-67df84ee46c7",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.nom_adc_duration": {
+      "name": "read.nom_adc_duration",
+      "script": "return read_dur + adc_delay",
+      "sources": {
+        "adc_delay": "adc_delay",
+        "read_dur": "readout_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "read.t0": {
+      "name": "read.t0",
+      "script": "return t0",
+      "sources": {
+        "t0": "t0"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tstart": {
+      "name": "read.tstart",
+      "script": "return adc_delay",
+      "sources": {
+        "adc_delay": "adc_delay"
+      },
+      "type": "parameter_definition"
+    },
+    "read.uniform": {
+      "name": "read.uniform",
+      "script": "return uniform",
+      "sources": {
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "reph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "reph",
+      "type": "sequence_element_definition"
+    },
+    "reph.direction": {
+      "name": "reph.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.gradient_settings": {
+      "name": "reph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.m0": {
+      "name": "reph.m0",
+      "script": "local reph_moment = helper_functions.k_to_m0(dk_reph) - m0_rdt\nif spoiling then\n  return reph_moment + add_reph_moment + 2 * helper_functions.dx_to_m0(res)\nelse\n  return reph_moment + add_reph_moment\nend",
+      "sources": {
+        "add_reph_moment": "add_reph_moment",
+        "dk_reph": "read_info_dk_reph",
+        "helper_functions": "helper_functions",
+        "m0_rdt": "read.m0_rdt",
+        "res": "read_info_res",
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.tstart": {
+      "name": "reph.tstart",
+      "script": "return read_tstart + read_dur",
+      "sources": {
+        "read_dur": "read.duration",
+        "read_tstart": "read.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling": {
+      "name": "spoiling",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return adc_delay",
+      "sources": {
+        "adc_delay": "adc_delay"
+      },
+      "type": "parameter_definition"
+    },
+    "uniform": {
+      "name": "uniform",
+      "script": "return 'None'",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "090aef06-b8ec-4f17-9afe-a39c6b89f4af",
+  "name": "Radial UTE encoding",
+  "properties": {
+    "tags": [
+      "adc",
+      "readout"
+    ]
+  }
+}

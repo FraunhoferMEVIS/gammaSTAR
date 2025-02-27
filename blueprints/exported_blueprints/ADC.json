@@ -1,0 +1,466 @@
+{
+  "definitions": {
+    "adc_header_definition": {
+      "name": "adc_header_definition",
+      "type": "adc_header_definition"
+    },
+    "duration_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "duration"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "duration",
+              "script": "return number_of_samples * sample_time",
+              "sources": {
+                "number_of_samples": "number_of_samples",
+                "sample_time": "sample_time"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "number_of_samples",
+                "sample_time"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "duration",
+              "script": "return tend - tstart",
+              "sources": {
+                "tend": "tend",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend",
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "duration",
+              "script": "return 2 * (tcenter - tstart)",
+              "sources": {
+                "tcenter": "tcenter",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter",
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "duration",
+              "script": "return 2 * (tend - tcenter)",
+              "sources": {
+                "tcenter": "tcenter",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter",
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "duration_conditional",
+      "type": "conditional_definition"
+    },
+    "enabled_single": {
+      "name": "enabled_single",
+      "script": "return set_enabled",
+      "sources": {
+        "set_enabled": "set_enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "frequency": {
+      "name": "frequency",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "header": {
+      "blueprint_id": "ADC header",
+      "name": "header",
+      "type": "sequence_element_definition"
+    },
+    "header.number_of_samples": {
+      "name": "header.number_of_samples",
+      "script": "return number_of_samples",
+      "sources": {
+        "number_of_samples": "number_of_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "header.sample_time_us": {
+      "name": "header.sample_time_us",
+      "script": "return sample_time_us",
+      "sources": {
+        "sample_time_us": "sample_time_us"
+      },
+      "type": "parameter_definition"
+    },
+    "is_enabled": {
+      "name": "is_enabled",
+      "type": "is_enabled_definition"
+    },
+    "number_of_samples_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "number_of_samples"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "number_of_samples",
+              "script": "return math.floor(duration / sample_time + 0.5)",
+              "sources": {
+                "duration": "duration",
+                "sample_time": "sample_time"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "sample_time"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "number_of_samples_conditional",
+      "type": "conditional_definition"
+    },
+    "phase": {
+      "name": "phase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sample_time_us_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "sample_time_us"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "sample_time_us",
+              "script": "return duration / number_of_samples * 1e6",
+              "sources": {
+                "duration": "duration",
+                "number_of_samples": "number_of_samples"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "number_of_samples"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "sample_time_us_conditional",
+      "type": "conditional_definition"
+    },
+    "set_enabled": {
+      "name": "set_enabled",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + .5 * duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tend - .5 * duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tcenter + .5 * duration",
+              "sources": {
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - .5 * duration",
+              "sources": {
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "ADC",
+  "name": "ADC",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

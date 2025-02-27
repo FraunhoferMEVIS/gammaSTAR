@@ -1,0 +1,193 @@
+{
+  "definitions": {
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.duration": {
+      "name": "adc.duration",
+      "script": "return 2e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return 2*acq_size[1] -- 2x oversampling by default",
+      "sources": {
+        "acq_size": "acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "return echo_time - 0.5 * adc_dur - dt",
+      "sources": {
+        "adc_dur": "adc.duration",
+        "dt": "dt",
+        "echo_time": "echo_time"
+      },
+      "type": "parameter_definition"
+    },
+    "dt": {
+      "name": "dt",
+      "script": "return echo_time - 0.5 * adc_duration - read_rut - read_deph_duration",
+      "sources": {
+        "adc_duration": "adc.duration",
+        "echo_time": "echo_time",
+        "read_deph_duration": "read_deph.duration",
+        "read_rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "phase_deph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "phase_deph",
+      "type": "sequence_element_definition"
+    },
+    "phase_deph.direction": {
+      "name": "phase_deph.direction",
+      "script": "return {0,1,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_deph.m0": {
+      "name": "phase_deph.m0",
+      "script": "local dk = 1 / fov[2]\nlocal k = dk * (line_pos - 0.5 * acq_size[2] )\nreturn helper_functions.k_to_m0(k)",
+      "sources": {
+        "acq_size": "acq_size",
+        "fov": "fov",
+        "helper_functions": "helper_functions",
+        "line_pos": "phase_info_line_pos"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_deph.tend": {
+      "name": "phase_deph.tend",
+      "script": "return read_tstart",
+      "sources": {
+        "read_tstart": "read.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_reph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "phase_reph",
+      "type": "sequence_element_definition"
+    },
+    "phase_reph.direction": {
+      "name": "phase_reph.direction",
+      "script": "return {0,1,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_reph.m0": {
+      "name": "phase_reph.m0",
+      "script": "return -phase_deph_m0",
+      "sources": {
+        "phase_deph_m0": "phase_deph.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_reph.tstart": {
+      "name": "phase_reph.tstart",
+      "script": "return read_tend",
+      "sources": {
+        "read_tend": "read.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "read": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.direction": {
+      "name": "read.direction",
+      "script": "return {1,0,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read.ft": {
+      "name": "read.ft",
+      "script": "return adc_dur",
+      "sources": {
+        "adc_dur": "adc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "read.m0_ft": {
+      "name": "read.m0_ft",
+      "script": "local dk = acq_size[1] / fov[1]\nreturn helper_functions.k_to_m0(dk)",
+      "sources": {
+        "acq_size": "acq_size",
+        "fov": "fov",
+        "helper_functions": "helper_functions"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tftstart": {
+      "name": "read.tftstart",
+      "script": "return adc_start",
+      "sources": {
+        "adc_start": "adc.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "read_deph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read_deph",
+      "type": "sequence_element_definition"
+    },
+    "read_deph.direction": {
+      "name": "read_deph.direction",
+      "script": "return {1,0,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_deph.m0": {
+      "name": "read_deph.m0",
+      "script": "return -0.5 * read_m0",
+      "sources": {
+        "read_m0": "read.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "read_deph.tend": {
+      "name": "read_deph.tend",
+      "script": "return read_tstart",
+      "sources": {
+        "read_tstart": "read.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "tend": {
+      "name": "tend",
+      "script": "return tstart + phase_reph_tend",
+      "sources": {
+        "phase_reph_tend": "phase_reph.tend",
+        "tstart": "tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return dt",
+      "sources": {
+        "dt": "dt"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "b5879a3d-2782-4d87-9cae-dea17331e05b",
+  "name": "Demo FLASH encoding",
+  "properties": {
+    "tags": [
+      "adc"
+    ]
+  }
+}

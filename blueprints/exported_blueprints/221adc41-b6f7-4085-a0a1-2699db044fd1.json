@@ -1,0 +1,69 @@
+{
+  "definitions": {
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return num_samples",
+      "sources": {
+        "num_samples": "read_info_num_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.phase": {
+      "name": "adc.phase",
+      "script": "Phase = spoilphase\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.sample_time": {
+      "name": "adc.sample_time",
+      "script": "local min_dwell_time = adc_settings.min_dwell_time\nreturn math.floor(readout_duration / num_samples / min_dwell_time) * min_dwell_time",
+      "sources": {
+        "adc_settings": "adc_settings",
+        "num_samples": "adc.number_of_samples",
+        "readout_duration": "readout_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "local raster_time = grad_set.raster_time\nreturn math.ceil(adc_tend / raster_time) * raster_time + raster_time -- should  not end with adc",
+      "sources": {
+        "adc_tend": "adc.tend",
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "221adc41-b6f7-4085-a0a1-2699db044fd1",
+  "name": "FID",
+  "properties": {
+    "tags": [
+      "adc",
+      "readout"
+    ]
+  }
+}

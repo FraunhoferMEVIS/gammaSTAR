@@ -1,0 +1,205 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return spoiler_tstart + spoiler_dur\nelse\n  return 0\nend",
+      "sources": {
+        "enabled": "enabled",
+        "spoiler_dur": "spoiler.duration",
+        "spoiler_tstart": "spoiler.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return (sat_mode == 'fat_saturation') and true or false",
+      "sources": {
+        "sat_mode": "saturation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_after": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "grad_after",
+      "type": "sequence_element_definition"
+    },
+    "grad_after.gradient_settings": {
+      "name": "grad_after.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_after.is_atomic": {
+      "name": "grad_after.is_atomic",
+      "type": "atomic_definition"
+    },
+    "grad_after.read_m0": {
+      "name": "grad_after.read_m0",
+      "script": "return -read_before_m0",
+      "sources": {
+        "read_before_m0": "grad_before.read_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_after.slice_m0": {
+      "name": "grad_after.slice_m0",
+      "script": "return -slice_before_m0",
+      "sources": {
+        "slice_before_m0": "grad_before.slice_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_after.tstart": {
+      "name": "grad_after.tstart",
+      "script": "return rf_tstart + rf_dur",
+      "sources": {
+        "rf_dur": "rf.duration",
+        "rf_tstart": "rf.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_before": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "grad_before",
+      "type": "sequence_element_definition"
+    },
+    "grad_before.gradient_settings": {
+      "name": "grad_before.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_before.is_atomic": {
+      "name": "grad_before.is_atomic",
+      "type": "atomic_definition"
+    },
+    "grad_before.read_m0": {
+      "name": "grad_before.read_m0",
+      "script": "return -24e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_before.slice_m0": {
+      "name": "grad_before.slice_m0",
+      "script": "return -24e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_before.tstart": {
+      "name": "grad_before.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf": {
+      "blueprint_id": "eb57aa51-fb0f-4010-87c9-59e9af7fcaf3",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return 5.12e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.flip_angle": {
+      "name": "rf.flip_angle",
+      "script": "return 110",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.is_atomic": {
+      "name": "rf.is_atomic",
+      "type": "atomic_definition"
+    },
+    "rf.rf.frequency": {
+      "name": "rf.rf.frequency",
+      "script": "return sys_fat_shift",
+      "sources": {
+        "sys_fat_shift": "sys_fat_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return 10",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return grad_before_dur",
+      "sources": {
+        "grad_before_dur": "grad_before.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiler": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "spoiler",
+      "type": "sequence_element_definition"
+    },
+    "spoiler.gradient_settings": {
+      "name": "spoiler.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiler.is_atomic": {
+      "name": "spoiler.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spoiler.phase_m0": {
+      "name": "spoiler.phase_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiler.slice_m0": {
+      "name": "spoiler.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiler.tstart": {
+      "name": "spoiler.tstart",
+      "script": "return grad_after_tstart + grad_after_dur",
+      "sources": {
+        "grad_after_dur": "grad_after.duration",
+        "grad_after_tstart": "grad_after.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "78e28907-94e1-4455-9cf3-ede60831b263",
+  "name": "Fat saturation one pulse",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

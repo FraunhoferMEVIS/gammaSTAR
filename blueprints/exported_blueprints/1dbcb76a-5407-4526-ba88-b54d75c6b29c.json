@@ -1,0 +1,93 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "--kernel_dur missing as input\n--example (FLASH kernel): repetition.line.kernel.duration\n--return kernel_dur <= TR\nreturn true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "--kernel_info missing as input\n--example (FLASH kernel): repetition.line.kernel.kernel_info\n--local factor = 1\n--if PAT_mode ~= 'None' then\n--  factor = PAT_factor\n--end\n--return (kernel_info.num_lines['phase'] / factor) % ETL == 0\nreturn true",
+      "sources": {
+        "ETL": "echo_train_length",
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_slice": {
+      "name": "is_right_matrix_slice",
+      "script": "--kernel_info missing as input\n--example (FLASH kernel): repetition.line.kernel.kernel_info\n--if seq_dim == 3 then\n--  local factor = 1\n--  if PAT_mode ~= 'None' then\n--    factor = PAT_factor\n--  end\n--  return (kernel_info.num_lines['slice'] / factor) % TF == 0\n--end\n--return true\nreturn true",
+      "sources": {
+        "PAT_factor": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "TF": "turbo_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.kernel": {
+      "blueprint_id": "Empty",
+      "name": "repetition.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.kernel.tstart": {
+      "name": "repetition.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return rep_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "rep_counter": "repetition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "1dbcb76a-5407-4526-ba88-b54d75c6b29c",
+  "name": "Template structure",
+  "properties": {
+    "tags": []
+  }
+}

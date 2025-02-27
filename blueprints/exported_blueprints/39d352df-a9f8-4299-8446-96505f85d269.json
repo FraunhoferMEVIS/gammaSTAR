@@ -1,0 +1,30 @@
+{
+  "definitions": {
+    "is_right_echo_spacing_test": {
+      "name": "is_right_echo_spacing_test",
+      "test_parameter_definition": {
+        "name": "is_right_echo_spacing",
+        "script": "if is_epi and echo_spacing ~= nil then\n  for _,v in ipairs(acoustic_frequencies) do\n    if (2*echo_spacing < 1/(v[1]-0.5*v[2])) and (2*echo_spacing > 1/(v[1]+0.5*v[2])) then\n      return false\n    end\n  end\nend\nreturn true",
+        "sources": {
+          "acoustic_frequencies": "sys.acoustic_resonance_frequencies",
+          "echo_spacing": "expo.echo_spacing",
+          "is_epi": "info.is_epi"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "tests": {
+      "blueprint_id": "Tests",
+      "name": "tests",
+      "type": "sequence_element_definition"
+    }
+  },
+  "id": "39d352df-a9f8-4299-8446-96505f85d269",
+  "name": "Default tests",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

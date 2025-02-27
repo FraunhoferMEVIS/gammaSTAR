@@ -1,0 +1,68 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_dur",
+      "sources": {
+        "grad_dur": "grad.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.gradient_settings": {
+      "name": "grad.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.read_m0": {
+      "name": "grad.read_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.slice_m0": {
+      "name": "grad.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "a617f7f1-771e-42dc-ad41-3f3a41b24490",
+  "name": "Crusher",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

@@ -1,0 +1,253 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if #samples.t == 0 then\n  return 0\nelse\n  return samples.t[#samples.t]\nend",
+      "sources": {
+        "samples": "samples"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "GradPulse",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return direction",
+      "sources": {
+        "direction": "direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.samples": {
+      "name": "grad.samples",
+      "script": "return samples",
+      "sources": {
+        "samples": "samples"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "m0": {
+      "name": "m0",
+      "script": "return helper_functions.calc_grad_moment(samples)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "samples": "samples"
+      },
+      "type": "parameter_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + 0.5*duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tend - 0.5*duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tcenter + 0.5*duration",
+              "sources": {
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - .5 * duration",
+              "sources": {
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+  "name": "GradPulseArb",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

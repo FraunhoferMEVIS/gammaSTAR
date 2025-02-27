@@ -1,0 +1,47 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_tend",
+      "sources": {
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return {0,0,1}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad.is_atomic": {
+      "name": "grad.is_atomic",
+      "type": "atomic_definition"
+    },
+    "grad.m0": {
+      "name": "grad.m0",
+      "script": "local dk = 1 / fov[3]\nreturn helper_functions.k_to_m0(2 * dk)",
+      "sources": {
+        "fov": "fov",
+        "helper_functions": "helper_functions"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "cb451231-bf93-45b5-8d91-304ce31f898e",
+  "name": "Demo FLASH spoiler",
+  "properties": {
+    "tags": []
+  }
+}

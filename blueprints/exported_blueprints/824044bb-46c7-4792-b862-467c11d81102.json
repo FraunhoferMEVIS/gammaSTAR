@@ -1,0 +1,106 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding": {
+      "blueprint_id": "d2cdb902-f82b-413c-b180-d806e1e98e44",
+      "name": "encoding",
+      "type": "sequence_element_definition"
+    },
+    "encoding.t_since_excitation": {
+      "name": "encoding.t_since_excitation",
+      "script": "return exc_t_after_center",
+      "sources": {
+        "exc_t_after_center": "exc.t_after_center"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.tstart": {
+      "name": "encoding.tstart",
+      "script": "return exc_dur",
+      "sources": {
+        "exc_dur": "exc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "exc": {
+      "blueprint_id": "ab5d830d-ae3b-499b-ba21-7f17f1ced1c0",
+      "name": "exc",
+      "type": "sequence_element_definition"
+    },
+    "exc.mode": {
+      "name": "exc.mode",
+      "script": "return exc_mode",
+      "sources": {
+        "exc_mode": "excitation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "exc.rect.spoilphase": {
+      "name": "exc.rect.spoilphase",
+      "script": "return math.pi / 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "exc.ssel.sinc.rf.spoilphase": {
+      "name": "exc.ssel.sinc.rf.spoilphase",
+      "script": "return math.pi / 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "exc.tstart": {
+      "name": "exc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "excitation_mode": {
+      "name": "excitation_mode",
+      "script": "return 'sinc'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "local ret_table = {minTE=minTE, acq_slices=acq_slices}\nfor k,v in pairs(readout_info) do\n  ret_table[k] = v\nend\nreturn ret_table",
+      "sources": {
+        "acq_slices": "exc.slice_info_acq_lines",
+        "minTE": "encoding.minimalTE",
+        "readout_info": "encoding.echo.partition.line.single_readout.readout_info"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil": {
+      "blueprint_id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return enc_tstart + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration",
+        "enc_tstart": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_exc": {
+      "name": "t_before_exc",
+      "script": "return exc_t_before_center",
+      "sources": {
+        "exc_t_before_center": "exc.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "824044bb-46c7-4792-b862-467c11d81102",
+  "name": "EPI kernel",
+  "properties": {}
+}

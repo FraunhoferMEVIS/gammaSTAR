@@ -1,0 +1,102 @@
+{
+  "definitions": {
+    "read_info_acq_size": {
+      "name": "read_info_acq_size",
+      "script": "return acq_size[1]",
+      "sources": {
+        "acq_size": "acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_center_sample": {
+      "name": "read_info_center_sample",
+      "script": "return math.floor(num_samples-acq_size*(1+OS)/2)",
+      "sources": {
+        "OS": "read_oversampling",
+        "acq_size": "read_info_acq_size",
+        "num_samples": "read_info_num_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_dk": {
+      "name": "read_info_dk",
+      "script": "return PF / (fov / acq_size)",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "acq_size": "read_info_acq_size",
+        "fov": "read_info_fov"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_dk_deph": {
+      "name": "read_info_dk_deph",
+      "script": "return -(PF-0.5)/PF * dk",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "dk": "read_info_dk"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_dk_reph": {
+      "name": "read_info_dk_reph",
+      "script": "return -(1.0-(PF-0.5)/PF) * dk",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "dk": "read_info_dk"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_fov": {
+      "name": "read_info_fov",
+      "script": "return fov[1]",
+      "sources": {
+        "fov": "fov"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_mat_size": {
+      "name": "read_info_mat_size",
+      "script": "return mat_size[1]",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_num_samples": {
+      "name": "read_info_num_samples",
+      "script": "return math.ceil(PF*acq_size*(1+OS))",
+      "sources": {
+        "OS": "read_oversampling",
+        "PF": "read_partial_fourier",
+        "acq_size": "read_info_acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_offcenter": {
+      "name": "read_info_offcenter",
+      "script": "rot_offcenter = helper_functions.rot_vec(helper_functions.mat_transp(rot_matrix), offcenter)\nreturn rot_offcenter[1]",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "offcenter": "offcenter",
+        "rot_matrix": "rot_matrix"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info_res": {
+      "name": "read_info_res",
+      "script": "return fov / mat_size",
+      "sources": {
+        "fov": "read_info_fov",
+        "mat_size": "read_info_mat_size"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+  "name": "Read info",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

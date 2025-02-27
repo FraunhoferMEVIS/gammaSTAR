@@ -1,0 +1,216 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_max": {
+      "name": "duration_max",
+      "script": "local spoil_durations = helper_functions.calc_gradient_shape_from_moment(3*spoiling_moment,grad_set)\nreturn grad_tend + 2*spoil_durations.rt + spoil_durations.ft",
+      "sources": {
+        "grad_set": "spoil.gradient_settings",
+        "grad_tend": "grad.tend",
+        "helper_functions": "helper_functions",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rf": {
+      "blueprint_id": "33bc71ea-d91d-4b3b-8fac-4bdaaf74b499",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return 10.24e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.flip_angle": {
+      "name": "rf.flip_angle",
+      "script": "return 90",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.multiband_factor": {
+      "name": "rf.multiband_factor",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.rf.frequency": {
+      "name": "rf.rf.frequency",
+      "script": "return gamma * slice_shift * slice_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "slice_amp": "grad.amp",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.slice_distance_factor": {
+      "name": "rf.slice_distance_factor",
+      "script": "return slice_fov/thickness",
+      "sources": {
+        "slice_fov": "slice_info_fov",
+        "thickness": "rf.thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.slices": {
+      "name": "rf.slices",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.t_bw_product": {
+      "name": "rf.t_bw_product",
+      "script": "return 8",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return 0.040",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return grad_rut",
+      "sources": {
+        "grad_rut": "grad.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoil": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.ft": {
+      "name": "spoil.ft",
+      "script": "return spoil_durations.ft",
+      "sources": {
+        "spoil_durations": "spoil_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.gradient_settings": {
+      "name": "spoil.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.phase_m0": {
+      "name": "spoil.phase_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.rt": {
+      "name": "spoil.rt",
+      "script": "return spoil_durations.rt",
+      "sources": {
+        "spoil_durations": "spoil_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.slice_m0": {
+      "name": "spoil.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return grad_tend",
+      "sources": {
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil_durations": {
+      "name": "spoil_durations",
+      "script": "return helper_functions.calc_gradient_shape_from_moment(spoiling_moment,grad_set)",
+      "sources": {
+        "grad_set": "spoil.gradient_settings",
+        "helper_functions": "helper_functions",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return grad_tcenter",
+      "sources": {
+        "grad_tcenter": "grad.tcenter"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "936d71cf-9557-4492-aaf8-ffe9e3d5ef9b",
+  "name": "Q2TIPS one pulse",
+  "properties": {}
+}

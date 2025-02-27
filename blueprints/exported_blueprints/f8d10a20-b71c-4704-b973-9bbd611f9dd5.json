@@ -1,0 +1,106 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return reph_tend",
+      "sources": {
+        "reph_tend": "reph.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.amp": {
+      "name": "grad.amp",
+      "script": "return slice_amp",
+      "sources": {
+        "slice_amp": "sinc.slice_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return {0,0,1}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return sinc_dur",
+      "sources": {
+        "sinc_dur": "sinc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "reph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "reph",
+      "type": "sequence_element_definition"
+    },
+    "reph.direction": {
+      "name": "reph.direction",
+      "script": "return {0,0,1}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "reph.m0": {
+      "name": "reph.m0",
+      "script": "return -0.5 * grad_m0",
+      "sources": {
+        "grad_m0": "grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.tstart": {
+      "name": "reph.tstart",
+      "script": "return grad_tend",
+      "sources": {
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc": {
+      "blueprint_id": "1883bc6e-b418-426c-9043-82b0aac949ac",
+      "name": "sinc",
+      "type": "sequence_element_definition"
+    },
+    "sinc.flip_angle": {
+      "name": "sinc.flip_angle",
+      "script": "return 15",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc.rf.type": {
+      "name": "sinc.rf.type",
+      "script": "return 'Excitation'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc.tstart": {
+      "name": "sinc.tstart",
+      "script": "return grad_rut",
+      "sources": {
+        "grad_rut": "grad.rut"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f8d10a20-b71c-4704-b973-9bbd611f9dd5",
+  "name": "Demo FLASH slice selection",
+  "properties": {
+    "tags": []
+  }
+}

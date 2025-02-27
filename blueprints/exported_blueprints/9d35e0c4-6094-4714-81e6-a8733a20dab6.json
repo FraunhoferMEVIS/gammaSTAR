@@ -1,0 +1,146 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_max": {
+      "name": "duration_max",
+      "script": "local spoil_durations = helper_functions.calc_gradient_shape_from_moment(3*spoiling_moment,grad_set)\nreturn rf_tend + 2*spoil_durations.rt + spoil_durations.ft",
+      "sources": {
+        "grad_set": "spoil.gradient_settings",
+        "helper_functions": "helper_functions",
+        "rf_tend": "rf.tend",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "rf": {
+      "blueprint_id": "eb57aa51-fb0f-4010-87c9-59e9af7fcaf3",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return 20.48e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.flip_angle": {
+      "name": "rf.flip_angle",
+      "script": "return 90",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.is_atomic": {
+      "name": "rf.is_atomic",
+      "type": "atomic_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return 10",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoil": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.ft": {
+      "name": "spoil.ft",
+      "script": "return spoil_durations.ft",
+      "sources": {
+        "spoil_durations": "spoil_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.gradient_settings": {
+      "name": "spoil.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.is_atomic": {
+      "name": "spoil.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spoil.phase_m0": {
+      "name": "spoil.phase_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.rt": {
+      "name": "spoil.rt",
+      "script": "return spoil_durations.rt",
+      "sources": {
+        "spoil_durations": "spoil_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.slice_m0": {
+      "name": "spoil.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return rf_tstart + rf_dur",
+      "sources": {
+        "rf_dur": "rf.duration",
+        "rf_tstart": "rf.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil_durations": {
+      "name": "spoil_durations",
+      "script": "return helper_functions.calc_gradient_shape_from_moment(spoiling_moment,grad_set)",
+      "sources": {
+        "grad_set": "spoil.gradient_settings",
+        "helper_functions": "helper_functions",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "9d35e0c4-6094-4714-81e6-a8733a20dab6",
+  "name": "Water saturation one pulse",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

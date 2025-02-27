@@ -1,0 +1,239 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.segment.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_segment_forwarding": {
+      "forward_as": "repetition.segment.kernel.idx_segment",
+      "name": "idx_segment_forwarding",
+      "source_to_forward": "repetition.segment.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(q2tips_dur+fat_dur+kernel_dur, TR)",
+      "sources": {
+        "TR": "TR",
+        "fat_dur": "repetition.segment.fatsat.duration",
+        "kernel_dur": "repetition.segment.kernel.duration",
+        "q2tips_dur": "repetition.segment.q2tips.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % ETL == 0",
+      "sources": {
+        "ETL": "echo_train_length",
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.segment.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_slice": {
+      "name": "is_right_matrix_slice",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['slice'] / factor) % TF == 0",
+      "sources": {
+        "PAT_factor": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "TF": "turbo_factor",
+        "kernel_info": "repetition.segment.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan": {
+      "blueprint_id": "Loop",
+      "name": "prescan",
+      "type": "sequence_element_definition"
+    },
+    "prescan.fatsat": {
+      "blueprint_id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+      "name": "prescan.fatsat",
+      "type": "sequence_element_definition"
+    },
+    "prescan.fatsat.tstart": {
+      "name": "prescan.fatsat.tstart",
+      "script": "return q2tips_dur",
+      "sources": {
+        "q2tips_dur": "prescan.q2tips.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.kernel": {
+      "blueprint_id": "1152c20f-6954-42ab-b29c-e7f61a9f776a",
+      "name": "prescan.kernel",
+      "type": "sequence_element_definition"
+    },
+    "prescan.kernel.encoding.corr.line.readout.adc.set_enabled": {
+      "name": "prescan.kernel.encoding.corr.line.readout.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled": {
+      "name": "prescan.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.kernel.encoding.freqcorr.adc.set_enabled": {
+      "name": "prescan.kernel.encoding.freqcorr.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.kernel.tstart": {
+      "name": "prescan.kernel.tstart",
+      "script": "return q2tips_dur + fat_dur",
+      "sources": {
+        "fat_dur": "prescan.fatsat.duration",
+        "q2tips_dur": "prescan.q2tips.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.length": {
+      "name": "prescan.length",
+      "script": "return number_prescans",
+      "sources": {
+        "number_prescans": "number_prescans"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.q2tips": {
+      "blueprint_id": "a04f9a40-7e2a-4d77-8603-8f3b68575a62",
+      "name": "prescan.q2tips",
+      "type": "sequence_element_definition"
+    },
+    "prescan.q2tips.tstart": {
+      "name": "prescan.q2tips.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.tstart": {
+      "name": "prescan.tstart",
+      "script": "return pat_ref_dur + pre_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "pat_ref_dur": "pat_ref.duration",
+        "pre_counter": "prescan.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment": {
+      "blueprint_id": "Loop",
+      "name": "repetition.segment",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.fatsat": {
+      "blueprint_id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+      "name": "repetition.segment.fatsat",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.fatsat.tstart": {
+      "name": "repetition.segment.fatsat.tstart",
+      "script": "return q2tips_dur",
+      "sources": {
+        "q2tips_dur": "repetition.segment.q2tips.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.kernel": {
+      "blueprint_id": "1152c20f-6954-42ab-b29c-e7f61a9f776a",
+      "name": "repetition.segment.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.kernel.tstart": {
+      "name": "repetition.segment.kernel.tstart",
+      "script": "return q2tips_dur + fat_dur",
+      "sources": {
+        "fat_dur": "repetition.segment.fatsat.duration",
+        "q2tips_dur": "repetition.segment.q2tips.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.length": {
+      "name": "repetition.segment.length",
+      "script": "return kernel_info.segs['total']",
+      "sources": {
+        "kernel_info": "repetition.segment.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.q2tips": {
+      "blueprint_id": "a04f9a40-7e2a-4d77-8603-8f3b68575a62",
+      "name": "repetition.segment.q2tips",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.q2tips.tstart": {
+      "name": "repetition.segment.q2tips.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.segment.tstart": {
+      "name": "repetition.segment.tstart",
+      "script": "return seg_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_counter": "repetition.segment.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return pat_ref_dur + pre_length * TR + rep_counter * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "pat_ref_dur": "pat_ref.duration",
+        "pre_length": "prescan.length",
+        "rep_counter": "repetition.counter",
+        "seg_length": "repetition.segment.length"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "ed446751-4713-4de8-a217-7dfa46ab407d",
+  "name": "GRASE structure",
+  "properties": {}
+}

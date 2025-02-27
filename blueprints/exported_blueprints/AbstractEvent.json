@@ -1,0 +1,63 @@
+{
+  "definitions": {
+    "description_conditional": {
+      "conditionals": [
+        {
+          "body": [
+            {
+              "name": "description",
+              "script": "return {counter=counter, info='looped event'}",
+              "sources": {
+                "counter": "counter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "counter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "description",
+              "script": "return {info='non-looped event'}",
+              "sources": {},
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "description_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_positivity": {
+      "name": "tstart_positivity",
+      "test_parameter_definition": {
+        "name": "tstart_positivity_assertion",
+        "script": "return tstart >= 0",
+        "sources": {
+          "tstart": "tstart"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    }
+  },
+  "id": "AbstractEvent",
+  "name": "Abstract event",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

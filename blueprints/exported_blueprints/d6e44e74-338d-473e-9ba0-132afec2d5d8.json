@@ -1,0 +1,326 @@
+{
+  "definitions": {
+    "ACQ_FIRST_IN_ENCODE_STEP1": {
+      "name": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "script": "return line_counter == 0",
+      "sources": {
+        "line_counter": "line_counter"
+      },
+      "type": "parameter_definition"
+    },
+    "ACQ_FIRST_IN_ENCODE_STEP1_forwarding": {
+      "forward_as": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "name": "ACQ_FIRST_IN_ENCODE_STEP1_forwarding",
+      "source_to_forward": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "type": "forwarding_definition"
+    },
+    "ACQ_LAST_IN_ENCODE_STEP1": {
+      "name": "ACQ_LAST_IN_ENCODE_STEP1",
+      "script": "return line_counter == (line_length - 1)",
+      "sources": {
+        "line_counter": "line_counter",
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "ACQ_LAST_IN_ENCODE_STEP1_forwarding": {
+      "forward_as": "ACQ_LAST_IN_ENCODE_STEP1",
+      "name": "ACQ_LAST_IN_ENCODE_STEP1_forwarding",
+      "source_to_forward": "ACQ_LAST_IN_ENCODE_STEP1",
+      "type": "forwarding_definition"
+    },
+    "UTE": {
+      "name": "UTE",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "density_adaption": {
+      "name": "density_adaption",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "density_t0": {
+      "name": "density_t0",
+      "script": "return 500e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "echo": {
+      "blueprint_id": "Loop",
+      "name": "echo",
+      "type": "sequence_element_definition"
+    },
+    "echo.UTEencoding": {
+      "blueprint_id": "090aef06-b8ec-4f17-9afe-a39c6b89f4af",
+      "name": "echo.UTEencoding",
+      "type": "sequence_element_definition"
+    },
+    "echo.UTEencoding.enabled": {
+      "name": "echo.UTEencoding.enabled",
+      "script": "return UTE",
+      "sources": {
+        "UTE": "UTE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.UTEencoding.t0": {
+      "name": "echo.UTEencoding.t0",
+      "script": "return density_t0",
+      "sources": {
+        "density_t0": "density_t0"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.UTEencoding.tstart": {
+      "name": "echo.UTEencoding.tstart",
+      "script": "return TE[echo_counter+1]-TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.UTEencoding.uniform": {
+      "name": "echo.UTEencoding.uniform",
+      "script": "if density_adaption == true then\n  return \"3D\"\nelse\n  return \"None\"\nend",
+      "sources": {
+        "density_adaption": "density_adaption"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.encoding": {
+      "blueprint_id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+      "name": "echo.encoding",
+      "type": "sequence_element_definition"
+    },
+    "echo.encoding.enabled": {
+      "name": "echo.encoding.enabled",
+      "script": "return not UTE",
+      "sources": {
+        "UTE": "UTE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.encoding.readout.adc.frequency": {
+      "name": "echo.encoding.readout.adc.frequency",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.encoding.readout.adc.header.phase_info_comb_reorder_scheme": {
+      "name": "echo.encoding.readout.adc.header.phase_info_comb_reorder_scheme",
+      "script": "return 'No'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.encoding.readout.phase_info_comb_reorder_scheme": {
+      "name": "echo.encoding.readout.phase_info_comb_reorder_scheme",
+      "script": "return 'No'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.encoding.spoiling": {
+      "name": "echo.encoding.spoiling",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.encoding.tstart": {
+      "name": "echo.encoding.tstart",
+      "script": "return TE[echo_counter+1]-TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.idx_contrast": {
+      "name": "echo.idx_contrast",
+      "script": "return echo_counter",
+      "sources": {
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.length": {
+      "name": "echo.length",
+      "script": "return #TE",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.rot_matrix": {
+      "name": "echo.rot_matrix",
+      "script": "sinphi = math.sin(phi_theta['phi'][line_counter+1])\ncosphi = math.cos(phi_theta['phi'][line_counter+1])\nsintheta = math.sin(phi_theta['theta'][line_counter+1])\ncostheta = math.cos(phi_theta['theta'][line_counter+1])\nreturn {\n{cosphi*sintheta, -sinphi, cosphi*costheta},\n{sinphi*sintheta, cosphi, sinphi*costheta},\n{-costheta, 0, sintheta}}",
+      "sources": {
+        "line_counter": "line_counter",
+        "phi_theta": "rot_angle_phi_theta"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "if enc_enabled then\n  return exc_t_before_center + TE[1] - t_before_te\nelseif UTEenc_enabled then\n  return exc_t_before_center + TE[1] - ute_t_before_center\nend",
+      "sources": {
+        "TE": "TE",
+        "UTEenc_enabled": "echo.UTEencoding.enabled",
+        "enc_enabled": "echo.encoding.enabled",
+        "exc_t_before_center": "exc.t_before_center",
+        "t_before_te": "echo.encoding.t_before_te",
+        "ute_t_before_center": "echo.UTEencoding.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "exc": {
+      "blueprint_id": "ab5d830d-ae3b-499b-ba21-7f17f1ced1c0",
+      "name": "exc",
+      "type": "sequence_element_definition"
+    },
+    "exc.mode": {
+      "name": "exc.mode",
+      "script": "return exc_mode",
+      "sources": {
+        "exc_mode": "excitation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "exc.tstart": {
+      "name": "exc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "excitation_mode": {
+      "name": "excitation_mode",
+      "script": "return 'global'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "flex_encoding_encodingLimits_kspace_encoding_step_1": {
+      "name": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "script": "return {0, line_length - 1, 0}",
+      "sources": {
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "flex_encoding_encodingLimits_kspace_encoding_step_1forwarding": {
+      "forward_as": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "name": "flex_encoding_encodingLimits_kspace_encoding_step_1forwarding",
+      "source_to_forward": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "type": "forwarding_definition"
+    },
+    "golden_ratio": {
+      "name": "golden_ratio",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "idx_contrast_forwarding": {
+      "forward_as": "echo.idx_contrast",
+      "name": "idx_contrast_forwarding",
+      "source_to_forward": "echo.idx_contrast",
+      "type": "forwarding_definition"
+    },
+    "idx_kspace_encode_step_1_forwarding": {
+      "forward_as": "idx_kspace_encode_step_1",
+      "name": "idx_kspace_encode_step_1_forwarding",
+      "source_to_forward": "line_counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local is_right = true\nif lt(echo_tstart, exc_dur) then\n  is_right = false\nend\nlocal encoding_duration\nif enc_enabled then\n  encoding_duration = enc_dur\nelseif UTEenc_enabled then\n  encoding_duration = UTEenc_dur\nend\nfor i=1,#TE-1 do\n  if lt(TE[i+1]-TE[i], encoding_duration) then\n    is_right = false\n  end\nend \nreturn is_right  ",
+      "sources": {
+        "TE": "TE",
+        "UTEenc_dur": "echo.UTEencoding.duration",
+        "UTEenc_enabled": "echo.UTEencoding.enabled",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration",
+        "enc_enabled": "echo.encoding.enabled",
+        "exc_dur": "exc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "return {minTE=minTE, acq_lines={total=acq_size[2]}}",
+      "sources": {
+        "acq_size": "acq_size",
+        "minTE": "minimalTE"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min, TE_inc\nif enc_enabled then\n  TE_min = exc_t_after_center + 10e-6 + t_before_te\n  TE_inc = enc_dur + 10e-6\nelseif UTEenc_enabled then\n  TE_min = exc_t_after_center + 40e-6 + ute_t_before_center\n  TE_inc = UTEenc_dur + 10e-6\nend\nlocal TE_times = {}\nfor cTE=1,number_TE do\n  table.insert(TE_times, TE_min + (cTE-1)*TE_inc)\nend\nreturn TE_times",
+      "sources": {
+        "UTEenc_dur": "echo.UTEencoding.duration",
+        "UTEenc_enabled": "echo.UTEencoding.enabled",
+        "enc_dur": "echo.encoding.duration",
+        "enc_enabled": "echo.encoding.enabled",
+        "exc_t_after_center": "exc.t_after_center",
+        "number_TE": "number_TE",
+        "t_before_te": "echo.encoding.t_before_te",
+        "ute_t_before_center": "echo.UTEencoding.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "number_TE": {
+      "name": "number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rot_angle_phi_theta": {
+      "name": "rot_angle_phi_theta",
+      "script": "phi = {}\ntheta = {}\nif UTE == false then\n  if GR == false then\n    for counter = 0,line_length-1 do\n      local dH = -1 + counter/(line_length-1)\n      if dH >= 0 then\n        dH = 0 --because of rounding errors\n      end\n      if (counter == 0) then\n        phi[counter+1] = 0\n      else\n        phi[counter+1] = (phi[counter]+3.544907701811032/math.sqrt(2*line_length*(1-dH^2))) % (2*math.pi)\n      end\n      theta[counter+1] = math.acos(dH)\n    end\n  else\n    local GR2d_1 = helper_constants.golden_ratio_2d_1\n    local GR2d_2 = helper_constants.golden_ratio_2d_2\n    for counter = 1,line_length do\n      phi[counter] = ((counter*GR2d_2)%1) * 2 * math.pi\n      theta[counter] = math.asin((counter*GR2d_1)%1) + math.pi/2\n    end\n  end\nelse\n  if GR == false then\n    for counter = 0,line_length-1 do\n      local dH = -1 + 2*counter/(line_length-1)\n      if dH >= 1 then\n        dH = 1 --because of rounding errors\n      end\n      if (counter == 0 or counter == line_length-1) then\n        phi[counter+1] = 0\n      else\n        phi[counter+1] = (phi[counter]+3.544907701811032/math.sqrt(line_length*(1-dH^2))) % (2*math.pi)\n      end\n      theta[counter+1] = math.acos(dH)\n    end\n  else\n    local GR2d_1 = helper_constants.golden_ratio_2d_1\n    local GR2d_2 = helper_constants.golden_ratio_2d_2\n    for counter = 1,line_length do\n      phi[counter] = ((counter*GR2d_2)%1) * 2 * math.pi\n      theta[counter] = math.asin(2*((counter*GR2d_1)%1)-1) + math.pi/2\n    end\n  end\nend\nreturn {phi=phi, theta=theta}",
+      "sources": {
+        "GR": "golden_ratio",
+        "UTE": "UTE",
+        "helper_constants": "helper_constants",
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "rot_matrix_forwarding": {
+      "forward_as": "echo.rot_matrix",
+      "name": "rot_matrix_forwarding",
+      "source_to_forward": "echo.rot_matrix",
+      "type": "forwarding_definition"
+    },
+    "spoil": {
+      "blueprint_id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "if enc_enabled then\n  return echo_tstart + TE[#TE] - TE[1] + enc_dur\nelseif UTEenc_enabled then\n  return echo_tstart + TE[#TE] - TE[1] + UTEenc_dur\nend",
+      "sources": {
+        "TE": "TE",
+        "UTEenc_dur": "echo.UTEencoding.duration",
+        "UTEenc_enabled": "echo.UTEencoding.enabled",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration",
+        "enc_enabled": "echo.encoding.enabled"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "d6e44e74-338d-473e-9ba0-132afec2d5d8",
+  "name": "3D radial kernel",
+  "properties": {}
+}

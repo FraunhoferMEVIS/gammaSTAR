@@ -1,0 +1,196 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if rect_enabled then\n  return rect_dur\nelseif ssel_enabled then\n  return ssel_dur\nelseif extrf_enabled then\n  return extrf_dur\nend\nreturn 0",
+      "sources": {
+        "extrf_dur": "extrf.duration",
+        "extrf_enabled": "extrf.enabled",
+        "rect_dur": "rect.duration",
+        "rect_enabled": "rect.enabled",
+        "ssel_dur": "ssel.duration",
+        "ssel_enabled": "ssel.enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "external_json_file": {
+      "name": "external_json_file",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "extrf": {
+      "blueprint_id": "de47d28a-3993-4d3d-9d30-a7616d1092bd",
+      "name": "extrf",
+      "type": "sequence_element_definition"
+    },
+    "extrf.enabled": {
+      "name": "extrf.enabled",
+      "script": "return mode == 'external'",
+      "sources": {
+        "mode": "mode"
+      },
+      "type": "parameter_definition"
+    },
+    "extrf.external_json_file": {
+      "name": "extrf.external_json_file",
+      "script": "return external_json_file",
+      "sources": {
+        "external_json_file": "external_json_file"
+      },
+      "type": "parameter_definition"
+    },
+    "extrf.is_atomic": {
+      "name": "extrf.is_atomic",
+      "type": "atomic_definition"
+    },
+    "extrf.thickness": {
+      "name": "extrf.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "extrf.tstart": {
+      "name": "extrf.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "mode": {
+      "name": "mode",
+      "script": "return 'sinc'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rect": {
+      "blueprint_id": "184dfa36-f86e-425f-a653-40d47a4a99b2",
+      "name": "rect",
+      "type": "sequence_element_definition"
+    },
+    "rect.duration": {
+      "name": "rect.duration",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "rect.enabled": {
+      "name": "rect.enabled",
+      "script": "return mode == 'global'",
+      "sources": {
+        "mode": "mode"
+      },
+      "type": "parameter_definition"
+    },
+    "rect.is_atomic": {
+      "name": "rect.is_atomic",
+      "type": "atomic_definition"
+    },
+    "rect.rf.type": {
+      "name": "rect.rf.type",
+      "script": "return 'Excitation'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rect.tstart": {
+      "name": "rect.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf_duration": {
+      "name": "rf_duration",
+      "script": "if mode == 'sinc' then\n  if thickness >= 0.01 then\n    return 3.2e-3\n  end\n  return 2.56e-3\nelseif mode == 'global' then\n  return 500e-6\nend\nreturn 2.56e-3",
+      "sources": {
+        "mode": "mode",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "ssel": {
+      "blueprint_id": "420b5e15-2362-4c7c-a9a5-89cbbd784c1c",
+      "name": "ssel",
+      "type": "sequence_element_definition"
+    },
+    "ssel.enabled": {
+      "name": "ssel.enabled",
+      "script": "return string.find(mode, \"sinc\") and true or false",
+      "sources": {
+        "mode": "mode"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel.is_atomic": {
+      "name": "ssel.is_atomic",
+      "type": "atomic_definition"
+    },
+    "ssel.sinc.rf_duration": {
+      "name": "ssel.sinc.rf_duration",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel.sinc.thickness": {
+      "name": "ssel.sinc.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel.tstart": {
+      "name": "ssel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "if rect_enabled then\n  return 0.5 * rect_dur\nelseif ssel_enabled then\n  return ssel_t_after_center\nelseif extrf_enabled then\n  return extrf_t_after_center\nend\nreturn 0",
+      "sources": {
+        "extrf_enabled": "extrf.enabled",
+        "extrf_t_after_center": "extrf.t_after_center",
+        "rect_dur": "rect.duration",
+        "rect_enabled": "rect.enabled",
+        "ssel_enabled": "ssel.enabled",
+        "ssel_t_after_center": "ssel.t_after_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "if rect_enabled then\n  return 0.5 * rect_dur\nelseif ssel_enabled then\n  return ssel_t_before_center\nelseif extrf_enabled then\n  return extrf_t_before_center\nend\nreturn 0",
+      "sources": {
+        "extrf_enabled": "extrf.enabled",
+        "extrf_t_before_center": "extrf.t_before_center",
+        "rect_dur": "rect.duration",
+        "rect_enabled": "rect.enabled",
+        "ssel_enabled": "ssel.enabled",
+        "ssel_t_before_center": "ssel.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "if string.find(mode, \"non_selective\") then\n  return 10\nend\nreturn slice_fov",
+      "sources": {
+        "mode": "mode",
+        "slice_fov": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "ab5d830d-ae3b-499b-ba21-7f17f1ced1c0",
+  "name": "3D excitation pulse",
+  "properties": {}
+}

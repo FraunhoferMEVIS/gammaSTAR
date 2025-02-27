@@ -1,0 +1,17 @@
+{
+  "definitions": {
+    "counter": {
+      "name": "counter",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "Loop",
+  "name": "Loop",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

@@ -1,0 +1,96 @@
+{
+  "definitions": {
+    "direction": {
+      "name": "direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return grad_dur\nelse\n  return 0\nend",
+      "sources": {
+        "enabled": "enabled",
+        "grad_dur": "grad.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return dir",
+      "sources": {
+        "dir": "direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.gradient_settings": {
+      "name": "grad.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.m0": {
+      "name": "grad.m0",
+      "script": "return moment",
+      "sources": {
+        "moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "max_duration": {
+      "name": "max_duration",
+      "script": "return grad_dur",
+      "sources": {
+        "grad_dur": "grad.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2. * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+  "name": "Spoiler",
+  "properties": {}
+}

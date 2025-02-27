@@ -1,0 +1,76 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return enc_tstart + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration",
+        "enc_tstart": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_with_spoil": {
+      "name": "duration_with_spoil",
+      "script": "return enc_tstart + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration_with_spoil",
+        "enc_tstart": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_without_spoil": {
+      "name": "duration_without_spoil",
+      "script": "return enc_tstart + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration_without_spoil",
+        "enc_tstart": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding": {
+      "blueprint_id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+      "name": "encoding",
+      "type": "sequence_element_definition"
+    },
+    "encoding.tstart": {
+      "name": "encoding.tstart",
+      "script": "return read_center_time - t_before_te",
+      "sources": {
+        "read_center_time": "readout_center_time",
+        "t_before_te": "encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "spinecho": {
+      "blueprint_id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+      "name": "spinecho",
+      "type": "sequence_element_definition"
+    },
+    "spinecho.is_atomic": {
+      "name": "spinecho.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spinecho.spoiling_moment": {
+      "name": "spinecho.spoiling_moment",
+      "script": "return 4 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "spinecho.slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "spinecho.tstart": {
+      "name": "spinecho.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "d53e0b9f-dff0-4db8-b314-6e3f772698b0",
+  "name": "Line encoding with spinecho",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

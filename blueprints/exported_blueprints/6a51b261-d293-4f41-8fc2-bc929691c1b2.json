@@ -1,0 +1,75 @@
+{
+  "definitions": {
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return kernel_dur <= TR",
+      "sources": {
+        "TR": "TR",
+        "kernel_dur": "line.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "line": {
+      "blueprint_id": "Loop",
+      "name": "line",
+      "type": "sequence_element_definition"
+    },
+    "line.kernel": {
+      "blueprint_id": "cdf518bb-dfee-4034-9dfb-63410740f05a",
+      "name": "line.kernel",
+      "type": "sequence_element_definition"
+    },
+    "line.kernel.tstart": {
+      "name": "line.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "line.length": {
+      "name": "line.length",
+      "script": "return acq_size[2]",
+      "sources": {
+        "acq_size": "acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "line.tstart": {
+      "name": "line.tstart",
+      "script": "return line_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "line_counter": "line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "phase_info_line_pos_forwarding": {
+      "forward_as": "phase_info_line_pos",
+      "name": "phase_info_line_pos_forwarding",
+      "source_to_forward": "line.counter",
+      "type": "forwarding_definition"
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "6a51b261-d293-4f41-8fc2-bc929691c1b2",
+  "name": "Demo FLASH structure",
+  "properties": {
+    "tags": []
+  }
+}

@@ -1,0 +1,51 @@
+{
+  "definitions": {
+    "asymmetry": {
+      "name": "asymmetry",
+      "script": "return 0.5",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "frequency": {
+      "name": "frequency",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_duration_positive_test": {
+      "name": "is_duration_positive_test",
+      "test_parameter_definition": {
+        "name": "is_duration_positive",
+        "script": "return duration > 0",
+        "sources": {
+          "duration": "duration"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_enabled": {
+      "name": "is_enabled",
+      "type": "is_enabled_definition"
+    },
+    "phase": {
+      "name": "phase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "type": {
+      "name": "type",
+      "script": "return 'Undefined' --Values: Undefined, Excitation, Spinecho",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "RFPulse",
+  "name": "RFPulse",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

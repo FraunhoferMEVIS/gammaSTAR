@@ -1,0 +1,179 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if grad_enabled == true then\n  return grad_tend\nelse\n  return grad_arb_dur\nend",
+      "sources": {
+        "grad_arb_dur": "grad_arb.duration",
+        "grad_enabled": "grad.enabled",
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.amp": {
+      "name": "grad.amp",
+      "script": "return grad_shape.amp",
+      "sources": {
+        "grad_shape": "rf.gradient_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.enabled": {
+      "name": "grad.enabled",
+      "script": "return (next(grad_shape.samples.t) == nil) and true or false",
+      "sources": {
+        "grad_shape": "rf.gradient_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_arb": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "grad_arb",
+      "type": "sequence_element_definition"
+    },
+    "grad_arb.direction": {
+      "name": "grad_arb.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb.enabled": {
+      "name": "grad_arb.enabled",
+      "script": "return (next(grad_shape.samples.t) ~= nil) and true or false",
+      "sources": {
+        "grad_shape": "rf.gradient_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb.samples": {
+      "name": "grad_arb.samples",
+      "script": "return grad_shape.samples",
+      "sources": {
+        "grad_shape": "rf.gradient_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb.tstart": {
+      "name": "grad_arb.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "mode": {
+      "name": "mode",
+      "script": "return 'afp'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rf": {
+      "blueprint_id": "22a52b16-e9b5-4149-ba69-3a30f21b643e",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return 10.24e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.mode": {
+      "name": "rf.mode",
+      "script": "return mode",
+      "sources": {
+        "mode": "mode"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "if grad_enabled == true then\n  return grad_rut\nelse\n  return grad_shape.rut\nend",
+      "sources": {
+        "grad_enabled": "grad.enabled",
+        "grad_rut": "grad.rut",
+        "grad_shape": "rf.gradient_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "if grad_enabled == true then\n  return grad_tcenter\nelse\n  return grad_arb_dur/2\nend",
+      "sources": {
+        "grad_arb_dur": "grad_arb.duration",
+        "grad_enabled": "grad.enabled",
+        "grad_tcenter": "grad.tcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "return slice_fov",
+      "sources": {
+        "slice_fov": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "82f69428-ef7a-4ae0-a89e-da3586c49007",
+  "name": "FOCI pulse",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

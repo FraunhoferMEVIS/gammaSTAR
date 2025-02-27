@@ -1,0 +1,178 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if uniform == \"None\" then\n  return read_trapez_tend\nelse\n  return read_uniform_tend\nend",
+      "sources": {
+        "read_trapez_tend": "read_trapez.tend",
+        "read_uniform_tend": "read_uniform.tend",
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_resolution": {
+      "name": "is_right_resolution",
+      "script": "return read_uniform_shape[\"ok\"]",
+      "sources": {
+        "read_uniform_shape": "read_uniform_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "m0_rdt": {
+      "name": "m0_rdt",
+      "script": "if uniform == \"None\" then\n  return 0.5 * read_trapez_rdt * read_trapez_amp\nelse\n  return uniform_shape.m0_rdt\nend",
+      "sources": {
+        "read_trapez_amp": "read_trapez.amp",
+        "read_trapez_rdt": "read_trapez.rdt",
+        "uniform": "uniform",
+        "uniform_shape": "read_uniform_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalADCsamples": {
+      "name": "minimalADCsamples",
+      "script": "local grad_amp\nif read_trapez_enabled then\n  grad_amp = trapez_shape.amp\nelseif read_uniform_enabled then\n  grad_amp = uniform_shape.amp\nend\nreturn gamma * fov[1] * grad_amp * nom_adc_dur",
+      "sources": {
+        "fov": "fov",
+        "gamma": "sys_gamma",
+        "nom_adc_dur": "nom_adc_duration",
+        "read_trapez_enabled": "read_trapez.enabled",
+        "read_uniform_enabled": "read_uniform.enabled",
+        "trapez_shape": "read_trapez_shape",
+        "uniform_shape": "read_uniform_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "read_trapez": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read_trapez",
+      "type": "sequence_element_definition"
+    },
+    "read_trapez.amp": {
+      "name": "read_trapez.amp",
+      "script": "return read_shape.amp",
+      "sources": {
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.direction": {
+      "name": "read_trapez.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.enabled": {
+      "name": "read_trapez.enabled",
+      "script": "if uniform == \"None\" then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.ft": {
+      "name": "read_trapez.ft",
+      "script": "return read_shape.ft",
+      "sources": {
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.rt": {
+      "name": "read_trapez.rt",
+      "script": "return read_shape.rt",
+      "sources": {
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.tstart": {
+      "name": "read_trapez.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_trapez_shape": {
+      "name": "read_trapez_shape",
+      "script": "local moment = 0.5*helper_functions.k_to_m0(dk)\nlocal raster_time = grad_set.raster_time\nrt, ft, amp = 0, 0, 0\nif uniform == \"None\" then\n  repeat\n    rt = rt + raster_time\n    ft = read_dur - rt\n    amp = moment / (0.5*rt + ft)\n  until (amp < rt*grad_set.max_grad_slew or ft < 0)\nend\nreturn {rt=rt, ft=ft, amp=amp}",
+      "sources": {
+        "dk": "read_info_dk",
+        "grad_set": "gradient_settings",
+        "helper_functions": "helper_functions",
+        "read_dur": "readout_duration",
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "read_uniform": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "read_uniform",
+      "type": "sequence_element_definition"
+    },
+    "read_uniform.direction": {
+      "name": "read_uniform.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read_uniform.enabled": {
+      "name": "read_uniform.enabled",
+      "script": "if uniform == \"None\" then\n  return false\nelse\n  return true\nend",
+      "sources": {
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "read_uniform.samples": {
+      "name": "read_uniform.samples",
+      "script": "return uniform_shape.samples",
+      "sources": {
+        "uniform_shape": "read_uniform_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_uniform.tstart": {
+      "name": "read_uniform.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_uniform_shape": {
+      "name": "read_uniform_shape",
+      "script": "--see paper MRM 65:1090-6 (2011) by Konstandin et al. (2D)\n--see paper MRM 62:1565-73 (2009) by Nagel et al. (3D)\nlocal samples = {t={}, v={}}\nlocal m0_rdt = 0\nlocal amp\nlocal rastered_rampup\nlocal rastered_rampdown\nlocal ok = true\nif uniform ~= \"None\" then\n  local m0 = 0.5*helper_functions.k_to_m0(dk)\n  local raster_time = grad_set.raster_time\n  local max_grad_amp = grad_set.max_grad_amp\n  local max_grad_slew = grad_set.max_grad_slew\n  local rt, k0, kmax\n  amp = m0 / read_dur\n  repeat\n    amp = amp + 0.001*1e-3\n    rt = amp / max_grad_slew\n    rastered_rampup = math.ceil(rt/raster_time) * raster_time\n    k0 = gamma * (amp * t0 - 0.5 * amp * rastered_rampup)\n    if uniform == \"2D\" then\n      kmax = (2*gamma*k0*amp*(read_dur-t0)+k0^2)^(1/2)\n    elseif uniform == \"3D\" then\n      kmax = (3*gamma*k0^2*amp*(read_dur-t0)+k0^3)^(1/3)\n    end\n  until (kmax >= 0.5*dk or amp > max_grad_amp or rastered_rampup > t0)\n  if amp > max_grad_amp or rastered_rampup > t0 then\n    ok = false\n  end    \n  table.insert(samples.t, 0)\n  table.insert(samples.v, 0)\n  local num_samples = math.ceil(read_dur/raster_time)\n  local t\n  for i=1,num_samples do\n    t = i*raster_time\n    table.insert(samples.t, t)  \n    if t <= rastered_rampup then\n      table.insert(samples.v, amp * t/rastered_rampup)\n    elseif t <= t0 then\n      table.insert(samples.v, amp)\n    else\n      if uniform == \"2D\" then\n        table.insert(samples.v, k0*amp*(2*gamma*k0*amp*(t-t0)+k0^2)^(-1/2))\n      elseif uniform == \"3D\" then\n        table.insert(samples.v, k0^2*amp*(3*gamma*k0^2*amp*(t-t0)+k0^3)^(-2/3))\n      end\n    end\n  end\n  local amp_last = samples.v[#samples.v]\n  local samples_rd = math.ceil(amp_last/max_grad_slew/raster_time)\n  rastered_rampdown = samples_rd * raster_time\n  for i=1,samples_rd do\n    t = t + raster_time\n    table.insert(samples.t, t)\n    table.insert(samples.v, amp_last * (1 - i/samples_rd))\n  end\n  m0_rdt = 0.5 * amp_last * samples_rd * raster_time\nend\nreturn {samples=samples,m0_rdt=m0_rdt,amp=amp,rut=rastered_rampup,rdt=rastered_rampdown, ok=ok}",
+      "sources": {
+        "dk": "read_info_dk",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "helper_functions": "helper_functions",
+        "read_dur": "readout_duration",
+        "t0": "t0",
+        "uniform": "uniform"
+      },
+      "type": "parameter_definition"
+    },
+    "uniform": {
+      "name": "uniform",
+      "script": "return \"None\"",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "5c507fd9-5498-41a8-b54d-67df84ee46c7",
+  "name": "Gradient for radial UTE",
+  "properties": {}
+}

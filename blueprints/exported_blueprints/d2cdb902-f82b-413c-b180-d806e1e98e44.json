@@ -1,0 +1,491 @@
+{
+  "definitions": {
+    "corr": {
+      "blueprint_id": "e73f35bc-1a1e-42e0-b3f2-21a9d71c92a6",
+      "name": "corr",
+      "type": "sequence_element_definition"
+    },
+    "corr.tstart": {
+      "name": "corr.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return t_first_ro + par_length * readout_duration_partition + TE[#TE] - TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_length": "echo.length",
+        "par_length": "echo.partition.length",
+        "readout_duration_partition": "readout_duration_partition",
+        "t_first_ro": "t_first_readout"
+      },
+      "type": "parameter_definition"
+    },
+    "echo": {
+      "blueprint_id": "Loop",
+      "name": "echo",
+      "type": "sequence_element_definition"
+    },
+    "echo.length": {
+      "name": "echo.length",
+      "script": "return #TE",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition": {
+      "blueprint_id": "Loop",
+      "name": "echo.partition",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.deph": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "echo.partition.deph",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.deph.ft": {
+      "name": "echo.partition.deph.ft",
+      "script": "return max_deph_dur.ft",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.gradient_settings": {
+      "name": "echo.partition.deph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.is_atomic": {
+      "name": "echo.partition.deph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "echo.partition.deph.phase_info": {
+      "blueprint_id": "12d7fb94-fecf-48e7-96e4-448b84fe5c2e",
+      "name": "echo.partition.deph.phase_info",
+      "type": "extending_definition"
+    },
+    "echo.partition.deph.phase_info_line_pos": {
+      "name": "echo.partition.deph.phase_info_line_pos",
+      "script": "return seg_counter * par_length * line_length + par_counter * line_length",
+      "sources": {
+        "line_length": "echo.partition.line.length",
+        "par_counter": "echo.partition.counter",
+        "par_length": "echo.partition.length",
+        "seg_counter": "idx_segment"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.phase_m0": {
+      "name": "echo.partition.deph.phase_m0",
+      "script": "return helper_functions.k_to_m0(k_cur[\"phase\"])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_cur": "echo.partition.deph.phase_info_k_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.read_m0": {
+      "name": "echo.partition.deph.read_m0",
+      "script": "return helper_functions.k_to_m0(dk_deph) - m0_ru_abs",
+      "sources": {
+        "dk_deph": "echo.partition.line.single_readout.read_info_dk_deph",
+        "helper_functions": "helper_functions",
+        "m0_ru_abs": "echo.partition.line.single_readout.read.m0_ru_abs"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.rt": {
+      "name": "echo.partition.deph.rt",
+      "script": "return max_deph_dur.rt",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "echo.partition.deph.slice_info",
+      "type": "extending_definition"
+    },
+    "echo.partition.deph.slice_info_caipi_line_cur": {
+      "name": "echo.partition.deph.slice_info_caipi_line_cur",
+      "script": "return phase_line_cur[\"phase\"]",
+      "sources": {
+        "phase_line_cur": "echo.partition.deph.phase_info_line_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.slice_m0": {
+      "name": "echo.partition.deph.slice_m0",
+      "script": "return helper_functions.k_to_m0(k_cur[\"slice\"]+k_caipi_cur)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_caipi_cur": "echo.partition.deph.slice_info_caipi_k_cur",
+        "k_cur": "echo.partition.deph.phase_info_k_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.deph.tstart": {
+      "name": "echo.partition.deph.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.partition.length": {
+      "name": "echo.partition.length",
+      "script": "if seq_dim == 3 then\n  return TF\nend\nreturn 1",
+      "sources": {
+        "TF": "turbo_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.line": {
+      "blueprint_id": "Loop",
+      "name": "echo.partition.line",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.line.length": {
+      "name": "echo.partition.line.length",
+      "script": "return ETL",
+      "sources": {
+        "ETL": "echo_train_length"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.line.single_readout": {
+      "blueprint_id": "ee153c9c-c247-48d1-ba59-d4e1bcef194f",
+      "name": "echo.partition.line.single_readout",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.line.single_readout.adc.header.idx_contrast": {
+      "name": "echo.partition.line.single_readout.adc.header.idx_contrast",
+      "script": "return echo_counter",
+      "sources": {
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.line.single_readout.phase_info_line_pos": {
+      "name": "echo.partition.line.single_readout.phase_info_line_pos",
+      "script": "return seg_counter * par_length * line_length + par_counter * line_length + line_counter",
+      "sources": {
+        "line_counter": "echo.partition.line.counter",
+        "line_length": "echo.partition.line.length",
+        "par_counter": "echo.partition.counter",
+        "par_length": "echo.partition.length",
+        "seg_counter": "idx_segment"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.line.single_readout.tstart": {
+      "name": "echo.partition.line.single_readout.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.partition.line.tstart": {
+      "name": "echo.partition.line.tstart",
+      "script": "return deph_tstart + deph_dur + line_counter * single_read_dur",
+      "sources": {
+        "deph_dur": "echo.partition.deph.duration",
+        "deph_tstart": "echo.partition.deph.tstart",
+        "line_counter": "echo.partition.line.counter",
+        "single_read_dur": "echo.partition.line.single_readout.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.phase_info_comb_reorder_scheme": {
+      "name": "echo.partition.phase_info_comb_reorder_scheme",
+      "script": "if seq_dim == 3 then\n  return 'Interleaved'\nend\nreturn 'Phase'",
+      "sources": {
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.phase_info_reorder_scheme": {
+      "name": "echo.partition.phase_info_reorder_scheme",
+      "script": "if seq_dim == 3 then\n  return {phase='Top-Down',slice='Center-Out'}\nend\nreturn {phase='Top-Down', slice='Top-Down'}",
+      "sources": {
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "echo.partition.reph",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.reph.ft": {
+      "name": "echo.partition.reph.ft",
+      "script": "return max_deph_dur.ft",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.gradient_settings": {
+      "name": "echo.partition.reph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.is_atomic": {
+      "name": "echo.partition.reph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "echo.partition.reph.phase_info": {
+      "blueprint_id": "12d7fb94-fecf-48e7-96e4-448b84fe5c2e",
+      "name": "echo.partition.reph.phase_info",
+      "type": "extending_definition"
+    },
+    "echo.partition.reph.phase_info_line_pos": {
+      "name": "echo.partition.reph.phase_info_line_pos",
+      "script": "return seg_counter * par_length * line_length + par_counter * line_length + line_length-1",
+      "sources": {
+        "line_length": "echo.partition.line.length",
+        "par_counter": "echo.partition.counter",
+        "par_length": "echo.partition.length",
+        "seg_counter": "idx_segment"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.phase_m0": {
+      "name": "echo.partition.reph.phase_m0",
+      "script": "return -helper_functions.k_to_m0(k_cur[\"phase\"])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_cur": "echo.partition.reph.phase_info_k_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.read_m0": {
+      "name": "echo.partition.reph.read_m0",
+      "script": "local is_reverse = (ETL+1) % 2\nif (is_reverse == 0) then\n  return helper_functions.k_to_m0(dk_reph) - m0_rd_abs\nelse\n  return -helper_functions.k_to_m0(dk_deph) + m0_ru_abs\nend",
+      "sources": {
+        "ETL": "echo_train_length",
+        "dk_deph": "echo.partition.line.single_readout.read_info_dk_deph",
+        "dk_reph": "echo.partition.line.single_readout.read_info_dk_reph",
+        "helper_functions": "helper_functions",
+        "m0_rd_abs": "echo.partition.line.single_readout.read.m0_rd_abs",
+        "m0_ru_abs": "echo.partition.line.single_readout.read.m0_ru_abs"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.rt": {
+      "name": "echo.partition.reph.rt",
+      "script": "return max_deph_dur.rt",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "echo.partition.reph.slice_info",
+      "type": "extending_definition"
+    },
+    "echo.partition.reph.slice_info_caipi_line_cur": {
+      "name": "echo.partition.reph.slice_info_caipi_line_cur",
+      "script": "return phase_line_cur[\"phase\"]",
+      "sources": {
+        "phase_line_cur": "echo.partition.reph.phase_info_line_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.slice_m0": {
+      "name": "echo.partition.reph.slice_m0",
+      "script": "return -helper_functions.k_to_m0(k_cur[\"slice\"]+k_caipi_cur)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_caipi_cur": "echo.partition.reph.slice_info_caipi_k_cur",
+        "k_cur": "echo.partition.reph.phase_info_k_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.reph.tstart": {
+      "name": "echo.partition.reph.tstart",
+      "script": "return deph_tstart + deph_dur + line_length * single_read_dur",
+      "sources": {
+        "deph_dur": "echo.partition.deph.duration",
+        "deph_tstart": "echo.partition.deph.tstart",
+        "line_length": "echo.partition.line.length",
+        "single_read_dur": "echo.partition.line.single_readout.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.tstart": {
+      "name": "echo.partition.tstart",
+      "script": "return par_counter * readout_duration_partition",
+      "sources": {
+        "par_counter": "echo.partition.counter",
+        "readout_duration_partition": "readout_duration_partition"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "return t_first_ro + TE[echo_counter+1] - TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter",
+        "t_first_ro": "t_first_readout"
+      },
+      "type": "parameter_definition"
+    },
+    "freqcorr": {
+      "blueprint_id": "f5073422-5630-4b16-9bbd-9cb15f0cfb4c",
+      "name": "freqcorr",
+      "type": "sequence_element_definition"
+    },
+    "freqcorr.tstart": {
+      "name": "freqcorr.tstart",
+      "script": "return corr_tstart + corr_dur + t_pause_freqcorr",
+      "sources": {
+        "corr_dur": "corr.duration",
+        "corr_tstart": "corr.tstart",
+        "t_pause_freqcorr": "t_pause_freqcorr"
+      },
+      "type": "parameter_definition"
+    },
+    "idx_segment": {
+      "name": "idx_segment",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local first_TE = ge(t_first_ro, freqcorr_tstart + freqcorr_dur + t_pause_freqcorr)\nif #TE > 1 then\n  for cTE = 2, #TE do\n    if lt(TE[cTE] - TE[cTE-1], par_length * readout_duration_partition) then\n      return false\n    end\n  end\nend\nreturn first_TE",
+      "sources": {
+        "TE": "TE",
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "par_length": "echo.partition.length",
+        "readout_duration_partition": "readout_duration_partition",
+        "t_first_ro": "t_first_readout",
+        "t_pause_freqcorr": "t_pause_freqcorr"
+      },
+      "type": "parameter_definition"
+    },
+    "max_deph_durations": {
+      "name": "max_deph_durations",
+      "script": "local m0_p = helper_functions.k_to_m0(k_max[\"phase\"])\nlocal m0_s = 0\nif seq_dim == 2 then\n  m0_s = helper_functions.k_to_m0((mb_factor-1)/2 * caipi_kmin)\nelseif seq_dim == 3 then\n  m0_s = helper_functions.k_to_m0(k_max[\"slice\"])\n  if PAT_mode == 'caipi' then\n    m0_s = m0_s + helper_functions.k_to_m0((PAT_factor_slice-1)*caipi_kmin)\n  end\nend\n\nlocal max_m0 = math.max(math.abs(m0_p), math.abs(m0_s), math.abs(m0_f))\nreturn helper_functions.calc_gradient_shape_from_moment(max_m0, grad_set)",
+      "sources": {
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "caipi_kmin": "echo.partition.deph.slice_info_caipi_kmin",
+        "grad_set": "echo.partition.deph.gradient_settings",
+        "helper_functions": "helper_functions",
+        "k_max": "echo.partition.deph.phase_info_kmax",
+        "m0_f": "echo.partition.deph.read_m0",
+        "mb_factor": "multiband_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min = t_since_exc + freqcorr_tstart + freqcorr_dur + t_pause_freqcorr + t_before_te\nTE_min = math.ceil(TE_min / 1e-4) * 1e-4\nlocal TE_times = {TE_min}\nfor cTE = 2, number_TE do\n  table.insert(TE_times, TE_times[cTE-1] + math.ceil(par_length * readout_duration_partition / 1e-4) * 1e-4)\nend\nreturn TE_times",
+      "sources": {
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "number_TE": "number_TE",
+        "par_length": "echo.partition.length",
+        "readout_duration_partition": "readout_duration_partition",
+        "t_before_te": "t_before_te",
+        "t_pause_freqcorr": "t_pause_freqcorr",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "number_TE": {
+      "name": "number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_comb_reorder_scheme_forwarding": {
+      "forward_as": "echo.partition.phase_info_comb_reorder_scheme",
+      "name": "phase_info_comb_reorder_scheme_forwarding",
+      "source_to_forward": "echo.partition.phase_info_comb_reorder_scheme",
+      "type": "forwarding_definition"
+    },
+    "phase_info_line_pos_forwarding": {
+      "forward_as": "echo.partition.line.single_readout.phase_info_line_pos",
+      "name": "phase_info_line_pos_forwarding",
+      "source_to_forward": "echo.partition.line.single_readout.phase_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "phase_info_reorder_scheme_forwarding": {
+      "forward_as": "echo.partition.phase_info_reorder_scheme",
+      "name": "phase_info_reorder_scheme_forwarding",
+      "source_to_forward": "echo.partition.phase_info_reorder_scheme",
+      "type": "forwarding_definition"
+    },
+    "readout_duration_partition": {
+      "name": "readout_duration_partition",
+      "script": "return reph_tstart + reph_dur",
+      "sources": {
+        "reph_dur": "echo.partition.reph.duration",
+        "reph_tstart": "echo.partition.reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "t_after_te": {
+      "name": "t_after_te",
+      "script": "return deph_dur + lines_length * single_read_dur + reph_dur - t_before_te",
+      "sources": {
+        "deph_dur": "echo.partition.deph.duration",
+        "lines_length": "echo.partition.line.length",
+        "reph_dur": "echo.partition.reph.duration",
+        "single_read_dur": "echo.partition.line.single_readout.duration",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_te": {
+      "name": "t_before_te",
+      "script": "return deph_dur + (reorder[\"center_pos\"]-1) * single_read_dur + t_before_te",
+      "sources": {
+        "deph_dur": "echo.partition.deph.duration",
+        "reorder": "echo.partition.line.single_readout.phase_info_comb_reorder",
+        "single_read_dur": "echo.partition.line.single_readout.duration",
+        "t_before_te": "echo.partition.line.single_readout.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "t_first_readout": {
+      "name": "t_first_readout",
+      "script": "return TE[1] - t_since_exc - t_before_te",
+      "sources": {
+        "TE": "TE",
+        "t_before_te": "t_before_te",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "t_pause_freqcorr": {
+      "name": "t_pause_freqcorr",
+      "script": "return 20e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "d2cdb902-f82b-413c-b180-d806e1e98e44",
+  "name": "EPI readout",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

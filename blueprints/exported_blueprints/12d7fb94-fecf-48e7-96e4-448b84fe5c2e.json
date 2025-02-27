@@ -1,0 +1,301 @@
+{
+  "definitions": {
+    "phase_info_acq_lines": {
+      "name": "phase_info_acq_lines",
+      "script": "return {phase=#reorder[\"phase\"][\"lines\"],slice=#reorder[\"slice\"][\"lines\"],total=#reorder_comb[\"lines\"]}",
+      "sources": {
+        "reorder": "phase_info_reorder",
+        "reorder_comb": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_acq_mask": {
+      "name": "phase_info_acq_mask",
+      "script": "--Here, a mask is defined for skipping encoding lines (e.g., GRAPPA)\nfunction calc_mask(dir, pat_factor, ref_lines)\n  --full Matrix\n  mask = {}\n  for i=0,num_lines[dir]-1 do\n    table.insert(mask,1)\n  end\n  --PAT\n  if (PAT_mode == 'grappa_prescan' or PAT_mode == 'caipi') then\n    for i=0,num_lines[dir]-1 do\n      if ((i % pat_factor) ~= (line_center[dir] % pat_factor)) then\n        mask[1+i] = 0\n      end\n    end  \n  elseif PAT_mode == 'grappa_integrated' then\n    for i=0,num_lines[dir]-1 do\n      if ((i % pat_factor) ~= (line_center[dir] % pat_factor)) and ((i - line_center[dir] < -ref_lines/2) or (i - line_center[dir] >= ref_lines/2)) then\n        mask[1+i] = 0\n      end\n    end\n  end\n  --count number of acquired lines\n  count = 0\n  for i=1,num_lines[dir] do\n    count = count + mask[i]\n  end  \n  return {mask=mask, count=count}\nend\n \nmask_phase = calc_mask(\"phase\", PAT_factor_phase, ref_lines_phase)\nmask_slice = calc_mask(\"slice\", PAT_factor_slice, ref_lines_slice)\nreturn {phase=mask_phase, slice=mask_slice}",
+      "sources": {
+        "PAT_factor_phase": "PAT_factor_phase",
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "line_center": "phase_info_line_center",
+        "num_lines": "phase_info_num_lines",
+        "ref_lines_phase": "PAT_ref_lines_phase",
+        "ref_lines_slice": "PAT_ref_lines_slice"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_acq_size": {
+      "name": "phase_info_acq_size",
+      "script": "--The number of phase encoding steps without consideration of PF and GRAPPA for calculation of kmax\nlocal acq_size_phase = acq_size[2]\nlocal acq_size_slice = acq_size[3]\nif reorder_scheme == 'No' then\n  acq_size_phase = 1\n  acq_size_slice = 1\nelseif reorder_scheme == 'Phase' then\n  acq_size_slice = 1\nelseif reorder_scheme == 'Slice' then\n  acq_size_phase = 1\nend\nreturn {phase=acq_size_phase, slice=acq_size_slice}",
+      "sources": {
+        "acq_size": "acq_size",
+        "reorder_scheme": "phase_info_comb_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_actual_oversampling": {
+      "name": "phase_info_actual_oversampling",
+      "script": "--see phase_info_numlines for formula\nlocal actual_os = {phase=OS_phase, slice=OS_slice}\nif OS_phase > 0 then\n  local rounded_lines_phase = math.ceil(PF_phase*acq_size[\"phase\"]*(1+OS_phase))\n  actual_os[\"phase\"] = rounded_lines_phase / (PF_phase*acq_size[\"phase\"]) - 1\nend\nif OS_slice > 0 then\n  local rounded_lines_slice = math.ceil(PF_slice*acq_size[\"slice\"]*(1+OS_slice))\n  actual_os[\"slice\"] = rounded_lines_slice / (PF_slice*acq_size[\"slice\"]) - 1\nend\nreturn actual_os",
+      "sources": {
+        "OS_phase": "phase_oversampling",
+        "OS_slice": "slice_oversampling",
+        "PF_phase": "phase_partial_fourier",
+        "PF_slice": "slice_partial_fourier",
+        "acq_size": "phase_info_acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_comb_reorder": {
+      "name": "phase_info_comb_reorder",
+      "script": "if (reorder_scheme == 'Phase') then\n  tab = {lines={}, is_first={}, is_last={}, is_first_enc={}, is_last_enc={}}\n  for i=1,#reorder[\"phase\"][\"lines\"] do\n    table.insert(tab[\"lines\"], {phase=reorder[\"phase\"][\"lines\"][i], slice=0})\n    table.insert(tab[\"is_first\"], {phase=reorder[\"phase\"][\"is_first\"][i], slice=false})\n    table.insert(tab[\"is_last\"], {phase=reorder[\"phase\"][\"is_last\"][i], slice=false})\n    table.insert(tab[\"is_first_enc\"], {phase=(i==1) and true or false, slice=false})\n    table.insert(tab[\"is_last_enc\"], {phase=(i==#reorder[\"phase\"][\"lines\"]) and true or false, slice=false})    \n  end\n  tab[\"center_pos\"] = reorder[\"phase\"][\"center_pos\"]  \n  return tab\nelseif (reorder_scheme == 'Slice') then\n  tab = {lines={}, is_first={}, is_last={}, is_first_enc={}, is_last_enc={}}\n  for i=1,#reorder[\"slice\"][\"lines\"] do\n    table.insert(tab[\"lines\"], {phase=0,slice=reorder[\"slice\"][\"lines\"][i]})\n    table.insert(tab[\"is_first\"], {phase=false,slice=reorder[\"slice\"][\"is_first\"][i]})\n    table.insert(tab[\"is_last\"], {phase=false,slice=reorder[\"slice\"][\"is_last\"][i]})\n    table.insert(tab[\"is_first_enc\"], {phase=false,slice=(i==1) and true or false})\n    table.insert(tab[\"is_last_enc\"], {phase=false,slice=(i==#reorder[\"phase\"][\"lines\"]) and true or false})\n  end\n  tab[\"center_pos\"] = reorder[\"slice\"][\"center_pos\"]  \n  return tab\nelseif (reorder_scheme == 'Phase-Slice' or reorder_scheme == 'Slice-Phase' or reorder_scheme == 'Interleaved') then \n  tab = {}\n  is_first = {}\n  is_last = {}\n  is_first_enc = {}\n  is_last_enc = {}\n  local center_pos\n  reorder1 = reorder[\"phase\"]\n  reorder2 = reorder[\"slice\"]\n  segs1 = segs[\"phase\"]\n  segs2 = segs[\"slice\"]\n  len1 = (#reorder1[\"lines\"])/segs1\n  len2 = (#reorder2[\"lines\"])/segs2\n  if (reorder_scheme == 'Phase-Slice') then\n    for i1=0,segs1-1 do\n      for j1=0,len1-1 do\n        for i2=0,segs2-1 do\n          for j2=0,len2-1 do\n            table.insert(tab,{phase=reorder1[\"lines\"][1+i1*len1+j1],slice=reorder2[\"lines\"][1+i2*len2+j2]})\n            table.insert(is_first,{phase=(j1==0) and true or false,slice=(j2==0) and true or false})\n            table.insert(is_last,{phase=(j1==len1-1) and true or false,slice=(j2==len2-1) and true or false})\n            table.insert(is_first_enc,{phase=(i1==0) and (j1==0) and true or false,slice=(i2==0) and (j2==0) and true or false})\n            table.insert(is_last_enc,{phase=(i1==segs1-1) and (j1==len1-1) and true or false,slice=(i2==segs2-1) and (j2==len2-1) and true or false})\n          end\n        end\n      end\n    end\n    center_pos = reorder2[\"center_pos\"]\n  elseif (reorder_scheme == 'Slice-Phase') then\n    for i2=0,segs2-1 do\n      for j2=0,len2-1 do\n        for i1=0,segs1-1 do\n          for j1=0,len1-1 do\n            table.insert(tab,{phase=reorder1[\"lines\"][1+i1*len1+j1],slice=reorder2[\"lines\"][1+i2*len2+j2]})\n            table.insert(is_first,{phase=(j1==0) and true or false,slice=(j2==0) and true or false})\n            table.insert(is_last,{phase=(j1==len1-1) and true or false,slice=(j2==len2-1) and true or false})\n            table.insert(is_first_enc,{phase=(i1==0) and (j1==0) and true or false,slice=(i2==0) and (j2==0) and true or false})\n            table.insert(is_last_enc,{phase=(i1==segs1-1) and (j1==len1-1) and true or false,slice=(i2==segs2-1) and (j2==len2-1) and true or false})\n          end\n        end\n      end\n    end\n    center_pos = reorder1[\"center_pos\"]\n  elseif (reorder_scheme == 'Interleaved') then\n    for i2=0,segs2-1 do\n      for i1=0,segs1-1 do\n        for j2=0,len2-1 do\n          for j1=0,len1-1 do\n            table.insert(tab, {phase=reorder1[\"lines\"][1+i1*len1+j1],slice=reorder2[\"lines\"][1+i2*len2+j2]})\n            table.insert(is_first,{phase=(j1==0) and true or false,slice=(j2==0) and true or false})\n            table.insert(is_last,{phase=(j1==len1-1) and true or false,slice=(j2==len2-1) and true or false})\n            table.insert(is_first_enc,{phase=(i1==0) and (j1==0) and true or false,slice=(i2==0) and (j2==0) and true or false})\n            table.insert(is_last_enc,{phase=(i1==segs1-1) and (j1==len1-1) and true or false,slice=(i2==segs2-1) and (j2==len2-1) and true or false})\n          end\n        end\n      end\n    end\n    center_pos = reorder1[\"center_pos\"]\n  end\n  return {lines=tab,center_pos=center_pos,is_first=is_first,is_last=is_last,is_first_enc=is_first_enc,is_last_enc=is_last_enc}\nelse\n  tab = {lines={}, is_first={}, is_last={}, is_first_enc={}, is_last_enc={}}\n  table.insert(tab[\"lines\"], {phase=0, slice=0})\n  table.insert(tab[\"is_first\"], {phase=false, slice=false})\n  table.insert(tab[\"is_last\"], {phase=false, slice=false})\n  table.insert(tab[\"is_first_enc\"], {phase=false, slice=false})\n  table.insert(tab[\"is_last_enc\"], {phase=false, slice=false})    \n  tab[\"center_pos\"] = -1\n  return tab\nend",
+      "sources": {
+        "reorder": "phase_info_reorder",
+        "reorder_scheme": "phase_info_comb_reorder_scheme",
+        "segs": "phase_info_reorder_segments"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_comb_reorder_scheme": {
+      "name": "phase_info_comb_reorder_scheme",
+      "script": "-- No, Phase, Slice, Phase-Slice, Slice-Phase, Interleaved\nreturn 'Phase'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_dk_next": {
+      "name": "phase_info_dk_next",
+      "script": "dk_next_phase = 0\ndk_next_slice = 0\nif not is_last[\"phase\"] then\n  dk_next_phase = k_next[\"phase\"] - k_cur[\"phase\"]\nend\nif not is_last[\"slice\"] then\n  dk_next_slice = k_next[\"slice\"] - k_cur[\"slice\"]\nend\nreturn {phase=dk_next_phase,slice=dk_next_slice}",
+      "sources": {
+        "is_last": "phase_info_is_last",
+        "k_cur": "phase_info_k_cur",
+        "k_next": "phase_info_k_next"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_dk_prev": {
+      "name": "phase_info_dk_prev",
+      "script": "dk_prev_phase = 0\ndk_prev_slice = 0\nif not is_first[\"phase\"] then\n  dk_prev_phase = k_cur[\"phase\"] - k_prev[\"phase\"]\nend\nif not is_first[\"slice\"] then\n  dk_prev_slice = k_cur[\"slice\"] - k_prev[\"slice\"]\nend\nreturn {phase=dk_prev_phase,slice=dk_prev_slice}",
+      "sources": {
+        "is_first": "phase_info_is_first",
+        "k_cur": "phase_info_k_cur",
+        "k_prev": "phase_info_k_prev"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_fov": {
+      "name": "phase_info_fov",
+      "script": "return {phase=fov[2], slice=fov[3]}",
+      "sources": {
+        "fov": "fov"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_is_first": {
+      "name": "phase_info_is_first",
+      "script": "return reorder[\"is_first\"][1+pos]",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_is_first_encode": {
+      "name": "phase_info_is_first_encode",
+      "script": "return reorder[\"is_first_enc\"][pos+1]",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_is_last": {
+      "name": "phase_info_is_last",
+      "script": "return reorder[\"is_last\"][1+pos]",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_is_last_encode": {
+      "name": "phase_info_is_last_encode",
+      "script": "return reorder[\"is_last_enc\"][pos+1]",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_k_cur": {
+      "name": "phase_info_k_cur",
+      "script": "return {phase=kmin[\"phase\"]*(line_cur[\"phase\"]-line_center[\"phase\"]),slice=kmin[\"slice\"]*(line_cur[\"slice\"]-line_center[\"slice\"])}\n",
+      "sources": {
+        "kmin": "phase_info_kmin",
+        "line_center": "phase_info_line_center",
+        "line_cur": "phase_info_line_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_k_next": {
+      "name": "phase_info_k_next",
+      "script": "return {phase=kmin[\"phase\"]*(line_next[\"phase\"]-line_center[\"phase\"]),slice=kmin[\"slice\"]*(line_next[\"slice\"]-line_center[\"slice\"])}\n",
+      "sources": {
+        "kmin": "phase_info_kmin",
+        "line_center": "phase_info_line_center",
+        "line_next": "phase_info_line_next"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_k_prev": {
+      "name": "phase_info_k_prev",
+      "script": "return {phase=kmin[\"phase\"]*(line_prev[\"phase\"]-line_center[\"phase\"]),slice=kmin[\"slice\"]*(line_prev[\"slice\"]-line_center[\"slice\"])}",
+      "sources": {
+        "kmin": "phase_info_kmin",
+        "line_center": "phase_info_line_center",
+        "line_prev": "phase_info_line_prev"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_kmax": {
+      "name": "phase_info_kmax",
+      "script": "return {phase=0.5/(fov[\"phase\"]/acq_size[\"phase\"]), slice=0.5/(fov[\"slice\"]/acq_size[\"slice\"])}",
+      "sources": {
+        "acq_size": "phase_info_acq_size",
+        "fov": "phase_info_fov"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_kmin": {
+      "name": "phase_info_kmin",
+      "script": "return {phase=1/(fov[\"phase\"]*(1+actual_os[\"phase\"])), slice=1/(fov[\"slice\"]*(1+actual_os[\"slice\"]))}",
+      "sources": {
+        "actual_os": "phase_info_actual_oversampling",
+        "fov": "phase_info_fov"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_line_center": {
+      "name": "phase_info_line_center",
+      "script": "-- line center must be even for phase since PAT does not work otherwise\nlocal acq_size_times_os_phase = num_lines[\"phase\"] / PF_phase\nlocal acq_size_times_os_slice = num_lines[\"slice\"] / PF_slice\nreturn {phase=math.floor(0.5*(num_lines[\"phase\"]-0.5*acq_size_times_os_phase))*2, slice=math.floor(num_lines[\"slice\"]-0.5*acq_size_times_os_slice)}",
+      "sources": {
+        "PF_phase": "phase_partial_fourier",
+        "PF_slice": "slice_partial_fourier",
+        "num_lines": "phase_info_num_lines"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_line_cur": {
+      "name": "phase_info_line_cur",
+      "script": "if reorder[\"lines\"][1+pos] ~= nil then\n  return {phase=reorder[\"lines\"][1+pos][\"phase\"],slice=reorder[\"lines\"][1+pos][\"slice\"]}\nelse\n  return {phase=-1,slice=-1}\nend",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_line_next": {
+      "name": "phase_info_line_next",
+      "script": "if (pos == #reorder[\"lines\"]-1) then\n  return {phase=-1,slice=-1}\nelse\n  if reorder[\"lines\"][1+pos+1] ~= nil then\n    return {phase=reorder[\"lines\"][1+pos+1][\"phase\"],slice=reorder[\"lines\"][1+pos+1][\"slice\"]}\n  else\n    return {phase=-1,slice=-1}\n  end\nend",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_line_pos": {
+      "name": "phase_info_line_pos",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_line_prev": {
+      "name": "phase_info_line_prev",
+      "script": "if (pos == 0) then\n  return {phase=-1,slice=-1}\nelse\n  if reorder[\"lines\"][1+pos-1] ~= nil then\n    return {phase=reorder[\"lines\"][1+pos-1][\"phase\"],slice=reorder[\"lines\"][1+pos-1][\"slice\"]}\n  else\n    return {phase=-1,slice=-1}\n  end\nend",
+      "sources": {
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_mat_size": {
+      "name": "phase_info_mat_size",
+      "script": "--The size of the final image matrix, which is used to calculate the resolution\nreturn {phase=mat_size[2], slice=mat_size[3]}",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_max_line_step": {
+      "name": "phase_info_max_line_step",
+      "script": "local max_step_phase = 0\nfor i=1,#reorder[\"phase\"][\"lines\"]-1 do\n  if (reorder[\"phase\"][\"is_last\"][i] == false and math.abs(reorder[\"phase\"][\"lines\"][i+1]-reorder[\"phase\"][\"lines\"][i]) > max_step_phase) then\n    max_step_phase = math.abs(reorder[\"phase\"][\"lines\"][i+1]-reorder[\"phase\"][\"lines\"][i])\n  end\nend\nlocal max_step_slice = 0\nfor i=1,#reorder[\"slice\"][\"lines\"]-1 do\n  if (reorder[\"slice\"][\"is_last\"][i] == false and math.abs(reorder[\"slice\"][\"lines\"][i+1]-reorder[\"slice\"][\"lines\"][i]) > max_step_slice) then\n    max_step_slice = math.abs(reorder[\"slice\"][\"lines\"][i+1]-reorder[\"slice\"][\"lines\"][i])\n  end\nend\nreturn {phase=max_step_phase, slice=max_step_slice}",
+      "sources": {
+        "reorder": "phase_info_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_num_lines": {
+      "name": "phase_info_num_lines",
+      "script": "--The number of phase encoding steps without consideration of the mask (e.g., GRAPPA)\nreturn {phase=math.floor(PF_phase*acq_size[\"phase\"]*(1+actual_os[\"phase\"])+0.5), slice=math.floor(PF_slice*acq_size[\"slice\"]*(1+actual_os[\"slice\"])+0.5)}",
+      "sources": {
+        "PF_phase": "phase_partial_fourier",
+        "PF_slice": "slice_partial_fourier",
+        "acq_size": "phase_info_acq_size",
+        "actual_os": "phase_info_actual_oversampling"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_offcenter": {
+      "name": "phase_info_offcenter",
+      "script": "rot_offcenter = helper_functions.rot_vec(helper_functions.mat_transp(rot_matrix), offcenter)\nreturn rot_offcenter[2]",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "offcenter": "offcenter",
+        "rot_matrix": "rot_matrix"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_reorder": {
+      "name": "phase_info_reorder",
+      "script": "function calc_reorder(dir)\n  help = {}\n  local help_center_pos = -1\n  local center_pos = -1\n  local center_pos_in_seg = -1\n  local is_first = {}\n  local is_last = {}\n  for i=0,num_lines[dir]-1 do\n    if (acq_mask[dir][\"mask\"][1+i] >= 1) then\n      for j=1,acq_mask[dir][\"mask\"][1+i] do\n        table.insert(help,i)\n      end\n      if (i == line_center[dir]) then\n        help_center_pos = #help\n      end\n    end\n  end\n  tab = {}\n  if (scheme[dir] == 'Top-Down') then\n    for i=0,segments[dir]-1 do\n      for j=1,#help,segments[dir] do\n        table.insert(tab,help[i+j])\n        if (j == 1) then\n          table.insert(is_first, true)\n        else\n          table.insert(is_first, false)\n        end\n        if (j > #help - segments[dir]) then\n          table.insert(is_last, true)\n        else\n          table.insert(is_last, false)\n        end\n        if (help[i+j] == line_center[dir]) then\n          center_pos = (j-1)/segments[dir] + 1\n          center_pos_in_seg = i + 1\n        end\n      end\n    end\n  elseif (scheme[dir] == 'Center-Out' or scheme[dir] == 'Center-In') then\n    help2 = {}\n    center_pos = 1\n    center_pos_in_seg = 1\n    local sign = 1\n    local sign_change = true\n    local step = 1\n    local index = help_center_pos\n    table.insert(help2,help[index])\n    for i=1,#help-1 do\n      if (sign_change == true) then\n        sign = -sign\n      end\n      index = help_center_pos + sign * step\n      if (index < 1) then\n        sign = 1\n        sign_change = false\n        index = help_center_pos + sign * step\n      end\n      if (index > #help) then\n        sign = -1\n        sign_change = false\n        step = step + 1\n        index = help_center_pos + sign * step\n      end\n      table.insert(help2,help[index])\n      if (i%2 == 0) or (sign_change == false) then\n        step = step + 1\n      end\n    end\n    if (scheme[dir] == 'Center-Out') then\n      for i=0,segments[dir]-1 do\n        for j=0,#help/segments[dir]-1 do\n          table.insert(tab, help2[1+i+j*segments[dir]])\n          if (j == 0) then\n            table.insert(is_first, true)\n          else\n            table.insert(is_first, false)\n          end\n          if (j == #help/segments[dir]-1) then\n            table.insert(is_last, true)\n          else\n            table.insert(is_last, false)\n          end\n        end\n      end\n    elseif (scheme[dir] == 'Center-In') then\n      center_pos = #help/segments[dir]\n      for i=0,segments[dir]-1 do\n        for j=#help/segments[dir]-1,0,-1 do\n          table.insert(tab, help2[1+i+j*segments[dir]])\n          if (j == #help/segments[dir]-1) then\n            table.insert(is_first, true)\n          else\n            table.insert(is_first, false)\n          end\n          if (j == 0) then\n            table.insert(is_last, true)\n          else\n            table.insert(is_last, false)\n          end\n        end\n      end\n    end\n  end\n  return {lines=tab,center_pos=center_pos,center_pos_in_seg=center_pos_in_seg,is_first=is_first,is_last=is_last}\nend\n\nphase=calc_reorder(\"phase\")\nslice=calc_reorder(\"slice\")\nreturn {phase=phase, slice=slice}",
+      "sources": {
+        "acq_mask": "phase_info_acq_mask",
+        "line_center": "phase_info_line_center",
+        "num_lines": "phase_info_num_lines",
+        "scheme": "phase_info_reorder_scheme",
+        "segments": "phase_info_reorder_segments"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_reorder_scheme": {
+      "name": "phase_info_reorder_scheme",
+      "script": "-- Top-Down, Center-Out, Center-In\nreturn {phase='Top-Down', slice='Top-Down'}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_reorder_segments": {
+      "name": "phase_info_reorder_segments",
+      "script": "function calc_acq_lines(dir)\n  local acq_lines = 0\n  for i=0,num_lines[dir]-1 do\n    if (acq_mask[dir][\"mask\"][1+i] >= 1) then\n      acq_lines = acq_lines + acq_mask[dir][\"mask\"][1+i]\n    end\n  end  \n  return acq_lines\nend\n\nlocal phase = math.max(1,math.floor(calc_acq_lines(\"phase\")/ETL))\nlocal slice = math.max(1,math.floor(calc_acq_lines(\"slice\")/TF))\nreturn {phase=phase, slice=slice, total=phase*slice}",
+      "sources": {
+        "ETL": "echo_train_length",
+        "TF": "turbo_factor",
+        "acq_mask": "phase_info_acq_mask",
+        "num_lines": "phase_info_num_lines"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_res": {
+      "name": "phase_info_res",
+      "script": "return {phase=fov[\"phase\"]/mat_size[\"phase\"], slice=fov[\"slice\"]/mat_size[\"slice\"]}",
+      "sources": {
+        "fov": "phase_info_fov",
+        "mat_size": "phase_info_mat_size"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "12d7fb94-fecf-48e7-96e4-448b84fe5c2e",
+  "name": "Phase info",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

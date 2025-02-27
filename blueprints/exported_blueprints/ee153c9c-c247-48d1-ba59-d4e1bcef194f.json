@@ -1,0 +1,380 @@
+{
+  "definitions": {
+    "RegridTable": {
+      "name": "RegridTable",
+      "script": "RegridTable = {}\nif read_type == \"Trapez\" then\n  RegridTable[\"Mode\"] = \"None\"\nelseif read_type == \"TrapezRamp\" then\n  if adc_delay == rut then\n    RegridTable[\"Mode\"] = \"None\"\n  else\n    RegridTable[\"Mode\"] = \"Trapez\"\n  end  \nelseif read_type == \"Sine\" then\n  RegridTable[\"Mode\"] = \"Sine\"\nend\nRegridTable[\"GradientRUT\"] = rut\nRegridTable[\"GradientRDT\"] = rdt\nRegridTable[\"GradientFT\"] = ft\nRegridTable[\"ADCdelay\"] = adc_delay\nRegridTable[\"ADCduration\"] = adc_duration\nRegridTable[\"ADCsamples\"] = adc_samples\n\nreturn RegridTable",
+      "sources": {
+        "adc_delay": "read.adc_delay",
+        "adc_duration": "adc.duration",
+        "adc_samples": "adc.number_of_samples",
+        "ft": "read.ft",
+        "rdt": "read.rdt",
+        "read_type": "read.read_type",
+        "rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.frequency": {
+      "name": "adc.frequency",
+      "script": "return gamma * read_offcenter * read_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "read_amp": "read.amp",
+        "read_offcenter": "read_info_offcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_IS_REVERSE": {
+      "name": "adc.header.ACQ_IS_REVERSE",
+      "script": "return (is_reverse == 1) and true or false",
+      "sources": {
+        "is_reverse": "is_reverse"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.header.idx_kspace_encode_step_2": {
+      "name": "adc.header.idx_kspace_encode_step_2",
+      "script": "local step = reorder[\"lines\"][1+pos][\"slice\"]\nif seq_dim == 3 and caipi then\n  step = step + k_shift_cur\nend\nreturn step",
+      "sources": {
+        "caipi": "caipi.enabled",
+        "k_shift_cur": "slice_info_caipi_k_shift_cur",
+        "pos": "phase_info_line_pos",
+        "reorder": "phase_info_comb_reorder",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return num_samples",
+      "sources": {
+        "num_samples": "read_info_num_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.phase": {
+      "name": "adc.phase",
+      "script": "local Phase = 2 * math.pi * (phase_offcenter * k_cur[\"phase\"]) + spoilphase\nif seq_dim == 3 then\n  Phase = Phase + 2 * math.pi * (slice_offcenter * k_cur[\"slice\"]) + (k_cur[\"slice\"]/kmin[\"slice\"]) * math.pi / acq_size[\"slice\"]\nend\nif caipi then\n  if seq_dim == 2 then\n    Phase = Phase + 2 * math.pi * (caipi_shift_bottom * caipi_k_cur)\n  elseif seq_dim == 3 then\n    Phase = Phase + 2 * math.pi * (caipi_shift * caipi_k_cur)\n  end\nend\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "acq_size": "phase_info_acq_size",
+        "caipi": "caipi.enabled",
+        "caipi_k_cur": "slice_info_caipi_k_cur",
+        "caipi_shift": "slice_info_caipi_shift",
+        "caipi_shift_bottom": "slice_info_caipi_shift_bottom",
+        "k_cur": "phase_info_k_cur",
+        "kmin": "phase_info_kmin",
+        "phase_offcenter": "phase_info_offcenter",
+        "seq_dim": "info_seq_dim",
+        "slice_offcenter": "slice_info_offcenter",
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.sample_time": {
+      "name": "adc.sample_time",
+      "script": "local min_dwell_time = adc_settings.min_dwell_time\nreturn math.floor(readout_dur / num_samples / min_dwell_time) * min_dwell_time",
+      "sources": {
+        "adc_settings": "adc_settings",
+        "num_samples": "adc.number_of_samples",
+        "readout_dur": "readout_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "return adc_delay",
+      "sources": {
+        "adc_delay": "read.adc_delay"
+      },
+      "type": "parameter_definition"
+    },
+    "blip": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "blip",
+      "type": "sequence_element_definition"
+    },
+    "blip.direction": {
+      "name": "blip.direction",
+      "script": "return phase_dir",
+      "sources": {
+        "phase_dir": "orientation_info_phase_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "blip.gradient_settings": {
+      "name": "blip.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "blip.m0": {
+      "name": "blip.m0",
+      "script": "return helper_functions.k_to_m0(dk_next[\"phase\"])",
+      "sources": {
+        "dk_next": "phase_info_dk_next",
+        "helper_functions": "helper_functions"
+      },
+      "type": "parameter_definition"
+    },
+    "blip.tstart": {
+      "name": "blip.tstart",
+      "script": "local raster_time = grad_set.raster_time\nlocal tstart = calc_durations.blip_center - 0.5*blip_dur\nreturn math.floor((tstart+float_precision)/raster_time) * raster_time",
+      "sources": {
+        "blip_dur": "blip.duration",
+        "calc_durations": "calc_durations",
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "caipi": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "caipi",
+      "type": "sequence_element_definition"
+    },
+    "caipi.direction": {
+      "name": "caipi.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "caipi.enabled": {
+      "name": "caipi.enabled",
+      "script": "return (mb_factor > 1) or (PAT_mode == 'caipi' and PAT_factor_slice > 1)",
+      "sources": {
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "mb_factor": "multiband_factor"
+      },
+      "type": "parameter_definition"
+    },
+    "caipi.gradient_settings": {
+      "name": "caipi.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "caipi.m0": {
+      "name": "caipi.m0",
+      "script": "return helper_functions.k_to_m0(dk_next)",
+      "sources": {
+        "dk_next": "slice_info_caipi_dk_next",
+        "helper_functions": "helper_functions"
+      },
+      "type": "parameter_definition"
+    },
+    "caipi.tstart": {
+      "name": "caipi.tstart",
+      "script": "local raster_time = grad_set.raster_time\nlocal tstart = calc_durations.blip_center - 0.5*caipi_dur\nreturn math.floor((tstart+float_precision)/raster_time) * raster_time",
+      "sources": {
+        "caipi_dur": "caipi.duration",
+        "calc_durations": "calc_durations",
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "calc_durations": {
+      "name": "calc_durations",
+      "script": "local atomic, blip_center\nif max_blip_dur <= 2*adc_delay then\n  atomic = read_rut + read_ft + read_rdt\n  blip_center = atomic\nelse\n  atomic = read_rut + read_ft + read_rdt - 2*adc_delay + max_blip_dur\n  blip_center = atomic + adc_delay - max_blip_dur/2\nend\nreturn {atomic=atomic, blip_center=blip_center}",
+      "sources": {
+        "adc_delay": "read.adc_delay",
+        "max_blip_dur": "max_blip_duration",
+        "read_ft": "read.ft",
+        "read_rdt": "read.rdt",
+        "read_rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return calc_durations.atomic",
+      "sources": {
+        "calc_durations": "calc_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "is_reverse": {
+      "name": "is_reverse",
+      "script": "return (line_pos % ETL) % 2",
+      "sources": {
+        "ETL": "echo_train_length",
+        "line_pos": "phase_info_line_pos"
+      },
+      "type": "parameter_definition"
+    },
+    "max_blip_duration": {
+      "name": "max_blip_duration",
+      "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nlocal moment1 = helper_functions.k_to_m0(max_line_step[\"phase\"] * phase_kmin[\"phase\"])\nlocal moment2 = 0\nif caipi then\n  if seq_dim == 2 then\n    moment2 = helper_functions.k_to_m0((mb_factor-1) * caipi_kmin)\n  elseif seq_dim == 3 then\n    moment2 = helper_functions.k_to_m0((PAT_factor_slice-1) * caipi_kmin)\n  end\nend\nlocal moment = math.max(moment1, moment2)\nif moment == 0 then\n  return 0\nend\nlocal rt = math.sqrt(math.abs(moment) / max_grad_slew)\nlocal rastered_ramp = math.ceil(rt/raster_time) * raster_time\nlocal amp = moment / rastered_ramp\nif (math.abs(amp) > max_grad_amp) then\n  rt = max_grad_amp / max_grad_slew\n  rastered_ramp = math.ceil(rt / raster_time) * raster_time\n  local flat_time = (math.abs(moment) - rastered_ramp * max_grad_amp) / max_grad_amp\n  local rastered_ft = math.ceil(flat_time / raster_time) * raster_time\n  return 2 * rastered_ramp + rastered_ft\nend\nreturn 2 * rastered_ramp",
+      "sources": {
+        "PAT_factor_slice": "PAT_factor_slice",
+        "caipi": "caipi.enabled",
+        "caipi_kmin": "slice_info_caipi_kmin",
+        "grad_set": "gradient_settings",
+        "helper_functions": "helper_functions",
+        "max_line_step": "phase_info_max_line_step",
+        "mb_factor": "multiband_factor",
+        "phase_kmin": "phase_info_kmin",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "phase_info": {
+      "blueprint_id": "12d7fb94-fecf-48e7-96e4-448b84fe5c2e",
+      "name": "phase_info",
+      "type": "extending_definition"
+    },
+    "read": {
+      "blueprint_id": "dba24868-c2dc-4b2d-9e87-1c32fabe77ce",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.adc_duration": {
+      "name": "read.adc_duration",
+      "script": "return adc_duration",
+      "sources": {
+        "adc_duration": "adc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "read.is_reverse": {
+      "name": "read.is_reverse",
+      "script": "return is_reverse",
+      "sources": {
+        "is_reverse": "is_reverse"
+      },
+      "type": "parameter_definition"
+    },
+    "read.read_type": {
+      "name": "read.read_type",
+      "script": "return read_type",
+      "sources": {
+        "read_type": "readout_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tstart": {
+      "name": "read.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "readout_info": {
+      "name": "readout_info",
+      "script": "return {num_lines=num_lines, segs=segs, echo_spacing=duration, RegridTable=RegridTable}",
+      "sources": {
+        "RegridTable": "RegridTable",
+        "duration": "duration",
+        "num_lines": "phase_info_num_lines",
+        "segs": "phase_info_reorder_segments"
+      },
+      "type": "parameter_definition"
+    },
+    "readout_type": {
+      "name": "readout_type",
+      "script": "return 'TrapezRamp'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "slice_info_caipi_is_first": {
+      "name": "slice_info_caipi_is_first",
+      "script": "return phase_is_first[\"phase\"]",
+      "sources": {
+        "phase_is_first": "phase_info_is_first"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_is_last": {
+      "name": "slice_info_caipi_is_last",
+      "script": "return phase_is_last[\"phase\"]",
+      "sources": {
+        "phase_is_last": "phase_info_is_last"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_cur": {
+      "name": "slice_info_caipi_line_cur",
+      "script": "return phase_line_cur[\"phase\"]",
+      "sources": {
+        "phase_line_cur": "phase_info_line_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_next": {
+      "name": "slice_info_caipi_line_next",
+      "script": "return phase_line_next[\"phase\"]",
+      "sources": {
+        "phase_line_next": "phase_info_line_next"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_prev": {
+      "name": "slice_info_caipi_line_prev",
+      "script": "return phase_line_prev[\"phase\"]",
+      "sources": {
+        "phase_line_prev": "phase_info_line_prev"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_te": {
+      "name": "t_after_te",
+      "script": "return duration - t_before_te",
+      "sources": {
+        "duration": "duration",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_te": {
+      "name": "t_before_te",
+      "script": "return read_rut + (PF - 0.5)/PF * read_ft",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "read_ft": "read.ft",
+        "read_rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "ee153c9c-c247-48d1-ba59-d4e1bcef194f",
+  "name": "EPI single readout",
+  "properties": {
+    "tags": [
+      "adc"
+    ]
+  }
+}

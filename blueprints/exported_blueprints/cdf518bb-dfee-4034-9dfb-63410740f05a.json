@@ -1,0 +1,66 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "enc": {
+      "blueprint_id": "b5879a3d-2782-4d87-9cae-dea17331e05b",
+      "name": "enc",
+      "type": "sequence_element_definition"
+    },
+    "enc.echo_time": {
+      "name": "enc.echo_time",
+      "script": "return exc_time + TE",
+      "sources": {
+        "TE": "TE",
+        "exc_time": "ssel.sinc.tcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "return enc_tstart >= ssel_tstart + ssel_dur",
+      "sources": {
+        "enc_tstart": "enc.tstart",
+        "ssel_dur": "ssel.duration",
+        "ssel_tstart": "ssel.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil": {
+      "blueprint_id": "cb451231-bf93-45b5-8d91-304ce31f898e",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return enc_tend",
+      "sources": {
+        "enc_tend": "enc.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel": {
+      "blueprint_id": "f8d10a20-b71c-4704-b973-9bbd611f9dd5",
+      "name": "ssel",
+      "type": "sequence_element_definition"
+    },
+    "ssel.tstart": {
+      "name": "ssel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "cdf518bb-dfee-4034-9dfb-63410740f05a",
+  "name": "Demo FLASH line",
+  "properties": {
+    "tags": []
+  }
+}

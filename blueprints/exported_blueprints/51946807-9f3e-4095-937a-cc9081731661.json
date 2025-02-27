@@ -1,0 +1,361 @@
+{
+  "definitions": {
+    "ACQ_IS_RTFEEDBACK_DATA": {
+      "name": "ACQ_IS_RTFEEDBACK_DATA",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ACQ_IS_RTFEEDBACK_DATA_forwarding": {
+      "forward_as": "ACQ_IS_RTFEEDBACK_DATA",
+      "name": "ACQ_IS_RTFEEDBACK_DATA_forwarding",
+      "source_to_forward": "ACQ_IS_RTFEEDBACK_DATA",
+      "type": "forwarding_definition"
+    },
+    "corr_TE": {
+      "name": "corr_TE",
+      "script": "return {minTE[1] + 40e-6}",
+      "sources": {
+        "minTE": "repetition.direction.distance.line.mode.kernel.minimalTE"
+      },
+      "type": "parameter_definition"
+    },
+    "corr_TR": {
+      "name": "corr_TR",
+      "script": "return math.ceil((kernel_dur+2e-4)/1e-4)*1e-4",
+      "sources": {
+        "kernel_dur": "repetition.direction.distance.line.mode.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "correction_averages": {
+      "name": "correction_averages",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "correction_slice_distance": {
+      "name": "correction_slice_distance",
+      "script": "return 0.04",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return rep_length * total_line_length * corr_TR\nelse\n  return 0\nend",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "enabled": "enabled",
+        "rep_length": "repetition.length",
+        "total_line_length": "repetition.direction.distance.line.mode.total_line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return is_corr",
+      "sources": {
+        "is_corr": "is_correction"
+      },
+      "type": "parameter_definition"
+    },
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.direction.distance.line.mode.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_correction": {
+      "name": "is_correction",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction": {
+      "blueprint_id": "Loop",
+      "name": "repetition.direction",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction.distance": {
+      "blueprint_id": "Loop",
+      "name": "repetition.direction.distance",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction.distance.length": {
+      "name": "repetition.direction.distance.length",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line": {
+      "blueprint_id": "Loop",
+      "name": "repetition.direction.distance.line",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction.distance.line.length": {
+      "name": "repetition.direction.distance.line.length",
+      "script": "return acq_size[2]",
+      "sources": {
+        "acq_size": "acq_size"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode": {
+      "blueprint_id": "Loop",
+      "name": "repetition.direction.distance.line.mode",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel": {
+      "blueprint_id": "87e713e3-04e4-40b6-b8a0-9fd68b50352b",
+      "name": "repetition.direction.distance.line.mode.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.TE": {
+      "name": "repetition.direction.distance.line.mode.kernel.TE",
+      "script": "return corr_TE",
+      "sources": {
+        "corr_TE": "corr_TE"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.encoding.adc.header.user_int": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.encoding.adc.header.user_int",
+      "script": "\nreturn {4,total_line_length,rep_length,0,0,1e3*slice_distance,0,0} -- method,lines,scans,slice_distance",
+      "sources": {
+        "rep_length": "repetition.length",
+        "slice_distance": "correction_slice_distance",
+        "total_line_length": "repetition.direction.distance.line.mode.total_line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.encoding.reph.phase.enabled": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.encoding.reph.phase.enabled",
+      "script": "if dir_counter == 1 and mode_counter == 0 then\n  return true\nend\nreturn false",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "mode_counter": "repetition.direction.distance.line.mode.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.encoding.reph.read.enabled": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.encoding.reph.read.enabled",
+      "script": "if dir_counter == 0 and mode_counter == 0 then\n  return true\nend\nreturn false",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "mode_counter": "repetition.direction.distance.line.mode.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.encoding.spiral.phase.enabled": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.encoding.spiral.phase.enabled",
+      "script": "if dir_counter == 1 and mode_counter == 0 then\n  return true\nend\nreturn false",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "mode_counter": "repetition.direction.distance.line.mode.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.encoding.spiral.read.enabled": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.encoding.spiral.read.enabled",
+      "script": "if dir_counter == 0 and mode_counter == 0 then\n  return true\nend\nreturn false",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "mode_counter": "repetition.direction.distance.line.mode.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.echo.rot_matrix": {
+      "name": "repetition.direction.distance.line.mode.kernel.echo.rot_matrix",
+      "script": "local sinphi = math.sin(phi[line_counter+1])\nlocal cosphi = math.cos(phi[line_counter+1])\nreturn {\n  {cosphi, -sinphi, 0},\n  {sinphi, cosphi, 0},\n  {0, 0, 1}\n}",
+      "sources": {
+        "line_counter": "repetition.direction.distance.line.counter",
+        "phi": "repetition.direction.distance.line.mode.kernel.rot_angle_phi"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.line_counter": {
+      "name": "repetition.direction.distance.line.mode.kernel.line_counter",
+      "script": "return line_counter",
+      "sources": {
+        "line_counter": "repetition.direction.distance.line.mode.total_line_counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.line_length": {
+      "name": "repetition.direction.distance.line.mode.kernel.line_length",
+      "script": "return line_length",
+      "sources": {
+        "line_length": "repetition.direction.distance.line.mode.total_line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.rot_angle_phi": {
+      "name": "repetition.direction.distance.line.mode.kernel.rot_angle_phi",
+      "script": "local tab = {}\nfor counter = 0, line_length-1 do\n  tab[counter+1] = counter/line_length * 2 * math.pi\nend\nreturn tab",
+      "sources": {
+        "line_length": "repetition.direction.distance.line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.spoilphase": {
+      "name": "repetition.direction.distance.line.mode.kernel.spoilphase",
+      "script": "Phase = .5 * helper_constants.spoilphase_inc_inc * (total_line_counter^2 + total_line_counter + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "total_line_counter": "repetition.direction.distance.line.mode.total_line_counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.ssel.sinc.grad.direction": {
+      "name": "repetition.direction.distance.line.mode.kernel.ssel.sinc.grad.direction",
+      "script": "if dir_counter == 0 then\n  return read_dir\nelseif dir_counter == 1 then\n  return phase_dir\nend\nreturn slice_dir",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "phase_dir": "repetition.direction.distance.line.mode.kernel.ssel.sinc.orientation_info_phase_direction",
+        "read_dir": "repetition.direction.distance.line.mode.kernel.ssel.sinc.orientation_info_read_direction",
+        "slice_dir": "repetition.direction.distance.line.mode.kernel.ssel.sinc.orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.ssel.sinc.rf.flip_angle": {
+      "name": "repetition.direction.distance.line.mode.kernel.ssel.sinc.rf.flip_angle",
+      "script": "return 5",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.ssel.sinc.rf.rf.frequency": {
+      "name": "repetition.direction.distance.line.mode.kernel.ssel.sinc.rf.rf.frequency",
+      "script": "if dis_counter == 0 then\n  return gamma * slice_distance * slice_amp\nelseif dis_counter == 1 then\n  return -gamma * slice_distance * slice_amp\nend\nreturn 0",
+      "sources": {
+        "dis_counter": "repetition.direction.distance.counter",
+        "gamma": "sys_gamma",
+        "slice_amp": "repetition.direction.distance.line.mode.kernel.ssel.sinc.grad.amp",
+        "slice_distance": "correction_slice_distance"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.ssel.sinc.thickness": {
+      "name": "repetition.direction.distance.line.mode.kernel.ssel.sinc.thickness",
+      "script": "return 0.003",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.kernel.tstart": {
+      "name": "repetition.direction.distance.line.mode.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.length": {
+      "name": "repetition.direction.distance.line.mode.length",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.total_line_counter": {
+      "name": "repetition.direction.distance.line.mode.total_line_counter",
+      "script": "return dir_counter * dis_length * line_length * mode_length + dis_counter * line_length * mode_length + line_counter * mode_length + mode_counter",
+      "sources": {
+        "dir_counter": "repetition.direction.counter",
+        "dis_counter": "repetition.direction.distance.counter",
+        "dis_length": "repetition.direction.distance.length",
+        "line_counter": "repetition.direction.distance.line.counter",
+        "line_length": "repetition.direction.distance.line.length",
+        "mode_counter": "repetition.direction.distance.line.mode.counter",
+        "mode_length": "repetition.direction.distance.line.mode.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.total_line_length": {
+      "name": "repetition.direction.distance.line.mode.total_line_length",
+      "script": "return dir_length * dis_length * line_length * mode_length",
+      "sources": {
+        "dir_length": "repetition.direction.length",
+        "dis_length": "repetition.direction.distance.length",
+        "line_length": "repetition.direction.distance.line.length",
+        "mode_length": "repetition.direction.distance.line.mode.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.mode.tstart": {
+      "name": "repetition.direction.distance.line.mode.tstart",
+      "script": "return mode_counter * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "mode_counter": "repetition.direction.distance.line.mode.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.line.tstart": {
+      "name": "repetition.direction.distance.line.tstart",
+      "script": "return line_counter * mode_length * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "line_counter": "repetition.direction.distance.line.counter",
+        "mode_length": "repetition.direction.distance.line.mode.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.distance.tstart": {
+      "name": "repetition.direction.distance.tstart",
+      "script": "return dis_counter * line_length * mode_length * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "dis_counter": "repetition.direction.distance.counter",
+        "line_length": "repetition.direction.distance.line.length",
+        "mode_length": "repetition.direction.distance.line.mode.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.direction.length": {
+      "name": "repetition.direction.length",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.direction.tstart": {
+      "name": "repetition.direction.tstart",
+      "script": "return dir_counter * dis_length * line_length * mode_length * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "dir_counter": "repetition.direction.counter",
+        "dis_length": "repetition.direction.distance.length",
+        "line_length": "repetition.direction.distance.line.length",
+        "mode_length": "repetition.direction.distance.line.mode.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return corr_averages",
+      "sources": {
+        "corr_averages": "correction_averages"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return rep_counter * total_line_length * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "rep_counter": "repetition.counter",
+        "total_line_length": "repetition.direction.distance.line.mode.total_line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "repetition.direction.distance.line.mode.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "repetition.direction.distance.line.mode.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "51946807-9f3e-4095-937a-cc9081731661",
+  "name": "2D spiral correction",
+  "properties": {}
+}

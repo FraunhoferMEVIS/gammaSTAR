@@ -1,0 +1,264 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return max_duration\nelse\n  return 0\nend",
+      "sources": {
+        "enabled": "enabled",
+        "max_duration": "max_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return inversion_recovery ~= 'None'",
+      "sources": {
+        "inversion_recovery": "inversion_recovery"
+      },
+      "type": "parameter_definition"
+    },
+    "inv": {
+      "blueprint_id": "Loop",
+      "name": "inv",
+      "type": "sequence_element_definition"
+    },
+    "inv.inv_FOCI": {
+      "blueprint_id": "82f69428-ef7a-4ae0-a89e-da3586c49007",
+      "name": "inv.inv_FOCI",
+      "type": "sequence_element_definition"
+    },
+    "inv.inv_FOCI.enabled": {
+      "name": "inv.inv_FOCI.enabled",
+      "script": "if string.find(inversion_recovery, \"foci\") then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "inversion_recovery": "inversion_recovery"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.inv_FOCI.is_atomic": {
+      "name": "inv.inv_FOCI.is_atomic",
+      "type": "atomic_definition"
+    },
+    "inv.inv_FOCI.thickness": {
+      "name": "inv.inv_FOCI.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.inv_FOCI.tstart": {
+      "name": "inv.inv_FOCI.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_RECT": {
+      "blueprint_id": "184dfa36-f86e-425f-a653-40d47a4a99b2",
+      "name": "inv.inv_RECT",
+      "type": "sequence_element_definition"
+    },
+    "inv.inv_RECT.duration": {
+      "name": "inv.inv_RECT.duration",
+      "script": "return 600e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_RECT.enabled": {
+      "name": "inv.inv_RECT.enabled",
+      "script": "if string.find(inversion_recovery, \"rect\") then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "inversion_recovery": "inversion_recovery"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.inv_RECT.flip_angle": {
+      "name": "inv.inv_RECT.flip_angle",
+      "script": "return 180",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_RECT.is_atomic": {
+      "name": "inv.inv_RECT.is_atomic",
+      "type": "atomic_definition"
+    },
+    "inv.inv_RECT.tstart": {
+      "name": "inv.inv_RECT.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC": {
+      "blueprint_id": "1704a926-1ea6-4061-92d8-e3f2be4b71fd",
+      "name": "inv.inv_SINC",
+      "type": "sequence_element_definition"
+    },
+    "inv.inv_SINC.enabled": {
+      "name": "inv.inv_SINC.enabled",
+      "script": "if string.find(inversion_recovery, \"sinc\") then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "inversion_recovery": "inversion_recovery"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC.is_atomic": {
+      "name": "inv.inv_SINC.is_atomic",
+      "type": "atomic_definition"
+    },
+    "inv.inv_SINC.rf.flip_angle": {
+      "name": "inv.inv_SINC.rf.flip_angle",
+      "script": "return 180",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC.rf.t_bw_product": {
+      "name": "inv.inv_SINC.rf.t_bw_product",
+      "script": "return 10.4",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC.rf_duration": {
+      "name": "inv.inv_SINC.rf_duration",
+      "script": "return 7.68e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC.thickness": {
+      "name": "inv.inv_SINC.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.inv_SINC.tstart": {
+      "name": "inv.inv_SINC.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "inv.length": {
+      "name": "inv.length",
+      "script": "if type(TI) == \"number\" then\n  return 1\nend\nreturn #TI",
+      "sources": {
+        "TI": "TI"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.spoil": {
+      "blueprint_id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+      "name": "inv.spoil",
+      "type": "sequence_element_definition"
+    },
+    "inv.spoil.tstart": {
+      "name": "inv.spoil.tstart",
+      "script": "return pulse_dur",
+      "sources": {
+        "pulse_dur": "pulse_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "inv.tstart": {
+      "name": "inv.tstart",
+      "script": "if inv_counter > 0 then\n  local cumTI = 0\n  for i = 1, inv_counter do\n    cumTI = cumTI + TI[i]\n  end\n  return cumTI\nend\nreturn 0",
+      "sources": {
+        "TI": "TI",
+        "inv_counter": "inv.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "inversion_recovery": {
+      "name": "inversion_recovery",
+      "script": "return 'slice_selective_sinc'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_TI": {
+      "name": "is_right_TI",
+      "script": "if enabled and inv_length > 1 then\n  for i = 1, inv_length-1 do\n    if lt(TI[i], pulse_dur + spoil_dur) then\n      return false\n    end\n  end\nend\nreturn true",
+      "sources": {
+        "TI": "TI",
+        "enabled": "enabled",
+        "inv_length": "inv.length",
+        "pulse_dur": "pulse_duration",
+        "spoil_dur": "inv.spoil.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "max_duration": {
+      "name": "max_duration",
+      "script": "local cumTI = 0\nif inv_length > 1 then\n  for i = 1, inv_length-1 do\n    cumTI = cumTI + TI[i]\n  end\nend\nreturn cumTI + pulse_dur + spoil_dur",
+      "sources": {
+        "TI": "TI",
+        "inv_length": "inv.length",
+        "pulse_dur": "pulse_duration",
+        "spoil_dur": "inv.spoil.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse_duration": {
+      "name": "pulse_duration",
+      "script": "if inversion_recovery ~= 'None' then\n  if inv_FOCI_enabled then\n    return inv_FOCI_dur\n  elseif inv_RECT_enabled then\n    return inv_RECT_dur\n  elseif inv_SINC_enabled then\n    return inv_SINC_dur\n  else\n    return 0\n  end\nend\nreturn 0",
+      "sources": {
+        "inv_FOCI_dur": "inv.inv_FOCI.duration",
+        "inv_FOCI_enabled": "inv.inv_FOCI.enabled",
+        "inv_RECT_dur": "inv.inv_RECT.duration",
+        "inv_RECT_enabled": "inv.inv_RECT.enabled",
+        "inv_SINC_dur": "inv.inv_SINC.duration",
+        "inv_SINC_enabled": "inv.inv_SINC.enabled",
+        "inversion_recovery": "inversion_recovery"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "if inversion_recovery ~= 'None' then\n  local cumTI = 0\n  if inv_length > 1 then\n    for i = 1, inv_length-1 do\n      cumTI = cumTI + TI[i]\n    end\n  end  \n  if string.find(inversion_recovery, \"sinc\") then\n    return cumTI + inv_SINC_t_before_center\n  elseif string.find(inversion_recovery, \"foci\") then\n    return cumTI + inv_FOCI_t_before_center\n  elseif string.find(inversion_recovery, \"rect\") then\n    return cumTI + rf_rect_tcenter\n  else\n    return 0\n  end\nelse\n  return 0\nend",
+      "sources": {
+        "TI": "TI",
+        "inv_FOCI_t_before_center": "inv.inv_FOCI.t_before_center",
+        "inv_SINC_t_before_center": "inv.inv_SINC.t_before_center",
+        "inv_length": "inv.length",
+        "inversion_recovery": "inversion_recovery",
+        "rf_rect_tcenter": "inv.inv_RECT.tcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "if string.find(inversion_recovery, \"slice_selective\") then\n  return thickness_factor * slice_fov\nelse\n  return 10\nend",
+      "sources": {
+        "inversion_recovery": "inversion_recovery",
+        "slice_fov": "slice_info_fov",
+        "thickness_factor": "thickness_factor"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness_factor": {
+      "name": "thickness_factor",
+      "script": "return 1.1",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "9d05018d-2fc8-42a8-9671-24307c01d347",
+  "name": "Inversion recovery",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

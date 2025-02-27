@@ -1,0 +1,205 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.segment.slice.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_segment_forwarding": {
+      "forward_as": "repetition.segment.slice.kernel.idx_segment",
+      "name": "idx_segment_forwarding",
+      "source_to_forward": "repetition.segment.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(slice_length*(fat_dur+kernel_dur), TR)",
+      "sources": {
+        "TR": "TR",
+        "fat_dur": "repetition.segment.slice.fatsat.duration",
+        "kernel_dur": "repetition.segment.slice.kernel.duration",
+        "slice_length": "repetition.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % ETL == 0",
+      "sources": {
+        "ETL": "echo_train_length",
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "music_list": {
+      "name": "music_list",
+      "script": "return {{\"a1\",0.5},{\"a1\",0.5},{\"a1\",0.5},{\"f1\",0.25},{\"c2\",0.25},{\"a1\",0.5},{\"f1\",0.25},{\"c2\",0.25},{\"a1\",1},\n{\"e2\",0.5},{\"e2\",0.5},{\"e2\",0.5},{\"f2\",0.25},{\"c2\",0.25},{\"gis1\",0.5},{\"f1\",0.25},{\"c2\",0.25},{\"a1\",1},\n{\"a2\",0.5},{\"a1\",0.375},{\"a1\",0.25},{\"a2\",0.5},{\"gis2\",0.25},{\"g2\",0.25},{\"fis2\",0.25},{\"f2\",0.25},{\"fis2\",0.25},\n{\"ais1\",0.25},{\"dis2\",0.5},{\"d2\",0.25},{\"cis2\",0.25},{\"c2\",0.25},{\"h1\",0.25},{\"c2\",0.25},{\"f1\",0.25},{\"gis1\",0.5},\n{\"f1\",0.25},{\"gis1\",0.25},{\"c2\",0.5},{\"a1\",0.25},{\"c2\",0.25},{\"e2\",1},\n{\"a2\",0.5},{\"a1\",0.375},{\"a1\",0.25},{\"a2\",0.5},{\"gis2\",0.25},{\"g2\",0.25},{\"fis2\",0.25},{\"f2\",0.25},{\"fis2\",0.25},\n{\"ais1\",0.25},{\"dis2\",0.5},{\"d2\",0.25},{\"cis2\",0.25},{\"c2\",0.25},{\"h1\",0.25},{\"c2\",0.25},{\"f1\",0.25},{\"gis1\",0.5},\n{\"f1\",0.25},{\"c2\",0.25},{\"a1\",0.5},{\"f1\",0.25},{\"c2\",0.25},{\"a1\",0.5}}\n--66 notes\n",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "music_map": {
+      "name": "music_map",
+      "script": "return {c1=261,cis1=277,d1=293,dis1=311,e1=329,f1=349,fis1=369,g1=391,gis1=415,a1=440,ais1=466,h1=493,c2=523,cis2=554,d2=587,dis2=622,e2=659,f2=698,fis2=739,g2=783,gis2=830,a2=880,ais2=932,h2=987}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "readout_duration": {
+      "name": "readout_duration",
+      "script": "return 1/map[music_list[rep_counter+1][1]]/2",
+      "sources": {
+        "map": "music_map",
+        "music_list": "music_list",
+        "rep_counter": "repetition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "readout_duration_forwarding": {
+      "forward_as": "readout_duration",
+      "name": "readout_duration_forwarding",
+      "source_to_forward": "readout_duration",
+      "type": "forwarding_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment": {
+      "blueprint_id": "Loop",
+      "name": "repetition.segment",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.length": {
+      "name": "repetition.segment.length",
+      "script": "return kernel_info.segs['total']",
+      "sources": {
+        "kernel_info": "repetition.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.slice": {
+      "blueprint_id": "Loop",
+      "name": "repetition.segment.slice",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.slice.fatsat": {
+      "blueprint_id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+      "name": "repetition.segment.slice.fatsat",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.slice.fatsat.tstart": {
+      "name": "repetition.segment.slice.fatsat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.segment.slice.kernel": {
+      "blueprint_id": "824044bb-46c7-4792-b862-467c11d81102",
+      "name": "repetition.segment.slice.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.segment.slice.kernel.tstart": {
+      "name": "repetition.segment.slice.kernel.tstart",
+      "script": "return fatsat_tstart + fatsat_dur",
+      "sources": {
+        "fatsat_dur": "repetition.segment.slice.fatsat.duration",
+        "fatsat_tstart": "repetition.segment.slice.fatsat.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.slice.length": {
+      "name": "repetition.segment.slice.length",
+      "script": "return kernel_info.acq_slices",
+      "sources": {
+        "kernel_info": "repetition.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.slice.slice_info_line_pos": {
+      "name": "repetition.segment.slice.slice_info_line_pos",
+      "script": "return slice_counter",
+      "sources": {
+        "slice_counter": "repetition.segment.slice.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.slice.tstart": {
+      "name": "repetition.segment.slice.tstart",
+      "script": "return slice_counter/slice_length * TR",
+      "sources": {
+        "TR": "TR",
+        "slice_counter": "repetition.segment.slice.counter",
+        "slice_length": "repetition.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.segment.tstart": {
+      "name": "repetition.segment.tstart",
+      "script": "return seg_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_counter": "repetition.segment.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "acc = 0\nfor i=1,rep_counter do\n  acc = acc + music_list[i][2]\nend\nreturn acc",
+      "sources": {
+        "TR": "TR",
+        "music_list": "music_list",
+        "pat_ref_dur": "pat_ref.duration",
+        "rep_counter": "repetition.counter",
+        "seg_length": "repetition.segment.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "repetition.segment.slice.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "repetition.segment.slice.slice_info_line_pos",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "e28957d1-e80c-45b0-9e74-2898350032b4",
+  "name": "EPI music structure",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

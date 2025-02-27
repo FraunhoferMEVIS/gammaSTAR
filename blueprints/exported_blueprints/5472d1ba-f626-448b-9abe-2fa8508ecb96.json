@@ -1,0 +1,142 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return echo_tstart + TE[#TE] - TE[1] + enc_dur",
+      "sources": {
+        "TE": "TE",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration_with_spoil"
+      },
+      "type": "parameter_definition"
+    },
+    "echo": {
+      "blueprint_id": "Loop",
+      "name": "echo",
+      "type": "sequence_element_definition"
+    },
+    "echo.encoding": {
+      "blueprint_id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+      "name": "echo.encoding",
+      "type": "sequence_element_definition"
+    },
+    "echo.encoding.readout.adc.header.idx_contrast": {
+      "name": "echo.encoding.readout.adc.header.idx_contrast",
+      "script": "return echo_counter",
+      "sources": {
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.encoding.spoiling": {
+      "name": "echo.encoding.spoiling",
+      "script": "if echo_counter == echo_length-1 then\n  return true\nend\nreturn false",
+      "sources": {
+        "echo_counter": "echo.counter",
+        "echo_length": "echo.length"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.encoding.tstart": {
+      "name": "echo.encoding.tstart",
+      "script": "return TE[echo_counter+1] - TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.length": {
+      "name": "echo.length",
+      "script": "return #TE",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "return t_before_exc + TE[1] - t_before_te",
+      "sources": {
+        "TE": "TE",
+        "t_before_exc": "t_before_exc",
+        "t_before_te": "echo.encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "exc": {
+      "blueprint_id": "ab5d830d-ae3b-499b-ba21-7f17f1ced1c0",
+      "name": "exc",
+      "type": "sequence_element_definition"
+    },
+    "exc.mode": {
+      "name": "exc.mode",
+      "script": "return exc_mode",
+      "sources": {
+        "exc_mode": "excitation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "exc.tstart": {
+      "name": "exc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "excitation_mode": {
+      "name": "excitation_mode",
+      "script": "return 'sinc'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local first_TE = ge(echo_tstart, exc_dur)\nfor cTE = 2, #TE do\n  if lt(TE[cTE] - TE[cTE-1], enc_dur) then\n    return false\n  end\nend\nreturn first_TE",
+      "sources": {
+        "TE": "TE",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration_without_spoil",
+        "exc_dur": "exc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "local ret_table = {minTE=minTE, acq_slices=acq_slices}\nfor k,v in pairs(readout_info) do\n  ret_table[k] = v\nend\nreturn ret_table",
+      "sources": {
+        "acq_slices": "exc.slice_info_acq_lines",
+        "minTE": "minimalTE",
+        "readout_info": "echo.encoding.readout.readout_info"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min = exc_t_after_center + t_before_te\nlocal TE_min = math.ceil(TE_min / 1e-4) * 1e-4\nlocal TE_times = {TE_min}\nlocal TE_min_step = math.ceil(enc_dur / 1e-4) * 1e-4\nfor cTE = 2, number_TE do\n  table.insert(TE_times, TE_min + (cTE-1) * TE_min_step)\nend\nreturn TE_times",
+      "sources": {
+        "enc_dur": "echo.encoding.duration_without_spoil",
+        "exc_t_after_center": "exc.t_after_center",
+        "number_TE": "number_TE",
+        "t_before_te": "echo.encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "number_TE": {
+      "name": "number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_before_exc": {
+      "name": "t_before_exc",
+      "script": "return exc_t_before_center",
+      "sources": {
+        "exc_t_before_center": "exc.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "5472d1ba-f626-448b-9abe-2fa8508ecb96",
+  "name": "FLASH kernel",
+  "properties": {}
+}

@@ -1,0 +1,204 @@
+{
+  "definitions": {
+    "TimeBetweenGrads": {
+      "name": "TimeBetweenGrads",
+      "script": "return se_dur + math.abs(TEcontribAfter-TEcontribBefore)",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "se_dur": "spinecho.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "bValue_ref": {
+      "name": "bValue_ref",
+      "script": "-- reference b-value for gradient amplitude of 1 mT/m (from Bernstein page 278)\nlocal delta = deltaDelta[1]\nlocal Delta = deltaDelta[2]\nlocal amp = 1e-3\nreturn (2*math.pi*gamma)^2 * amp^2 * (delta^2*(Delta-delta/3) + rt^3/30 - delta*rt^2/6)",
+      "sources": {
+        "deltaDelta": "deltaDelta",
+        "gamma": "sys_gamma",
+        "rt": "monopolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "deltaDelta": {
+      "name": "deltaDelta",
+      "script": "--from Bernstein page 278\n--COEFFICIENTS OF CUBIC POLYNOMIAL\n--set ramp times to 0, Delta=delta+TimeBetweenGrads, max gradient, and max b-value\n--and solve cubic equation of delta\nlocal B = complex.to({3/2*TimeBetweenGrads,0})\nlocal D = complex.to({-3/2*b_max / (2*math.pi*gamma)^2 / (max_grad_amp^2),0})\n--HELPER VARIABLES\nlocal Bpow2 = complex.mul(B,B)\nlocal Bpow3 = complex.mul(Bpow2,B)\nlocal Dpow2 = complex.mul(D,D)\nlocal CubeRoot2 = complex.pow(complex.to(2),1/3)\nlocal SqrRoot3 = complex.sqrt(complex.to(3))\n--FIND FIRST ROOT OF CUBIC POLYNOMIAL\nlocal V1 = complex.mul(complex.to(27),Dpow2)\nV1 = complex.add(V1,complex.mul(complex.to(4),complex.mul(Bpow3,D)))\nV1 = complex.sqrt(V1)\nV1 = complex.mul(V1,complex.mul(complex.to(3),SqrRoot3))\nV1 = complex.sub(V1,complex.mul(complex.to(2),Bpow3))\nV1 = complex.sub(V1,complex.mul(complex.to(27),D))\nV1 = complex.pow(V1,1/3)\nlocal delta = complex.div(V1,CubeRoot2)\ndelta = complex.add(delta,complex.div(complex.mul(CubeRoot2,Bpow2),V1))\ndelta = complex.div(delta,complex.to(3))\ndelta = complex.sub(delta,complex.div(B,complex.to(3)))\nlocal Delta = delta[1] + rt + TimeBetweenGrads\nlocal raster_time = grad_set.raster_time\nlocal rastered_delta = math.ceil(delta[1]/raster_time) * raster_time\nlocal rastered_Delta = math.ceil(Delta/raster_time) * raster_time\nreturn {rastered_delta, rastered_Delta}",
+      "sources": {
+        "TimeBetweenGrads": "TimeBetweenGrads",
+        "b_max": "max_bValue",
+        "complex": "helper_complex",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "max_grad_amp": "max_grad_amp",
+        "rt": "monopolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return mp2_tend",
+      "sources": {
+        "mp2_tend": "monopolar2.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "max_grad_amp": {
+      "name": "max_grad_amp",
+      "script": "return grad_set.max_grad_amp",
+      "sources": {
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "max_grad_slew": {
+      "name": "max_grad_slew",
+      "script": "return grad_set.max_grad_slew",
+      "sources": {
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar1": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "monopolar1",
+      "type": "sequence_element_definition"
+    },
+    "monopolar1.bValue_ref": {
+      "name": "monopolar1.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar1.direction": {
+      "name": "monopolar1.direction",
+      "script": "return diff_dir",
+      "sources": {
+        "diff_dir": "diffusion_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar1.ft": {
+      "name": "monopolar1.ft",
+      "script": "return deltaDelta[1] - rt",
+      "sources": {
+        "deltaDelta": "deltaDelta",
+        "rt": "monopolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar1.is_atomic": {
+      "name": "monopolar1.is_atomic",
+      "type": "atomic_definition"
+    },
+    "monopolar1.rt": {
+      "name": "monopolar1.rt",
+      "script": "return math.ceil(max_grad_amp / max_grad_slew / grad_set.raster_time) * grad_set.raster_time",
+      "sources": {
+        "grad_set": "gradient_settings",
+        "max_grad_amp": "max_grad_amp",
+        "max_grad_slew": "max_grad_slew"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar1.tstart": {
+      "name": "monopolar1.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "monopolar2": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "monopolar2",
+      "type": "sequence_element_definition"
+    },
+    "monopolar2.bValue_ref": {
+      "name": "monopolar2.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "monopolar1.bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar2.direction": {
+      "name": "monopolar2.direction",
+      "script": "return direction",
+      "sources": {
+        "direction": "monopolar1.direction"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar2.ft": {
+      "name": "monopolar2.ft",
+      "script": "return ft",
+      "sources": {
+        "ft": "monopolar1.ft"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar2.is_atomic": {
+      "name": "monopolar2.is_atomic",
+      "type": "atomic_definition"
+    },
+    "monopolar2.rt": {
+      "name": "monopolar2.rt",
+      "script": "return rt",
+      "sources": {
+        "rt": "monopolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolar2.tstart": {
+      "name": "monopolar2.tstart",
+      "script": "if (TEcontribBefore - TEcontribAfter > 0) then\n  return se_tstart + se_dur + TEcontribBefore - TEcontribAfter\nelse\n  return se_tstart + se_dur\nend",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "se_dur": "spinecho.duration",
+        "se_tstart": "spinecho.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "spinecho": {
+      "blueprint_id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+      "name": "spinecho",
+      "type": "sequence_element_definition"
+    },
+    "spinecho.is_atomic": {
+      "name": "spinecho.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spinecho.tstart": {
+      "name": "spinecho.tstart",
+      "script": "if (TEcontribAfter - TEcontribBefore > 0) then\n  return mp1_dur + TEcontribAfter - TEcontribBefore\nelse\n  return mp1_dur\nend",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "mp1_dur": "monopolar1.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return se_tstart + 0.5 * se_dur",
+      "sources": {
+        "se_dur": "spinecho.duration",
+        "se_tstart": "spinecho.tstart"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "77a2ec1f-9cb7-4f76-87e0-ea93ef154f14",
+  "name": "Spinecho with monopolar diffusion gradient",
+  "properties": {}
+}

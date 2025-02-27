@@ -1,0 +1,161 @@
+{
+  "definitions": {
+    "bipolarSpinecho": {
+      "blueprint_id": "71d5bda9-14db-4ba7-be19-0c812a7b5f7d",
+      "name": "bipolarSpinecho",
+      "type": "sequence_element_definition"
+    },
+    "bipolarSpinecho.TEcontribAfter": {
+      "name": "bipolarSpinecho.TEcontribAfter",
+      "script": "return TEcontribAfter",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolarSpinecho.TEcontribBefore": {
+      "name": "bipolarSpinecho.TEcontribBefore",
+      "script": "return TEcontribBefore",
+      "sources": {
+        "TEcontribBefore": "TEcontribBefore"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolarSpinecho.enabled": {
+      "name": "bipolarSpinecho.enabled",
+      "script": "return (diff_scheme == 'Bipolar') and true or false",
+      "sources": {
+        "diff_scheme": "diffusion_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolarSpinecho.max_grad_amp": {
+      "name": "bipolarSpinecho.max_grad_amp",
+      "script": "return diff_max_grad_amp",
+      "sources": {
+        "diff_max_grad_amp": "diffusion_max_grad_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolarSpinecho.max_grad_slew": {
+      "name": "bipolarSpinecho.max_grad_slew",
+      "script": "return diff_max_grad_slew",
+      "sources": {
+        "diff_max_grad_slew": "diffusion_max_grad_slew"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolarSpinecho.tstart": {
+      "name": "bipolarSpinecho.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "diffusion_max_grad_amp": {
+      "name": "diffusion_max_grad_amp",
+      "script": "return 40e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "diffusion_max_grad_slew": {
+      "name": "diffusion_max_grad_slew",
+      "script": "return 100",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "diffusion_scheme": {
+      "name": "diffusion_scheme",
+      "script": "return 'Bipolar'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if diff_scheme == 'Bipolar' then\n  return bipolar_dur\nelseif diff_scheme == 'Monopolar' then\n  return monopolar_dur\nend",
+      "sources": {
+        "bipolar_dur": "bipolarSpinecho.duration",
+        "diff_scheme": "diffusion_scheme",
+        "monopolar_dur": "monopolarSpinecho.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho": {
+      "blueprint_id": "77a2ec1f-9cb7-4f76-87e0-ea93ef154f14",
+      "name": "monopolarSpinecho",
+      "type": "sequence_element_definition"
+    },
+    "monopolarSpinecho.TEcontribAfter": {
+      "name": "monopolarSpinecho.TEcontribAfter",
+      "script": "return TEcontribAfter",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho.TEcontribBefore": {
+      "name": "monopolarSpinecho.TEcontribBefore",
+      "script": "return TEcontribBefore",
+      "sources": {
+        "TEcontribBefore": "TEcontribBefore"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho.enabled": {
+      "name": "monopolarSpinecho.enabled",
+      "script": "return (diff_scheme == 'Monopolar') and true or false",
+      "sources": {
+        "diff_scheme": "diffusion_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho.max_grad_amp": {
+      "name": "monopolarSpinecho.max_grad_amp",
+      "script": "return diff_max_grad_amp",
+      "sources": {
+        "diff_max_grad_amp": "diffusion_max_grad_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho.max_grad_slew": {
+      "name": "monopolarSpinecho.max_grad_slew",
+      "script": "return diff_max_grad_slew",
+      "sources": {
+        "diff_max_grad_slew": "diffusion_max_grad_slew"
+      },
+      "type": "parameter_definition"
+    },
+    "monopolarSpinecho.tstart": {
+      "name": "monopolarSpinecho.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "if diff_scheme == 'Bipolar' then\n  return t_after_center_bipolar\nelseif diff_scheme == 'Monopolar' then\n  return t_after_center_monopolar\nend",
+      "sources": {
+        "diff_scheme": "diffusion_scheme",
+        "t_after_center_bipolar": "bipolarSpinecho.t_after_center",
+        "t_after_center_monopolar": "monopolarSpinecho.t_after_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "if diff_scheme == 'Bipolar' then\n  return t_before_center_bipolar\nelseif diff_scheme == 'Monopolar' then\n  return t_before_center_monopolar\nend",
+      "sources": {
+        "diff_scheme": "diffusion_scheme",
+        "t_before_center_bipolar": "bipolarSpinecho.t_before_center",
+        "t_before_center_monopolar": "monopolarSpinecho.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "b59cf2e7-54d5-4d98-9dee-73eedf0a8b32",
+  "name": "Spinecho with diffusion gradient",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

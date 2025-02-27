@@ -1,0 +1,101 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return enc_start + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration",
+        "enc_start": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding": {
+      "blueprint_id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+      "name": "encoding",
+      "type": "sequence_element_definition"
+    },
+    "encoding.add_slice_deph_moment": {
+      "name": "encoding.add_slice_deph_moment",
+      "script": "return -.5 * grad_m0",
+      "sources": {
+        "grad_m0": "ssel.grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.tstart": {
+      "name": "encoding.tstart",
+      "script": "return ssel_t_before_center + TE[1] - t_before_te",
+      "sources": {
+        "TE": "TE",
+        "ssel_t_before_center": "ssel.t_before_center",
+        "t_before_te": "encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "return ge(enc_tstart, ssel_dur)",
+      "sources": {
+        "enc_tstart": "encoding.tstart",
+        "ssel_dur": "ssel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "local ret_table = {minTE=minTE}\nfor k,v in pairs(readout_info) do\n  ret_table[k] = v\nend\nreturn ret_table",
+      "sources": {
+        "minTE": "minimalTE",
+        "readout_info": "encoding.readout.readout_info"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "return ssel_dur/2 + t_before_te",
+      "sources": {
+        "ssel_dur": "ssel.duration",
+        "t_before_te": "encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel": {
+      "blueprint_id": "96a6bffa-6f4a-442c-9b2f-a681bd7abbb0",
+      "name": "ssel",
+      "type": "sequence_element_definition"
+    },
+    "ssel.grad_reph.m0": {
+      "name": "ssel.grad_reph.m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ssel.is_atomic": {
+      "name": "ssel.is_atomic",
+      "type": "atomic_definition"
+    },
+    "ssel.max_rf_amp": {
+      "name": "ssel.max_rf_amp",
+      "script": "return 5.5e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ssel.tstart": {
+      "name": "ssel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_before_exc": {
+      "name": "t_before_exc",
+      "script": "return t_before_center",
+      "sources": {
+        "t_before_center": "ssel.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f1c654bb-2d1a-4e9b-8992-16c99450e2c9",
+  "name": "3D MP-RAGE kernel",
+  "properties": {}
+}

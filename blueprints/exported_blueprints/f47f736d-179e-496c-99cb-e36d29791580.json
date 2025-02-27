@@ -1,0 +1,122 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if not enabled then\n  return 0\nend\nreturn line_length * TR",
+      "sources": {
+        "TR": "TR",
+        "enabled": "enabled",
+        "line_length": "line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "if prescan_method == 'None' then\n  return false\nend\nreturn true",
+      "sources": {
+        "prescan_method": "prescan_method"
+      },
+      "type": "parameter_definition"
+    },
+    "flip_angle_forwarding": {
+      "forward_as": "line.kernel.flip_angle",
+      "name": "flip_angle_forwarding",
+      "source_to_forward": "line.kernel.flip_angle",
+      "type": "forwarding_definition"
+    },
+    "line": {
+      "blueprint_id": "Loop",
+      "name": "line",
+      "type": "sequence_element_definition"
+    },
+    "line.kernel": {
+      "blueprint_id": "f94a7ac3-3616-4285-999d-ca24be5f7aaa",
+      "name": "line.kernel",
+      "type": "sequence_element_definition"
+    },
+    "line.kernel.KB_angles": {
+      "name": "line.kernel.KB_angles",
+      "script": "--from leRoux JMR 163(1):23-37 (2003)\nbeta = 3\ntab = {}\nif prescan_method == 'Kaiser-Bessel' then\n  bessel = {}\n  sum_bessel = 0\n  for i=1, length do\n    tau = i*2/(1-length)+(length+1)/(length-1)\n    arg = beta*math.sqrt(1-tau^2)\n    if 1-tau^2 <= 0 then\n      arg = 0 --because of rounding error\n    end\n    bessel[i] = 1 + (arg^2)/4 + (arg^4)/64 + (arg^6)/2304 + (arg^8)/147456\n    sum_bessel = sum_bessel + bessel[i]\n  end\n  G_factor = flip_angle / sum_bessel\n  tab[1] = G_factor * bessel[1]\n  for i=2, length do\n    tab[i] = tab[i-1] + G_factor * bessel[i]\n  end\nend\nreturn tab",
+      "sources": {
+        "flip_angle": "flip_angle",
+        "length": "line.length",
+        "prescan_method": "prescan_method"
+      },
+      "type": "parameter_definition"
+    },
+    "line.kernel.encoding.readout.adc.set_enabled": {
+      "name": "line.kernel.encoding.readout.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "line.kernel.flip_angle": {
+      "name": "line.kernel.flip_angle",
+      "script": "if prescan_method == 'Linear' then\n  return (line_counter+1)/line_length * flip_angle\nelseif prescan_method == 'Kaiser-Bessel' then\n  return KB_angles[line_counter+1]\nend\nreturn 0",
+      "sources": {
+        "KB_angles": "line.kernel.KB_angles",
+        "flip_angle": "flip_angle",
+        "line_counter": "line.counter",
+        "line_length": "line.length",
+        "prescan_method": "prescan_method"
+      },
+      "type": "parameter_definition"
+    },
+    "line.kernel.spoilphase": {
+      "name": "line.kernel.spoilphase",
+      "script": "local phase = (line_counter % 2) * math.pi\nphase = LuaHelper:reduce_angle_to_pi_interval(phase, true)\nreturn phase",
+      "sources": {
+        "line_counter": "line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "line.kernel.tstart": {
+      "name": "line.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "line.length": {
+      "name": "line.length",
+      "script": "return number_prescans",
+      "sources": {
+        "number_prescans": "number_prescans"
+      },
+      "type": "parameter_definition"
+    },
+    "line.tstart": {
+      "name": "line.tstart",
+      "script": "return line_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "line_counter": "line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "number_prescans": {
+      "name": "number_prescans",
+      "script": "return 8",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan_method": {
+      "name": "prescan_method",
+      "script": "return 'Kaiser-Bessel'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "line.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "line.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "f47f736d-179e-496c-99cb-e36d29791580",
+  "name": "bSSFP prescans",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

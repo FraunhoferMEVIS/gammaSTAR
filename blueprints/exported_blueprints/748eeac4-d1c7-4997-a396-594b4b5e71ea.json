@@ -1,0 +1,88 @@
+{
+  "definitions": {
+    "echo.partition.deph.tstart": {
+      "name": "echo.partition.deph.tstart",
+      "script": "return TE[1]/2 + se_t_before_center - t_before_te",
+      "sources": {
+        "TE": "TE",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.spinecho": {
+      "blueprint_id": "b59cf2e7-54d5-4d98-9dee-73eedf0a8b32",
+      "name": "echo.partition.spinecho",
+      "type": "sequence_element_definition"
+    },
+    "echo.partition.spinecho.TEcontribAfter": {
+      "name": "echo.partition.spinecho.TEcontribAfter",
+      "script": "return deph_dur + t_before_te",
+      "sources": {
+        "deph_dur": "echo.partition.deph.duration",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.spinecho.TEcontribBefore": {
+      "name": "echo.partition.spinecho.TEcontribBefore",
+      "script": "return t_since_exc + freqcorr_tstart + freqcorr_dur + t_pause_freqcorr",
+      "sources": {
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "t_pause_freqcorr": "t_pause_freqcorr",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.partition.spinecho.tstart": {
+      "name": "echo.partition.spinecho.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "epi_readout": {
+      "blueprint_id": "d2cdb902-f82b-413c-b180-d806e1e98e44",
+      "name": "epi_readout",
+      "type": "extending_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local first_TE_before = ge(t_first_ro, freqcorr_tstart + freqcorr_dur + t_pause_freqcorr)\nreturn first_TE_before",
+      "sources": {
+        "freqcorr_dur": "freqcorr.duration",
+        "freqcorr_tstart": "freqcorr.tstart",
+        "t_first_ro": "t_first_readout",
+        "t_pause_freqcorr": "t_pause_freqcorr"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min = TEcontribBefore + TEcontribAfter + se_dur\nTE_min = math.ceil(TE_min / 1e-4) * 1e-4\nreturn {TE_min}",
+      "sources": {
+        "TEcontribAfter": "echo.partition.spinecho.TEcontribAfter",
+        "TEcontribBefore": "echo.partition.spinecho.TEcontribBefore",
+        "se_dur": "echo.partition.spinecho.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "t_first_readout": {
+      "name": "t_first_readout",
+      "script": "return TE[1]/2 - t_since_exc - se_t_before_center",
+      "sources": {
+        "TE": "TE",
+        "se_t_before_center": "echo.partition.spinecho.t_before_center",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "748eeac4-d1c7-4997-a396-594b4b5e71ea",
+  "name": "SE EPI diffusion readout",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

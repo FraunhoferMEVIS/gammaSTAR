@@ -1,0 +1,51 @@
+{
+  "definitions": {
+    "orientation_info_phase_direction": {
+      "name": "orientation_info_phase_direction",
+      "script": "return helper_functions.rot_vec(rot_matrix_xyz, orientation[2])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "rot_matrix_xyz": "rot_matrix_xyz"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info_read_direction": {
+      "name": "orientation_info_read_direction",
+      "script": "return helper_functions.rot_vec(rot_matrix_xyz, orientation[1])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "rot_matrix_xyz": "rot_matrix_xyz"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info_slice_direction": {
+      "name": "orientation_info_slice_direction",
+      "script": "return helper_functions.rot_vec(rot_matrix_xyz, orientation[3])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "rot_matrix_xyz": "rot_matrix_xyz"
+      },
+      "type": "parameter_definition"
+    },
+    "rot_matrix_xyz": {
+      "name": "rot_matrix_xyz",
+      "script": "--to get rot matrix in x/y/z instead of read/phase/slice \nreturn helper_functions.mat_mult(helper_functions.mat_transp(orientation), helper_functions.mat_mult(rot_matrix, orientation))",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "rot_matrix": "rot_matrix"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "3c907235-30a5-4319-8c39-05eada1271e3",
+  "name": "Orientation info",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

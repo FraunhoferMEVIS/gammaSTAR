@@ -1,0 +1,523 @@
+{
+  "definitions": {
+    "bValue": {
+      "name": "bValue",
+      "script": "if set_counter == 0 then\n  return 0\nelse\n  return bValues[((set_counter-1)%(#bValues))+1]\nend",
+      "sources": {
+        "bValues": "bValues",
+        "set_counter": "repetition.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "bValue_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.bValue",
+      "name": "bValue_forwarding",
+      "source_to_forward": "bValue",
+      "type": "forwarding_definition"
+    },
+    "bValue_prescan": {
+      "name": "bValue_prescan",
+      "script": "if set_counter == 0 then\n  return 0\nelse\n  return bValues[((set_counter-1)%(#bValues))+1]\nend",
+      "sources": {
+        "bValues": "bValues",
+        "set_counter": "prescan.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "bValue_prescan_forwarding": {
+      "forward_as": "prescan.slicegroup.set.segment.slice.kernel.bValue",
+      "name": "bValue_prescan_forwarding",
+      "source_to_forward": "bValue_prescan",
+      "type": "forwarding_definition"
+    },
+    "diffusion_direction": {
+      "name": "diffusion_direction",
+      "script": "if set_counter == 0 then\n  return {1,0,0} --any direction for b=0\nelse\n  local diff_direction = diff_directions[math.floor((set_counter-1)/(#bValues))+1]\n  return helper_functions.rot_vec(orientation, diff_direction)\nend",
+      "sources": {
+        "bValues": "bValues",
+        "diff_directions": "diffusion_directions",
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "set_counter": "repetition.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "diffusion_direction_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.diffusion_direction",
+      "name": "diffusion_direction_forwarding",
+      "source_to_forward": "diffusion_direction",
+      "type": "forwarding_definition"
+    },
+    "diffusion_direction_prescan": {
+      "name": "diffusion_direction_prescan",
+      "script": "if set_counter == 0 then\n  return {1,0,0} --any direction for b=0\nelse\n  local diff_direction = diff_directions[math.floor((set_counter-1)/(#bValues))+1]\n  return helper_functions.rot_vec(orientation, diff_direction)\nend",
+      "sources": {
+        "bValues": "bValues",
+        "diff_directions": "diffusion_directions",
+        "helper_functions": "helper_functions",
+        "orientation": "orientation",
+        "set_counter": "prescan.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "diffusion_direction_prescan_forwarding": {
+      "forward_as": "prescan.slicegroup.set.segment.slice.kernel.diffusion_direction",
+      "name": "diffusion_direction_prescan_forwarding",
+      "source_to_forward": "diffusion_direction_prescan",
+      "type": "forwarding_definition"
+    },
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_segment_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.idx_segment",
+      "name": "idx_segment_forwarding",
+      "source_to_forward": "repetition.slicegroup.set.segment.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_segment_prescan_forwarding": {
+      "forward_as": "prescan.slicegroup.set.segment.slice.kernel.idx_segment",
+      "name": "idx_segment_prescan_forwarding",
+      "source_to_forward": "prescan.slicegroup.set.segment.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_set_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.idx_set",
+      "name": "idx_set_forwarding",
+      "source_to_forward": "repetition.slicegroup.set.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_set_prescan_forwarding": {
+      "forward_as": "prescan.slicegroup.set.segment.slice.kernel.idx_set",
+      "name": "idx_set_prescan_forwarding",
+      "source_to_forward": "prescan.slicegroup.set.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(slice_length*(fat_dur+kernel_dur), TR)",
+      "sources": {
+        "TR": "TR",
+        "fat_dur": "repetition.slicegroup.set.segment.slice.fatsat.duration",
+        "kernel_dur": "repetition.slicegroup.set.segment.slice.kernel.duration",
+        "slice_length": "repetition.slicegroup.set.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % ETL == 0",
+      "sources": {
+        "ETL": "echo_train_length",
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.slicegroup.set.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "max_bValue": {
+      "name": "max_bValue",
+      "script": "local bValues_copy = {}\nfor _,v in pairs(bValues) do\n  table.insert(bValues_copy, v)\nend\ntable.sort(bValues_copy)\nreturn bValues_copy[#bValues_copy]",
+      "sources": {
+        "bValues": "bValues"
+      },
+      "type": "parameter_definition"
+    },
+    "max_bValue_forwarding": {
+      "forward_as": "max_bValue",
+      "name": "max_bValue_forwarding",
+      "source_to_forward": "max_bValue",
+      "type": "forwarding_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan": {
+      "blueprint_id": "Loop",
+      "name": "prescan",
+      "type": "sequence_element_definition"
+    },
+    "prescan.length": {
+      "name": "prescan.length",
+      "script": "return number_prescans",
+      "sources": {
+        "number_prescans": "number_prescans"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup": {
+      "blueprint_id": "Loop",
+      "name": "prescan.slicegroup",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.length": {
+      "name": "prescan.slicegroup.length",
+      "script": "return slice_groups",
+      "sources": {
+        "slice_groups": "slice_groups"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set": {
+      "blueprint_id": "Loop",
+      "name": "prescan.slicegroup.set",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.set.length": {
+      "name": "prescan.slicegroup.set.length",
+      "script": "if slicegroup_length == 1 then\n  return 1\nend\nreturn 1 + (#diff_directions) * (#bValues)",
+      "sources": {
+        "bValues": "bValues",
+        "diff_directions": "diffusion_directions",
+        "slicegroup_length": "prescan.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment": {
+      "blueprint_id": "Loop",
+      "name": "prescan.slicegroup.set.segment",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.set.segment.length": {
+      "name": "prescan.slicegroup.set.segment.length",
+      "script": "if slicegroup_length == 1 then\n  return 1\nend\nreturn kernel_info.segs['phase']",
+      "sources": {
+        "kernel_info": "prescan.slicegroup.set.segment.slice.kernel.kernel_info",
+        "slicegroup_length": "prescan.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice": {
+      "blueprint_id": "Loop",
+      "name": "prescan.slicegroup.set.segment.slice",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.fatsat": {
+      "blueprint_id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+      "name": "prescan.slicegroup.set.segment.slice.fatsat",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.fatsat.tstart": {
+      "name": "prescan.slicegroup.set.segment.slice.fatsat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel": {
+      "blueprint_id": "8c7c9aec-b2f3-44e9-85fc-ef6ca8d2f5d1",
+      "name": "prescan.slicegroup.set.segment.slice.kernel",
+      "type": "sequence_element_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel.encoding.corr.line.readout.adc.set_enabled": {
+      "name": "prescan.slicegroup.set.segment.slice.kernel.encoding.corr.line.readout.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled": {
+      "name": "prescan.slicegroup.set.segment.slice.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel.encoding.freqcorr.adc.set_enabled": {
+      "name": "prescan.slicegroup.set.segment.slice.kernel.encoding.freqcorr.adc.set_enabled",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel.slice_info_line_pos": {
+      "name": "prescan.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "script": "local total_slice_counter = slicegroup_counter*slice_length + slice_counter\nif total_slice_counter < slices then\n  return total_slice_counter\nend\nreturn 0",
+      "sources": {
+        "slice_counter": "prescan.slicegroup.set.segment.slice.counter",
+        "slice_length": "prescan.slicegroup.set.segment.slice.length",
+        "slicegroup_counter": "prescan.slicegroup.counter",
+        "slices": "slices"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.kernel.tstart": {
+      "name": "prescan.slicegroup.set.segment.slice.kernel.tstart",
+      "script": "return fat_dur",
+      "sources": {
+        "fat_dur": "prescan.slicegroup.set.segment.slice.fatsat.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.length": {
+      "name": "prescan.slicegroup.set.segment.slice.length",
+      "script": "return math.ceil(kernel_info.acq_slices/slicegroup_length)",
+      "sources": {
+        "kernel_info": "prescan.slicegroup.set.segment.slice.kernel.kernel_info",
+        "slicegroup_length": "prescan.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.slice.tstart": {
+      "name": "prescan.slicegroup.set.segment.slice.tstart",
+      "script": "return slice_counter/slice_length * TR",
+      "sources": {
+        "TR": "TR",
+        "slice_counter": "prescan.slicegroup.set.segment.slice.counter",
+        "slice_length": "prescan.slicegroup.set.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.segment.tstart": {
+      "name": "prescan.slicegroup.set.segment.tstart",
+      "script": "return seg_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_counter": "prescan.slicegroup.set.segment.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.set.tstart": {
+      "name": "prescan.slicegroup.set.tstart",
+      "script": "return set_counter * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_length": "prescan.slicegroup.set.segment.length",
+        "set_counter": "prescan.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.slicegroup.tstart": {
+      "name": "prescan.slicegroup.tstart",
+      "script": "return slicegroup_counter * set_length * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_length": "prescan.slicegroup.set.segment.length",
+        "set_length": "prescan.slicegroup.set.length",
+        "slicegroup_counter": "prescan.slicegroup.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "prescan.tstart": {
+      "name": "prescan.tstart",
+      "script": "return pat_ref_dur + pre_counter * slicegroup_length * set_length * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "pat_ref_dur": "pat_ref.duration",
+        "pre_counter": "prescan.counter",
+        "seg_length": "prescan.slicegroup.set.segment.length",
+        "set_length": "prescan.slicegroup.set.length",
+        "slicegroup_length": "prescan.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.length": {
+      "name": "repetition.slicegroup.length",
+      "script": "return slice_groups",
+      "sources": {
+        "slice_groups": "slice_groups"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup.set",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.set.length": {
+      "name": "repetition.slicegroup.set.length",
+      "script": "return 1 + (#diff_directions) * (#bValues)",
+      "sources": {
+        "bValues": "bValues",
+        "diff_directions": "diffusion_directions"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup.set.segment",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.set.segment.length": {
+      "name": "repetition.slicegroup.set.segment.length",
+      "script": "return kernel_info.segs['total']",
+      "sources": {
+        "kernel_info": "repetition.slicegroup.set.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup.set.segment.slice",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.fatsat": {
+      "blueprint_id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+      "name": "repetition.slicegroup.set.segment.slice.fatsat",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.fatsat.tstart": {
+      "name": "repetition.slicegroup.set.segment.slice.fatsat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.kernel": {
+      "blueprint_id": "8c7c9aec-b2f3-44e9-85fc-ef6ca8d2f5d1",
+      "name": "repetition.slicegroup.set.segment.slice.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled": {
+      "name": "repetition.slicegroup.set.segment.slice.kernel.encoding.echo.partition.line.single_readout.adc.set_enabled",
+      "script": "local total_slice_counter = slicegroup_counter*slice_length + slice_counter\nif total_slice_counter < slices then\n  return true\nend\nreturn false",
+      "sources": {
+        "slice_counter": "repetition.slicegroup.set.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.set.segment.slice.length",
+        "slicegroup_counter": "repetition.slicegroup.counter",
+        "slices": "slices"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.kernel.slice_info_line_pos": {
+      "name": "repetition.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "script": "local total_slice_counter = slicegroup_counter*slice_length + slice_counter\nif total_slice_counter < slices then\n  return total_slice_counter\nend\nreturn 0",
+      "sources": {
+        "slice_counter": "repetition.slicegroup.set.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.set.segment.slice.length",
+        "slicegroup_counter": "repetition.slicegroup.counter",
+        "slices": "slices"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.kernel.tstart": {
+      "name": "repetition.slicegroup.set.segment.slice.kernel.tstart",
+      "script": "return fat_dur",
+      "sources": {
+        "fat_dur": "repetition.slicegroup.set.segment.slice.fatsat.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.length": {
+      "name": "repetition.slicegroup.set.segment.slice.length",
+      "script": "return math.ceil(kernel_info.acq_slices/slicegroup_length)",
+      "sources": {
+        "kernel_info": "repetition.slicegroup.set.segment.slice.kernel.kernel_info",
+        "slicegroup_length": "repetition.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.slice.tstart": {
+      "name": "repetition.slicegroup.set.segment.slice.tstart",
+      "script": "return slice_counter/slice_length * TR",
+      "sources": {
+        "TR": "TR",
+        "slice_counter": "repetition.slicegroup.set.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.set.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.segment.tstart": {
+      "name": "repetition.slicegroup.set.segment.tstart",
+      "script": "return seg_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_counter": "repetition.slicegroup.set.segment.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.set.tstart": {
+      "name": "repetition.slicegroup.set.tstart",
+      "script": "return set_counter * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_length": "repetition.slicegroup.set.segment.length",
+        "set_counter": "repetition.slicegroup.set.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.tstart": {
+      "name": "repetition.slicegroup.tstart",
+      "script": "return slicegroup_counter * set_length * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_length": "repetition.slicegroup.set.segment.length",
+        "set_length": "repetition.slicegroup.set.length",
+        "slicegroup_counter": "repetition.slicegroup.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return pat_ref_dur + pre_length * slicegroup_length_pre * set_length_pre * seg_length_pre * TR + rep_counter * slicegroup_length * set_length * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "pat_ref_dur": "pat_ref.duration",
+        "pre_length": "prescan.length",
+        "rep_counter": "repetition.counter",
+        "seg_length": "repetition.slicegroup.set.segment.length",
+        "seg_length_pre": "prescan.slicegroup.set.segment.length",
+        "set_length": "repetition.slicegroup.set.length",
+        "set_length_pre": "prescan.slicegroup.set.length",
+        "slicegroup_length": "repetition.slicegroup.length",
+        "slicegroup_length_pre": "prescan.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "repetition.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "repetition.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "slice_info_line_pos_prescan_forwarding": {
+      "forward_as": "prescan.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "name": "slice_info_line_pos_prescan_forwarding",
+      "source_to_forward": "prescan.slicegroup.set.segment.slice.kernel.slice_info_line_pos",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "c7424503-7fbe-42c9-865d-097ffe71b165",
+  "name": "SE EPI diffusion structure",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

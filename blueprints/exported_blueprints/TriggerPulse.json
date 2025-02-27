@@ -1,0 +1,47 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return 20e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "enabled_single": {
+      "name": "enabled_single",
+      "script": "return set_enabled",
+      "sources": {
+        "set_enabled": "set_enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "is_enabled": {
+      "name": "is_enabled",
+      "type": "is_enabled_definition"
+    },
+    "mode": {
+      "name": "mode",
+      "script": "return 'ExtTrigger' --Values: ExtTrigger, WakeUp",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "set_enabled": {
+      "name": "set_enabled",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "wake_up": {
+      "name": "wake_up",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "TriggerPulse",
+  "name": "TriggerPulse",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

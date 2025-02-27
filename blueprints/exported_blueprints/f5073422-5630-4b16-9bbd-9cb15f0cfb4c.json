@@ -1,0 +1,128 @@
+{
+  "definitions": {
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.header.ACQ_FIRST_IN_ENCODE_STEP1": {
+      "name": "adc.header.ACQ_FIRST_IN_ENCODE_STEP1",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_FIRST_IN_REPETITION": {
+      "name": "adc.header.ACQ_FIRST_IN_REPETITION",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_FIRST_IN_SLICE": {
+      "name": "adc.header.ACQ_FIRST_IN_SLICE",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_IS_RTFEEDBACK_DATA": {
+      "name": "adc.header.ACQ_IS_RTFEEDBACK_DATA",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_LAST_IN_ENCODE_STEP1": {
+      "name": "adc.header.ACQ_LAST_IN_ENCODE_STEP1",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_LAST_IN_REPETITION": {
+      "name": "adc.header.ACQ_LAST_IN_REPETITION",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.ACQ_LAST_IN_SLICE": {
+      "name": "adc.header.ACQ_LAST_IN_SLICE",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc.header.user_int": {
+      "name": "adc.header.user_int",
+      "script": "return {sample_time*1e9,0,0,0,0,0,0,0}",
+      "sources": {
+        "sample_time": "adc.sample_time"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return num_samples",
+      "sources": {
+        "num_samples": "read_info_num_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.phase": {
+      "name": "adc.phase",
+      "script": "Phase = spoilphase\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.sample_time": {
+      "name": "adc.sample_time",
+      "script": "local min_dwell_time = adc_settings.min_dwell_time\nreturn math.floor(read_dur / num_samples / min_dwell_time) * min_dwell_time",
+      "sources": {
+        "adc_settings": "adc_settings",
+        "num_samples": "adc.number_of_samples",
+        "read_dur": "readout_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "local raster_time = grad_set.raster_time\nreturn math.ceil(adc_tend / raster_time) * raster_time + raster_time -- should  not end with adc",
+      "sources": {
+        "adc_tend": "adc.tend",
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f5073422-5630-4b16-9bbd-9cb15f0cfb4c",
+  "name": "Frequency correction FID",
+  "properties": {
+    "tags": [
+      "adc",
+      "readout"
+    ]
+  }
+}

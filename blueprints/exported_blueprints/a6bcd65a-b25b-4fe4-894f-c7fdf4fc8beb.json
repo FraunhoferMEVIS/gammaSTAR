@@ -1,0 +1,69 @@
+{
+  "definitions": {
+    "fid": {
+      "blueprint_id": "221adc41-b6f7-4085-a0a1-2699db044fd1",
+      "name": "fid",
+      "type": "sequence_element_definition"
+    },
+    "fid.is_atomic": {
+      "name": "fid.is_atomic",
+      "type": "atomic_definition"
+    },
+    "fid.readout_duration": {
+      "name": "fid.readout_duration",
+      "script": "return 512e-3",
+      "sources": {
+        "rf_dur": "rf.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "fid.tstart": {
+      "name": "fid.tstart",
+      "script": "return rf_dur + 100e-6",
+      "sources": {
+        "rf_dur": "rf.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "rf": {
+      "blueprint_id": "184dfa36-f86e-425f-a653-40d47a4a99b2",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return 300e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.flip_angle": {
+      "name": "rf.flip_angle",
+      "script": "return 90",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.is_atomic": {
+      "name": "rf.is_atomic",
+      "type": "atomic_definition"
+    },
+    "rf.rf.phase": {
+      "name": "rf.rf.phase",
+      "script": "return math.pi / 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "a6bcd65a-b25b-4fe4-894f-c7fdf4fc8beb",
+  "name": "Demo FID kernel",
+  "properties": {
+    "tags": [
+      "adc"
+    ]
+  }
+}

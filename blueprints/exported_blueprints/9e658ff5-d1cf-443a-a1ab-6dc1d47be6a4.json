@@ -1,0 +1,206 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.line.partition.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(t_before_center + TI - (reorder[\"slice\"][\"center_pos\"]-1) * TR_small + par_length*kernel_dur, TR)",
+      "sources": {
+        "TI": "TI",
+        "TR": "TR",
+        "TR_small": "TR_small",
+        "kernel_dur": "repetition.line.partition.kernel.duration",
+        "par_length": "repetition.line.partition.length",
+        "reorder": "repetition.line.partition.kernel.encoding.readout.phase_info_reorder",
+        "t_before_center": "repetition.line.invrec.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_TR_small": {
+      "name": "is_right_TR_small",
+      "script": "return le(kernel_dur, TR_small)",
+      "sources": {
+        "TR_small": "TR_small",
+        "kernel_dur": "repetition.line.partition.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % 1 == 0",
+      "sources": {
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.line.partition.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_slice": {
+      "name": "is_right_matrix_slice",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['slice'] / factor) % 1 == 0",
+      "sources": {
+        "PAT_factor": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.line.partition.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_line_pos_forwarding": {
+      "forward_as": "repetition.line.partition.kernel.phase_info_line_pos",
+      "name": "phase_info_line_pos_forwarding",
+      "source_to_forward": "repetition.line.partition.kernel.phase_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line": {
+      "blueprint_id": "Loop",
+      "name": "repetition.line",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.invrec": {
+      "blueprint_id": "9d05018d-2fc8-42a8-9671-24307c01d347",
+      "name": "repetition.line.invrec",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.invrec.tstart": {
+      "name": "repetition.line.invrec.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.length": {
+      "name": "repetition.line.length",
+      "script": "return kernel_info.acq_lines[\"phase\"]",
+      "sources": {
+        "kernel_info": "repetition.line.partition.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.partition": {
+      "blueprint_id": "Loop",
+      "name": "repetition.line.partition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.partition.kernel": {
+      "blueprint_id": "f1c654bb-2d1a-4e9b-8992-16c99450e2c9",
+      "name": "repetition.line.partition.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.partition.kernel.phase_info_line_pos": {
+      "name": "repetition.line.partition.kernel.phase_info_line_pos",
+      "script": "return line_counter * par_length + par_counter",
+      "sources": {
+        "line_counter": "repetition.line.counter",
+        "par_counter": "repetition.line.partition.counter",
+        "par_length": "repetition.line.partition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.partition.kernel.spoilphase": {
+      "name": "repetition.line.partition.kernel.spoilphase",
+      "script": "local i = line_counter * par_length + par_counter\nPhase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "line_counter": "repetition.line.counter",
+        "par_counter": "repetition.line.partition.counter",
+        "par_length": "repetition.line.partition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.partition.kernel.tstart": {
+      "name": "repetition.line.partition.kernel.tstart",
+      "script": "return (par_counter - (reorder[\"slice\"][\"center_pos\"]-1)) * TR_small + t_before_center + TI - t_before_exc",
+      "sources": {
+        "TI": "TI",
+        "TR_small": "TR_small",
+        "par_counter": "repetition.line.partition.counter",
+        "reorder": "repetition.line.partition.kernel.encoding.readout.phase_info_reorder",
+        "t_before_center": "repetition.line.invrec.t_before_center",
+        "t_before_exc": "repetition.line.partition.kernel.t_before_exc"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.partition.length": {
+      "name": "repetition.line.partition.length",
+      "script": "return kernel_info.acq_lines[\"slice\"]",
+      "sources": {
+        "kernel_info": "repetition.line.partition.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.partition.tstart": {
+      "name": "repetition.line.partition.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.tstart": {
+      "name": "repetition.line.tstart",
+      "script": "return line_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "line_counter": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return pat_ref_dur + rep_counter * line_length * TR",
+      "sources": {
+        "TR": "TR",
+        "line_length": "repetition.line.length",
+        "pat_ref_dur": "pat_ref.duration",
+        "rep_counter": "repetition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "repetition.line.partition.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "repetition.line.partition.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "9e658ff5-d1cf-443a-a1ab-6dc1d47be6a4",
+  "name": "3D MP-RAGE structure",
+  "properties": {}
+}

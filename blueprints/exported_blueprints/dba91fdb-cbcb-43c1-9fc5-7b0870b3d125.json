@@ -1,0 +1,310 @@
+{
+  "definitions": {
+    "filter": {
+      "name": "filter",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "number_of_samples": {
+      "name": "number_of_samples",
+      "script": "return duration / rf_set.raster_time",
+      "sources": {
+        "duration": "duration",
+        "rf_set": "rf_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "rf": {
+      "blueprint_id": "RFPulse",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return duration",
+      "sources": {
+        "duration": "duration"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.phase": {
+      "name": "rf.phase",
+      "script": "return spoilphase",
+      "sources": {
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.samples": {
+      "name": "rf.samples",
+      "script": "local samples = (#shape[\"t\"])\nlocal rf_amp = (flip_angle/180*math.pi)/(2*math.pi*gamma*duration) * samples/shape[\"amp_int\"]\nlocal new_samples_am = {}\nfor i = 1, samples do\n  new_samples_am[i] = shape[\"am\"][i] * rf_amp\nend\nreturn {t=shape[\"t\"], am=new_samples_am, fm=shape[\"fm\"]}    ",
+      "sources": {
+        "duration": "rf.duration",
+        "flip_angle": "flip_angle",
+        "gamma": "sys_gamma",
+        "shape": "rf_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf_shape": {
+      "name": "rf_shape",
+      "script": "local samples_t, samples_am, samples_fm = {}, {}, {}\nlocal dwell_time = duration / rf_samples\nfor i = 0, rf_samples-1 do\n  table.insert(samples_t, (i+0.5)*dwell_time)\nend\nlocal alpha = 0.5 --Hanning\nif not filter then\n  alpha = 0\nend\nlocal amp_int = 0\nfor i = 1, rf_samples do\n  samples_fm[i] = 0\n  local x = (-0.5 + samples_t[i]/duration) * t_bw_product * math.pi\n  if x == 0 then\n    samples_am[i] = 1\n  else\n    local filter_value = 1-alpha+alpha*math.cos((-1+2*samples_t[i]/duration)*math.pi)\n    samples_am[i] = filter_value * math.sin(x)/x\n  end\n  amp_int = amp_int + samples_am[i]\nend\nreturn {t=samples_t, am=samples_am, fm=samples_fm, amp_int=amp_int}",
+      "sources": {
+        "duration": "rf.duration",
+        "filter": "filter",
+        "rf_samples": "number_of_samples",
+        "t_bw_product": "t_bw_product"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_amp": {
+      "name": "slice_amp",
+      "script": "return helper_functions.dx_to_m0(thickness) * t_bw_product / rf_dur",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "rf_dur": "rf.duration",
+        "t_bw_product": "t_bw_product",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_m0_ft": {
+      "name": "slice_m0_ft",
+      "script": "return helper_functions.dx_to_m0(thickness) * t_bw_product",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "t_bw_product": "t_bw_product",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_bw_product": {
+      "name": "t_bw_product",
+      "script": "return 5.2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + asymmetry*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tend + (asymmetry-1)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tcenter + (1-asymmetry)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - asymmetry * duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "dba91fdb-cbcb-43c1-9fc5-7b0870b3d125",
+  "name": "RF sinc",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

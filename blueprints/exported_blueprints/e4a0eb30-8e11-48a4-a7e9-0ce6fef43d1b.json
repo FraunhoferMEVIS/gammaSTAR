@@ -1,0 +1,315 @@
+{
+  "definitions": {
+    "PAT_TE": {
+      "name": "PAT_TE",
+      "script": "return {minTE[1]}",
+      "sources": {
+        "minTE": "slipar.line.kernel.minimalTE"
+      },
+      "type": "parameter_definition"
+    },
+    "PAT_TR": {
+      "name": "PAT_TR",
+      "script": "return math.ceil((kernel_dur + 2e-4) / 1e-4) * 1e-4",
+      "sources": {
+        "kernel_dur": "slipar.line.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if not enabled then\n  return 0\nend\nreturn slipar_length * line_length * PAT_TR",
+      "sources": {
+        "PAT_TR": "PAT_TR",
+        "enabled": "enabled",
+        "line_length": "slipar.line.length",
+        "slipar_length": "slipar.length"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "local is_enabled_2d = (seq_dim == 2) and (PAT_mode == 'grappa_prescan' or PAT_mode == 'caipi') and (PAT_factor_phase > 1)\nlocal is_enabled_3d = (seq_dim == 3) and (PAT_mode == 'grappa_prescan' or PAT_mode == 'caipi') and (PAT_factor_phase > 1 or PAT_factor_slice > 1)\nreturn is_enabled_2d or is_enabled_3d",
+      "sources": {
+        "PAT_factor_phase": "PAT_factor_phase",
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_line_cur_forwarding": {
+      "forward_as": "slipar.line.kernel.phase_info_line_cur",
+      "name": "phase_info_line_cur_forwarding",
+      "source_to_forward": "slipar.line.kernel.phase_info_line_cur",
+      "type": "forwarding_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "slipar.line.kernel.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "slipar.line.kernel.slice_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "slipar": {
+      "blueprint_id": "Loop",
+      "name": "slipar",
+      "type": "sequence_element_definition"
+    },
+    "slipar.length": {
+      "name": "slipar.length",
+      "script": "if seq_dim == 2 then\n  return kernel_info.acq_slices\nelseif seq_dim == 3 then\n  return ref_lines_slice\nend\nreturn 0",
+      "sources": {
+        "kernel_info": "slipar.line.kernel.kernel_info",
+        "ref_lines_slice": "PAT_ref_lines_slice",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line": {
+      "blueprint_id": "Loop",
+      "name": "slipar.line",
+      "type": "sequence_element_definition"
+    },
+    "slipar.line.kernel": {
+      "blueprint_id": "5472d1ba-f626-448b-9abe-2fa8508ecb96",
+      "name": "slipar.line.kernel",
+      "type": "sequence_element_definition"
+    },
+    "slipar.line.kernel.TE": {
+      "name": "slipar.line.kernel.TE",
+      "script": "return PAT_TE",
+      "sources": {
+        "PAT_TE": "PAT_TE"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.add_slice_deph_moment": {
+      "name": "slipar.line.kernel.echo.encoding.add_slice_deph_moment",
+      "script": "return -.5 * grad_m0",
+      "sources": {
+        "grad_m0": "slipar.line.kernel.exc.ssel.sinc.grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_ENCODE_STEP1": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_ENCODE_STEP1",
+      "script": "return line_counter==0",
+      "sources": {
+        "line_counter": "slipar.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_ENCODE_STEP2": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_ENCODE_STEP2",
+      "script": "if seq_dim == 2 then\n  return false\nelseif seq_dim == 3 then\n  return slipar_counter == 0\nend",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_REPETITION": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_REPETITION",
+      "script": "return slipar_counter == 0 and line_counter == 0",
+      "sources": {
+        "line_counter": "slipar.line.counter",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_SLICE": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_FIRST_IN_SLICE",
+      "script": "if seq_dim == 2 then\n  return line_counter == 0\nelseif seq_dim == 3 then\n  return false\nend",
+      "sources": {
+        "line_counter": "slipar.line.counter",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_IS_PARALLEL_CALIBRATION": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_IS_PARALLEL_CALIBRATION",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_ENCODE_STEP1": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_ENCODE_STEP1",
+      "script": "return line_counter == line_length-1",
+      "sources": {
+        "line_counter": "slipar.line.counter",
+        "line_length": "slipar.line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_ENCODE_STEP2": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_ENCODE_STEP2",
+      "script": "if seq_dim == 2 then\n  return false\nelseif seq_dim == 3 then\n  return slipar_counter == slipar_length-1\nend",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slipar_counter": "slipar.counter",
+        "slipar_length": "slipar.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_REPETITION": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_REPETITION",
+      "script": "return (line_counter == line_length-1) and (slipar_counter == slipar_length-1)",
+      "sources": {
+        "line_counter": "slipar.line.counter",
+        "line_length": "slipar.line.length",
+        "slipar_counter": "slipar.counter",
+        "slipar_length": "slipar.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_SLICE": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.ACQ_LAST_IN_SLICE",
+      "script": "if seq_dim == 2 then\n  return line_counter == line_length-1\nelseif seq_dim == 3 then\n  return false\nend",
+      "sources": {
+        "line_counter": "slipar.line.counter",
+        "line_length": "slipar.line.length",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.flex_encoding_encodingLimits_kspace_encoding_step_1": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "script": "return {0, ref_lines_p-1, ref_lines_p/2}",
+      "sources": {
+        "ref_lines_p": "PAT_ref_lines_phase"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.flex_encoding_encodingLimits_kspace_encoding_step_2": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.flex_encoding_encodingLimits_kspace_encoding_step_2",
+      "script": "if seq_dim == 2 then\n  return {0, 0, 0}\nelseif seq_dim == 3 then\n  return {0, ref_lines_s-1, ref_lines_s/2}\nend",
+      "sources": {
+        "ref_lines_s": "PAT_ref_lines_slice",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.idx_kspace_encode_step_1": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.idx_kspace_encode_step_1",
+      "script": "return line_counter",
+      "sources": {
+        "line_counter": "slipar.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.echo.encoding.readout.adc.header.idx_kspace_encode_step_2": {
+      "name": "slipar.line.kernel.echo.encoding.readout.adc.header.idx_kspace_encode_step_2",
+      "script": "if seq_dim == 2 then\n  return 0\nelseif seq_dim == 3 then\n  return slipar_counter\nend",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.exc.ssel.grad_reph.m0": {
+      "name": "slipar.line.kernel.exc.ssel.grad_reph.m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.exc.ssel.sinc.rf.duration": {
+      "name": "slipar.line.kernel.exc.ssel.sinc.rf.duration",
+      "script": "if thickness < 0.005 then\n  return 2.56e-3\nelseif thickness > 0.01 then\n  return 1e-3\nend\nreturn 1.28e-3",
+      "sources": {
+        "thickness": "slipar.line.kernel.exc.thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.exc.ssel.sinc.rf.flip_angle": {
+      "name": "slipar.line.kernel.exc.ssel.sinc.rf.flip_angle",
+      "script": "return 5",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.exc.ssel.sinc.rf.t_bw_product": {
+      "name": "slipar.line.kernel.exc.ssel.sinc.rf.t_bw_product",
+      "script": "return 5.2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.phase_info_line_cur": {
+      "name": "slipar.line.kernel.phase_info_line_cur",
+      "script": "line_center_p = line_center[\"phase\"]\nline_center_s = line_center[\"slice\"]\nif seq_dim == 2 then\n  return {phase=line_center_p - ref_lines_phase/2 + line_counter, slice = -1}\nelseif seq_dim == 3 then\n  return {phase = line_center_p - ref_lines_phase/2 + line_counter, slice = line_center_s - ref_lines_slice/2 + slipar_counter}\nend",
+      "sources": {
+        "line_center": "slipar.line.kernel.echo.encoding.readout.phase_info_line_center",
+        "line_counter": "slipar.line.counter",
+        "ref_lines_phase": "PAT_ref_lines_phase",
+        "ref_lines_slice": "PAT_ref_lines_slice",
+        "seq_dim": "info_seq_dim",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.slice_info_line_pos": {
+      "name": "slipar.line.kernel.slice_info_line_pos",
+      "script": "if seq_dim == 2 then\n  return slipar_counter\nelseif seq_dim == 3 then\n  return 0\nend",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.spoilphase": {
+      "name": "slipar.line.kernel.spoilphase",
+      "script": "local i = slipar_counter * line_length + line_counter\nPhase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "line_counter": "slipar.line.counter",
+        "line_length": "slipar.line.length",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.kernel.tstart": {
+      "name": "slipar.line.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slipar.line.length": {
+      "name": "slipar.line.length",
+      "script": "return ref_lines_phase",
+      "sources": {
+        "ref_lines_phase": "PAT_ref_lines_phase"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.line.tstart": {
+      "name": "slipar.line.tstart",
+      "script": "return line_counter * PAT_TR",
+      "sources": {
+        "PAT_TR": "PAT_TR",
+        "line_counter": "slipar.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slipar.tstart": {
+      "name": "slipar.tstart",
+      "script": "return slipar_counter * line_length * PAT_TR",
+      "sources": {
+        "PAT_TR": "PAT_TR",
+        "line_length": "slipar.line.length",
+        "slipar_counter": "slipar.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "slipar.line.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "slipar.line.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+  "name": "PAT reference",
+  "properties": {
+    "tags": [
+      "reference"
+    ]
+  }
+}

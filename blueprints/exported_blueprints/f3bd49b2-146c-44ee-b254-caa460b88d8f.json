@@ -1,0 +1,468 @@
+{
+  "definitions": {
+    "LoopInfo": {
+      "name": "LoopInfo",
+      "script": "return {max_slice=1, max_contrast=#echo, max_measurement=meas}",
+      "sources": {
+        "echo": "prot.TE",
+        "meas": "prot.measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "TE_prot": {
+      "name": "TE_prot",
+      "par": "prot.TE",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The echo time (TE) is the time interval between the center of the RF excitation pulse and the acquisition of the k-space center.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "max": 1000,
+        "min": 0,
+        "name": "Echo Time",
+        "step": 0.1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_dimensions": "[-1]",
+        "value_type": "float"
+      }
+    },
+    "TR_prot": {
+      "name": "TR_prot",
+      "par": "prot.TR",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The repetition time (TR) is the time interval between RF excitations.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "max": 10000,
+        "min": 0,
+        "name": "Repetition Time",
+        "step": 0.1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "acq_size": {
+      "name": "acq_size",
+      "script": "return {mat_size[1], mat_size[2], mat_size[3]}",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "default_export": {
+      "blueprint_id": "54ea5fd1-0f57-4248-9508-77f5b861edd2",
+      "name": "default_export",
+      "type": "extending_definition"
+    },
+    "default_helper": {
+      "blueprint_id": "83cef442-e8d2-4218-843e-280ca227259b",
+      "name": "default_helper",
+      "type": "extending_definition"
+    },
+    "default_info": {
+      "blueprint_id": "415679b9-f8fb-4010-95f9-651d1ddac19a",
+      "name": "default_info",
+      "type": "extending_definition"
+    },
+    "default_protocol": {
+      "blueprint_id": "f7f39ac8-0440-4dd2-9702-4d7cc10b854a",
+      "name": "default_protocol",
+      "type": "extending_definition"
+    },
+    "default_system": {
+      "blueprint_id": "bd6d2ae9-7b07-4b88-ad69-9cadc1ea3194",
+      "name": "default_system",
+      "type": "extending_definition"
+    },
+    "default_tests": {
+      "blueprint_id": "39d352df-a9f8-4299-8446-96505f85d269",
+      "name": "default_tests",
+      "type": "extending_definition"
+    },
+    "flip_angle_prot": {
+      "name": "flip_angle_prot",
+      "par": "prot.flip_angle",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The flip angle (FA) is the amount of rotation the net magnetization experiences relative to the main magnetic field. There is an optimal flip angle to maximize the signal for spoiled gradient echo sequences FA = arccos(exp(-TR/T1)) called Ernst angle.",
+        "groups": [
+          [
+            "Contrast",
+            "Excitation"
+          ]
+        ],
+        "max": 360,
+        "min": 0,
+        "name": "Flip Angle Excitation",
+        "step": 1,
+        "unit": "°",
+        "value_type": "int"
+      }
+    },
+    "fov": {
+      "name": "fov",
+      "script": "if seq_dim == 2 then\n  return {fov_read, fov_phase, slice_thick}\nend\nreturn {fov_read, fov_phase, slice_thick*mat_size[3]}",
+      "sources": {
+        "fov_phase": "prot.fov_phase",
+        "fov_read": "prot.fov_read",
+        "mat_size": "mat_size",
+        "seq_dim": "info.seq_dim",
+        "slice_thick": "prot.thickness_exc_1"
+      },
+      "type": "parameter_definition"
+    },
+    "fov_phase_prot": {
+      "name": "fov_phase_prot",
+      "par": "prot.fov_phase",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The field-of-view determines the size of the image along the according direction. The nominal resolution is determined by the *Field-of-View* divided by the *Matrix Size*.",
+        "groups": [
+          [
+            "Geometry",
+            "FOV"
+          ]
+        ],
+        "max": 500,
+        "min": 10,
+        "name": "FOV Phase",
+        "step": 1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "fov_read_prot": {
+      "name": "fov_read_prot",
+      "par": "prot.fov_read",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The field-of-view determines the size of the image along the according direction. The nominal resolution is determined by the *Field-of-View* divided by the *Matrix Size*.",
+        "groups": [
+          [
+            "Geometry",
+            "FOV"
+          ]
+        ],
+        "max": 500,
+        "min": 10,
+        "name": "FOV Read",
+        "step": 1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "is_right_TR_test": {
+      "name": "is_right_TR_test",
+      "test_parameter_definition": {
+        "name": "is_right_TR",
+        "script": "return is_right_TR",
+        "sources": {
+          "is_right_TR": "structure.is_right_TR"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_right_matrix_phase_test": {
+      "name": "is_right_matrix_phase_test",
+      "test_parameter_definition": {
+        "name": "is_right_matrix_phase",
+        "script": "return is_right_matrix_phase",
+        "sources": {
+          "is_right_matrix_phase": "structure.is_right_matrix_phase"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_right_matrix_slice_test": {
+      "name": "is_right_matrix_slice_test",
+      "test_parameter_definition": {
+        "name": "is_right_matrix_slice",
+        "script": "return is_right_matrix_slice",
+        "sources": {
+          "is_right_matrix_slice": "structure.is_right_matrix_slice"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "mat_size": {
+      "name": "mat_size",
+      "script": "if seq_dim == 2 and slice ~= nil then\n  return {mat_size_read, mat_size_phase, slices}\nelseif seq_dim == 2 then\n  return {mat_size_read, mat_size_phase, 1}\nelseif partitions ~= nil then\n  return {mat_size_read, mat_size_phase, partitions}\nend\nreturn {mat_size_read, mat_size_phase, 1}",
+      "sources": {
+        "mat_size_phase": "prot.mat_size_phase",
+        "mat_size_read": "prot.mat_size_read",
+        "partitions": "prot.partitions",
+        "seq_dim": "info.seq_dim",
+        "slices": "prot.slices"
+      },
+      "type": "parameter_definition"
+    },
+    "mat_size_phase_prot": {
+      "name": "mat_size_phase_prot",
+      "par": "prot.mat_size_phase",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The matrix size determines the size of the final image along the according direction. The nominal resolution is determined by the *Field-of-View* divided by the *Matrix Size*.",
+        "groups": [
+          [
+            "Geometry",
+            "Resolution"
+          ]
+        ],
+        "max": 1024,
+        "min": 2,
+        "name": "Matrix Size Phase",
+        "step": 2,
+        "value_type": "int"
+      }
+    },
+    "mat_size_read_prot": {
+      "name": "mat_size_read_prot",
+      "par": "prot.mat_size_read",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The matrix size determines the size of the final image along the according direction. The nominal resolution is determined by the *Field-of-View* divided by the *Matrix Size*.",
+        "groups": [
+          [
+            "Geometry",
+            "Resolution"
+          ]
+        ],
+        "max": 1024,
+        "min": 2,
+        "name": "Matrix Size Read",
+        "step": 2,
+        "value_type": "int"
+      }
+    },
+    "measurements_prot": {
+      "name": "measurements_prot",
+      "par": "prot.measurements",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Number of measurements to increase signal-to-noise ratio, for instance.",
+        "groups": [
+          [
+            "Special"
+          ]
+        ],
+        "max": 128,
+        "min": 1,
+        "name": "Measurements",
+        "step": 1,
+        "value_type": "int"
+      }
+    },
+    "offcenter_exc_1_prot": {
+      "name": "offcenter_exc_1_prot",
+      "par": "prot.offcenter_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The shifting of the center of the image volume from the center of the magnetic field for positioning of the measured area.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 10000,
+        "min": -10000,
+        "name": "Offcenter",
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_dimensions": "[3]",
+        "value_type": "float"
+      }
+    },
+    "orientation_exc_1_prot": {
+      "name": "orientation_exc_1_prot",
+      "par": "prot.orientation_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Orientations determine the directions of the read/phase/slice directions.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 1,
+        "min": -1,
+        "name": "Orientation",
+        "value_dimensions": "[3,3]",
+        "value_type": "float"
+      }
+    },
+    "prot.TE": {
+      "name": "prot.TE",
+      "script": "return {50e-3}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.TR": {
+      "name": "prot.TR",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.flip_angle": {
+      "name": "prot.flip_angle",
+      "script": "return 90",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.fov_phase": {
+      "name": "prot.fov_phase",
+      "script": "return 256e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.fov_read": {
+      "name": "prot.fov_read",
+      "script": "return 256e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.mat_size_phase": {
+      "name": "prot.mat_size_phase",
+      "script": "return 64",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.mat_size_read": {
+      "name": "prot.mat_size_read",
+      "script": "return 64",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.measurements": {
+      "name": "prot.measurements",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.offcenter_exc_1": {
+      "name": "prot.offcenter_exc_1",
+      "script": "return {0,0,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.orientation_exc_1": {
+      "name": "prot.orientation_exc_1",
+      "script": "return {{1,0,0},{0,1,0},{0,0,1}}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.readout_duration": {
+      "name": "prot.readout_duration",
+      "script": "return 500e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.thickness_exc_1": {
+      "name": "prot.thickness_exc_1",
+      "script": "return 5e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ui_sorting": {
+      "name": "prot.ui_sorting",
+      "script": "return {\n  {\"Contrast\", \n    {{\"Timing\"}, {\"Excitation\"}}\n  }, {\"Geometry\", \n    {{\"FOV\"}, {\"Resolution\"}, {\"Positioning\"}}\n  }}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "readout_duration_prot": {
+      "name": "readout_duration_prot",
+      "par": "prot.readout_duration",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The readout duration determines the length of one ADC event. This parameter determines the receiver bandwidth and is a trade-off between high signal-to-noise ratio and short echo times.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "max": 10000,
+        "min": 200,
+        "name": "Readout Duration",
+        "step": 1,
+        "unit": "us",
+        "unit_scaling": "1e-6",
+        "value_type": "float"
+      }
+    },
+    "structure": {
+      "blueprint_id": "1dbcb76a-5407-4526-ba88-b54d75c6b29c",
+      "name": "structure",
+      "type": "sequence_element_definition"
+    },
+    "structure.tstart": {
+      "name": "structure.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "thickness_exc_1_prot": {
+      "name": "thickness_exc_1_prot",
+      "par": "prot.thickness_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The slice thickness determines the nominal resolution of the final image along the slice direction.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 20,
+        "min": 0.5,
+        "name": "Thickness",
+        "step": 0.1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f3bd49b2-146c-44ee-b254-caa460b88d8f",
+  "name": "Template sequence",
+  "properties": {
+    "tags": [
+      "sequence"
+    ]
+  }
+}

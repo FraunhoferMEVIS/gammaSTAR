@@ -1,0 +1,241 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.slice.line.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(kernel_dur, TR)",
+      "sources": {
+        "TR": "TR",
+        "kernel_dur": "repetition.slice.line.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % 1 == 0",
+      "sources": {
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.slice.line.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_slice": {
+      "name": "is_right_matrix_slice",
+      "script": "if seq_dim == 3 then\n  local factor = 1\n  if PAT_mode ~= 'None' then\n    factor = PAT_factor\n  end\n  return (kernel_info.num_lines['slice'] / factor) % 1 == 0\nend\nreturn true",
+      "sources": {
+        "PAT_factor": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.slice.line.kernel.kernel_info",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_line_pos_forwarding": {
+      "forward_as": "repetition.slice.line.kernel.phase_info_line_pos",
+      "name": "phase_info_line_pos_forwarding",
+      "source_to_forward": "repetition.slice.line.kernel.phase_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slice",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slice.length": {
+      "name": "repetition.slice.length",
+      "script": "if seq_dim == 2 then\n  return kernel_info.acq_slices\nend\nreturn 1",
+      "sources": {
+        "kernel_info": "repetition.slice.line.kernel.kernel_info",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slice.line",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slice.line.kernel": {
+      "blueprint_id": "f94a7ac3-3616-4285-999d-ca24be5f7aaa",
+      "name": "repetition.slice.line.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slice.line.kernel.exc.ssel.sinc.rf.t_bw_product": {
+      "name": "repetition.slice.line.kernel.exc.ssel.sinc.rf.t_bw_product",
+      "script": "return excitation_tbwp",
+      "sources": {
+        "excitation_tbwp": "excitation_tbwp"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.kernel.excitation_mode": {
+      "name": "repetition.slice.line.kernel.excitation_mode",
+      "script": "if seq_dim == 3 and excitation_type == 'global' then\n  return 'global'\nend\nreturn 'sinc'",
+      "sources": {
+        "excitation_type": "excitation_type",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.kernel.phase_info_line_pos": {
+      "name": "repetition.slice.line.kernel.phase_info_line_pos",
+      "script": "return line_counter",
+      "sources": {
+        "line_counter": "repetition.slice.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.kernel.spoilphase": {
+      "name": "repetition.slice.line.kernel.spoilphase",
+      "script": "Phase = ((number_prescans+line_counter) % 2) * math.pi\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "line_counter": "repetition.slice.line.counter",
+        "number_prescans": "number_prescans"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.kernel.tstart": {
+      "name": "repetition.slice.line.kernel.tstart",
+      "script": "return line_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "line_counter": "repetition.slice.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.length": {
+      "name": "repetition.slice.line.length",
+      "script": "return kernel_info.acq_lines[\"total\"]",
+      "sources": {
+        "kernel_info": "repetition.slice.line.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.line.tstart": {
+      "name": "repetition.slice.line.tstart",
+      "script": "return prescan_tstart + prescan_dur",
+      "sources": {
+        "prescan_dur": "repetition.slice.prescan.duration",
+        "prescan_tstart": "repetition.slice.prescan.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.prescan": {
+      "blueprint_id": "f47f736d-179e-496c-99cb-e36d29791580",
+      "name": "repetition.slice.prescan",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slice.prescan.line.kernel.exc.ssel.sinc.rf.t_bw_product": {
+      "name": "repetition.slice.prescan.line.kernel.exc.ssel.sinc.rf.t_bw_product",
+      "script": "return excitation_tbwp",
+      "sources": {
+        "excitation_tbwp": "excitation_tbwp"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.prescan.line.kernel.excitation_mode": {
+      "name": "repetition.slice.prescan.line.kernel.excitation_mode",
+      "script": "if seq_dim == 3 and excitation_type == 'global' then\n  return 'global'\nend\nreturn 'sinc'",
+      "sources": {
+        "excitation_type": "excitation_type",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.prescan.tstart": {
+      "name": "repetition.slice.prescan.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.slice.slice_info_line_pos": {
+      "name": "repetition.slice.slice_info_line_pos",
+      "script": "return slice_counter",
+      "sources": {
+        "slice_counter": "repetition.slice.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slice.tstart": {
+      "name": "repetition.slice.tstart",
+      "script": "return slice_counter * (line_length * TR + pre_dur)",
+      "sources": {
+        "TR": "TR",
+        "line_length": "repetition.slice.line.length",
+        "pre_dur": "repetition.slice.prescan.duration",
+        "slice_counter": "repetition.slice.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return pat_ref_dur + rep_counter * slice_length * (line_length * TR + pre_dur)",
+      "sources": {
+        "TR": "TR",
+        "line_length": "repetition.slice.line.length",
+        "pat_ref_dur": "pat_ref.duration",
+        "pre_dur": "repetition.slice.prescan.duration",
+        "rep_counter": "repetition.counter",
+        "slice_length": "repetition.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "repetition.slice.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "repetition.slice.slice_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "repetition.slice.line.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "repetition.slice.line.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "d8773705-5f73-4c91-a37f-88161e1eea1b",
+  "name": "bSSFP structure",
+  "properties": {}
+}

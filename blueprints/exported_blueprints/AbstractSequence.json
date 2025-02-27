@@ -1,0 +1,50 @@
+{
+  "definitions": {
+    "TR": {
+      "name": "TR",
+      "script": "return 100e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "info": {
+      "blueprint_id": "Empty",
+      "name": "info",
+      "type": "sequence_element_definition"
+    },
+    "info.description": {
+      "name": "info.description",
+      "script": "return [[\n# Abstract Sequence\n\nThis is an abstract sequence to illustrate the blueprint, definition and sequence definition data structure concepts of the framework.\n\nMany frontend features, such as Plot, Protocol and Checks are not functional due to the abstract nature of the Events contained in this sequence.\n\nThe sequence can be run using the Lua reference implementation within the downloaded software package. (see README file)\n]]",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "loop_offset": {
+      "name": "loop_offset",
+      "script": "return 50e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetitions": {
+      "name": "repetitions",
+      "script": "return 4",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "structure": {
+      "blueprint_id": "AbstractSequenceStructure",
+      "name": "structure",
+      "type": "extending_definition"
+    },
+    "tests": {
+      "blueprint_id": "Empty",
+      "name": "tests",
+      "type": "sequence_element_definition"
+    }
+  },
+  "id": "AbstractSequence",
+  "name": "Abstract sequence",
+  "properties": {
+    "tags": [
+      "sequence"
+    ]
+  }
+}

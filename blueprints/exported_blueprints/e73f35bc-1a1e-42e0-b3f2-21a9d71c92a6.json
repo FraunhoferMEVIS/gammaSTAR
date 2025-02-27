@@ -1,0 +1,141 @@
+{
+  "definitions": {
+    "deph": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "deph",
+      "type": "sequence_element_definition"
+    },
+    "deph.gradient_settings": {
+      "name": "deph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.is_atomic": {
+      "name": "deph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "deph.read_m0": {
+      "name": "deph.read_m0",
+      "script": "return -helper_functions.k_to_m0(dk_reph) + m0_rd_abs",
+      "sources": {
+        "dk_reph": "line.readout.read_info_dk_reph",
+        "helper_functions": "helper_functions",
+        "m0_rd_abs": "line.readout.read.m0_rd_abs"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.tstart": {
+      "name": "deph.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return reph_tstart + reph_dur",
+      "sources": {
+        "reph_dur": "reph.read.duration",
+        "reph_tstart": "reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "line": {
+      "blueprint_id": "Loop",
+      "name": "line",
+      "type": "sequence_element_definition"
+    },
+    "line.length": {
+      "name": "line.length",
+      "script": "return 3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "line.readout": {
+      "blueprint_id": "89005167-43a3-4830-a156-c03b1e626718",
+      "name": "line.readout",
+      "type": "sequence_element_definition"
+    },
+    "line.readout.adc.header.idx_average": {
+      "name": "line.readout.adc.header.idx_average",
+      "script": "return math.floor(line_counter/2)",
+      "sources": {
+        "line_counter": "line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "line.readout.is_reverse": {
+      "name": "line.readout.is_reverse",
+      "script": "return 1-(line_counter%2)",
+      "sources": {
+        "line_counter": "line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "line.readout.tstart": {
+      "name": "line.readout.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "line.tstart": {
+      "name": "line.tstart",
+      "script": "return deph_dur + line_counter * read_dur",
+      "sources": {
+        "deph_dur": "deph.duration",
+        "line_counter": "line.counter",
+        "read_dur": "line.readout.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "reph": {
+      "blueprint_id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+      "name": "reph",
+      "type": "sequence_element_definition"
+    },
+    "reph.gradient_settings": {
+      "name": "reph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.is_atomic": {
+      "name": "reph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "reph.read_m0": {
+      "name": "reph.read_m0",
+      "script": "if (line_length % 2 == 1) then\n  return -helper_functions.k_to_m0(dk_deph) + m0_ru_abs\nelse\n  return helper_functions.k_to_m0(dk_reph) - m0_rd_abs\nend",
+      "sources": {
+        "dk_deph": "line.readout.read_info_dk_deph",
+        "dk_reph": "line.readout.read_info_dk_reph",
+        "helper_functions": "helper_functions",
+        "line_length": "line.length",
+        "m0_rd_abs": "line.readout.read.m0_rd_abs",
+        "m0_ru_abs": "line.readout.read.m0_ru_abs"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.tstart": {
+      "name": "reph.tstart",
+      "script": "return deph_dur + line_length * read_dur",
+      "sources": {
+        "deph_dur": "deph.duration",
+        "line_length": "line.length",
+        "read_dur": "line.readout.duration"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "e73f35bc-1a1e-42e0-b3f2-21a9d71c92a6",
+  "name": "EPI phase correction",
+  "properties": {
+    "tags": [
+      "reference"
+    ]
+  }
+}

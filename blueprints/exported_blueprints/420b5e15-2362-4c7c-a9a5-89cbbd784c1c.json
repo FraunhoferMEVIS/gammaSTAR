@@ -1,0 +1,102 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_reph_tend",
+      "sources": {
+        "grad_reph_tend": "grad_reph.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad_reph",
+      "type": "sequence_element_definition"
+    },
+    "grad_reph.direction": {
+      "name": "grad_reph.direction",
+      "script": "return grad_dir",
+      "sources": {
+        "grad_dir": "sinc.grad.direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.gradient_settings": {
+      "name": "grad_reph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.m0": {
+      "name": "grad_reph.m0",
+      "script": "return reph_moment",
+      "sources": {
+        "reph_moment": "reph_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.tstart": {
+      "name": "grad_reph.tstart",
+      "script": "return sinc_tstart + sinc_dur",
+      "sources": {
+        "sinc_dur": "sinc.duration",
+        "sinc_tstart": "sinc.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "reph_moment": {
+      "name": "reph_moment",
+      "script": "return -.5 * sinc_grad_m0",
+      "sources": {
+        "sinc_grad_m0": "sinc.grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc": {
+      "blueprint_id": "1704a926-1ea6-4061-92d8-e3f2be4b71fd",
+      "name": "sinc",
+      "type": "sequence_element_definition"
+    },
+    "sinc.rf.rf.type": {
+      "name": "sinc.rf.rf.type",
+      "script": "return 'Excitation'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc.tstart": {
+      "name": "sinc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return sinc_t_before_center",
+      "sources": {
+        "sinc_t_before_center": "sinc.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "420b5e15-2362-4c7c-a9a5-89cbbd784c1c",
+  "name": "Slice selection",
+  "properties": {
+    "tags": []
+  }
+}

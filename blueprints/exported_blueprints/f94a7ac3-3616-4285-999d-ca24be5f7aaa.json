@@ -1,0 +1,160 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return enc_start + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration",
+        "enc_start": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding": {
+      "blueprint_id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+      "name": "encoding",
+      "type": "sequence_element_definition"
+    },
+    "encoding.add_slice_deph_moment": {
+      "name": "encoding.add_slice_deph_moment",
+      "script": "if exc_ssel_enabled then\n  return -.5 * exc_ssel_grad_m0\nend\nreturn 0",
+      "sources": {
+        "exc_ssel_enabled": "exc.ssel.enabled",
+        "exc_ssel_grad_m0": "exc.ssel.sinc.grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.deph.ft": {
+      "name": "encoding.deph.ft",
+      "script": "local raster_time = grad_set.raster_time\nlocal ft = TE[1] - (read_ramp + (PF - 0.5)/PF * read_ft) - exc_t_after_exc - 2*deph_ramp\nreturn math.floor((ft+float_precision)/raster_time) * raster_time",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "TE": "TE",
+        "deph_ramp": "encoding.deph.rt",
+        "exc_t_after_exc": "exc.t_after_center",
+        "grad_set": "gradient_settings",
+        "read_ft": "encoding.readout.read.ft",
+        "read_ramp": "encoding.readout.read.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.reph.ft": {
+      "name": "encoding.reph.ft",
+      "script": "return deph_ft",
+      "sources": {
+        "deph_ft": "encoding.deph.ft"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.reph.rt": {
+      "name": "encoding.reph.rt",
+      "script": "return deph_rt",
+      "sources": {
+        "deph_rt": "encoding.deph.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.reph.slice.m0": {
+      "name": "encoding.reph.slice.m0",
+      "script": "if not spoiling and exc_ssel_enabled then\n  return -.5 * exc_ssel_grad_m0 - helper_functions.k_to_m0(k_cur[\"slice\"])\nelseif not spoiling then\n  return -helper_functions.k_to_m0(k_cur[\"slice\"])\nend\nreturn 0",
+      "sources": {
+        "exc_ssel_enabled": "exc.ssel.enabled",
+        "exc_ssel_grad_m0": "exc.ssel.sinc.grad.m0",
+        "helper_functions": "helper_functions",
+        "k_cur": "encoding.readout.phase_info_k_cur",
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.spoiling": {
+      "name": "encoding.spoiling",
+      "script": "return spoiling",
+      "sources": {
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.tstart": {
+      "name": "encoding.tstart",
+      "script": "return exc_dur",
+      "sources": {
+        "exc_dur": "exc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "exc": {
+      "blueprint_id": "ab5d830d-ae3b-499b-ba21-7f17f1ced1c0",
+      "name": "exc",
+      "type": "sequence_element_definition"
+    },
+    "exc.mode": {
+      "name": "exc.mode",
+      "script": "return exc_mode",
+      "sources": {
+        "exc_mode": "excitation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "exc.ssel.grad_reph.m0": {
+      "name": "exc.ssel.grad_reph.m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "exc.tstart": {
+      "name": "exc.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "excitation_mode": {
+      "name": "excitation_mode",
+      "script": "return 'sinc'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "return ge(deph_ft, 0)",
+      "sources": {
+        "deph_ft": "encoding.deph.ft"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "local ret_table = {minTE=minTE, acq_slices=acq_slices}\nfor k,v in pairs(readout_info) do\n  ret_table[k] = v\nend\nreturn ret_table",
+      "sources": {
+        "acq_slices": "exc.slice_info_acq_lines",
+        "minTE": "minimalTE",
+        "readout_info": "encoding.readout.readout_info"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min = exc_t_after_center + t_before_te\nreturn math.ceil(TE_min / 1e-4) * 1e-4",
+      "sources": {
+        "exc_t_after_center": "exc.t_after_center",
+        "t_before_te": "encoding.t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiling": {
+      "name": "spoiling",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_before_exc": {
+      "name": "t_before_exc",
+      "script": "return exc_t_before_center",
+      "sources": {
+        "exc_t_before_center": "exc.t_before_center"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f94a7ac3-3616-4285-999d-ca24be5f7aaa",
+  "name": "bSSFP kernel",
+  "properties": {}
+}

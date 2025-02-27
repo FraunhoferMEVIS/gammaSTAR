@@ -1,0 +1,10 @@
+{
+  "definitions": {},
+  "id": "Tests",
+  "name": "Tests",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

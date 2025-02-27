@@ -1,0 +1,54 @@
+{
+  "definitions": {
+    "loop": {
+      "blueprint_id": "Loop",
+      "name": "loop",
+      "type": "sequence_element_definition"
+    },
+    "loop.kernel": {
+      "blueprint_id": "AbstractEvent",
+      "name": "loop.kernel",
+      "type": "sequence_element_definition"
+    },
+    "loop.kernel.tstart": {
+      "name": "loop.kernel.tstart",
+      "script": "return offset + counter * TR",
+      "sources": {
+        "TR": "TR",
+        "counter": "loop.counter",
+        "offset": "loop_offset"
+      },
+      "type": "parameter_definition"
+    },
+    "loop.length": {
+      "name": "loop.length",
+      "script": "return repetitions",
+      "sources": {
+        "repetitions": "repetitions"
+      },
+      "type": "parameter_definition"
+    },
+    "loop_counter_forwarding": {
+      "forward_as": "counter",
+      "name": "loop_counter_forwarding",
+      "source_to_forward": "loop.counter",
+      "type": "forwarding_definition"
+    },
+    "other": {
+      "blueprint_id": "AbstractEvent",
+      "name": "other",
+      "type": "sequence_element_definition"
+    },
+    "other.tstart": {
+      "name": "other.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "AbstractSequenceStructure",
+  "name": "Abstract sequence structure",
+  "properties": {
+    "tags": []
+  }
+}

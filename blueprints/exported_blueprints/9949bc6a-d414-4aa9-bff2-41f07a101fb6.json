@@ -1,0 +1,255 @@
+{
+  "definitions": {
+    "add_slice_deph_moment": {
+      "name": "add_slice_deph_moment",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "deph": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "deph",
+      "type": "sequence_element_definition"
+    },
+    "deph.ft": {
+      "name": "deph.ft",
+      "script": "return max_deph_dur.ft",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.is_atomic": {
+      "name": "deph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "deph.phase_m0": {
+      "name": "deph.phase_m0",
+      "script": "if reorder_scheme == 'No' or reorder_scheme == 'Slice' then\n  return 0\nelse\n  return helper_functions.k_to_m0(k_cur[\"phase\"])\nend",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_cur": "readout.phase_info_k_cur",
+        "reorder_scheme": "readout.phase_info_comb_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.read_m0": {
+      "name": "deph.read_m0",
+      "script": "return helper_functions.k_to_m0(dk_deph) - m0_rut - read_ft_m0_inc_before",
+      "sources": {
+        "dk_deph": "readout.read_info_dk_deph",
+        "helper_functions": "helper_functions",
+        "m0_rut": "readout.read.m0_rut",
+        "read_ft_m0_inc_before": "readout.read_ft_m0_inc_before"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.rt": {
+      "name": "deph.rt",
+      "script": "return max_deph_dur.rt",
+      "sources": {
+        "max_deph_dur": "max_deph_durations"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.slice_m0": {
+      "name": "deph.slice_m0",
+      "script": "if reorder_scheme == 'No' or reorder_scheme == 'Phase' then\n  return add_slice_deph_moment\nelse\n  return helper_functions.k_to_m0(k_cur[\"slice\"]) + add_slice_deph_moment\nend",
+      "sources": {
+        "add_slice_deph_moment": "add_slice_deph_moment",
+        "helper_functions": "helper_functions",
+        "k_cur": "readout.phase_info_k_cur",
+        "reorder_scheme": "readout.phase_info_comb_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "deph.tstart": {
+      "name": "deph.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return reph_tstart + reph_dur",
+      "sources": {
+        "reph_dur": "reph.duration",
+        "reph_tstart": "reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_with_spoil": {
+      "name": "duration_with_spoil",
+      "script": "return reph_tstart + 2*max_reph_dur.spoil.rt + max_reph_dur.spoil.ft",
+      "sources": {
+        "max_reph_dur": "max_reph_durations",
+        "reph_tstart": "reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration_without_spoil": {
+      "name": "duration_without_spoil",
+      "script": "return reph_tstart + 2*max_reph_dur.no_spoil.rt + max_reph_dur.no_spoil.ft",
+      "sources": {
+        "max_reph_dur": "max_reph_durations",
+        "reph_tstart": "reph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "max_deph_durations": {
+      "name": "max_deph_durations",
+      "script": "local m0_p = 0\nlocal m0_s =  0\nlocal m0_f = math.abs(read_m0)\nif reorder_scheme == 'Phase' then\n  m0_p = math.abs(helper_functions.k_to_m0(k_max[\"phase\"]))\n  m0_s =  math.abs(add_slice_deph_moment)\nelseif reorder_scheme == 'Slice' then\n  m0_s = math.abs(add_slice_deph_moment) + math.abs(helper_functions.k_to_m0(k_max[\"slice\"]))\nelseif reorder_scheme ~= 'No' then\n  m0_p = math.abs(helper_functions.k_to_m0(k_max[\"phase\"]))\n  m0_s = math.abs(add_slice_deph_moment) + math.abs(helper_functions.k_to_m0(k_max[\"slice\"]))\nend  \n\nlocal max_m0 = math.max(m0_p, m0_s, m0_f)\nreturn helper_functions.calc_gradient_shape_from_moment(max_m0, grad_set)",
+      "sources": {
+        "add_slice_deph_moment": "add_slice_deph_moment",
+        "grad_set": "gradient_settings_reduced_performance",
+        "helper_functions": "helper_functions",
+        "k_max": "readout.phase_info_kmax",
+        "read_m0": "deph.read.m0",
+        "reorder_scheme": "readout.phase_info_comb_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "max_reph_durations": {
+      "name": "max_reph_durations",
+      "script": "local m0_p = 0\nlocal m0_s = 0\nif reorder_scheme == 'Phase' then\n  m0_p = math.abs(helper_functions.k_to_m0(k_max[\"phase\"]))\nelseif reorder_scheme == 'Slice' then\n  m0_s = math.abs(helper_functions.k_to_m0(k_max[\"slice\"]))\nelseif reorder_scheme ~= 'No' then\n  m0_p = math.abs(helper_functions.k_to_m0(k_max[\"phase\"]))\n  m0_s = math.abs(helper_functions.k_to_m0(k_max[\"slice\"]))\nend\nlocal m0_f_no_spoil = math.abs(helper_functions.k_to_m0(dk_reph) - m0_rdt)\nlocal m0_f_spoil = math.abs(helper_functions.k_to_m0(dk_reph) - m0_rdt + 2 * helper_functions.dx_to_m0(read_res))\n\nlocal max_m0_no_spoil = math.max(m0_p, m0_s, m0_f_no_spoil)\nlocal max_m0_spoil = math.max(m0_p, m0_s, m0_f_spoil)\n\nreturn {\n  no_spoil=helper_functions.calc_gradient_shape_from_moment(max_m0_no_spoil, grad_set),\n  spoil=helper_functions.calc_gradient_shape_from_moment(max_m0_spoil, grad_set)\n}",
+      "sources": {
+        "dk_reph": "readout.read_info_dk_reph",
+        "grad_set": "gradient_settings_reduced_performance",
+        "helper_functions": "helper_functions",
+        "k_max": "readout.phase_info_kmax",
+        "m0_rdt": "readout.read.m0_rdt",
+        "read_res": "readout.read_info_res",
+        "reorder_scheme": "readout.phase_info_comb_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_comb_reorder_scheme": {
+      "name": "phase_info_comb_reorder_scheme",
+      "script": "if seq_dim == 3 then\n  return \"Phase-Slice\"\nend\nreturn \"Phase\"",
+      "sources": {
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "phase_info_comb_reorder_scheme_forwarding": {
+      "forward_as": "phase_info_comb_reorder_scheme",
+      "name": "phase_info_comb_reorder_scheme_forwarding",
+      "source_to_forward": "phase_info_comb_reorder_scheme",
+      "type": "forwarding_definition"
+    },
+    "readout": {
+      "blueprint_id": "6b149f92-d87a-4e59-b0a6-ec1c6fe225c0",
+      "name": "readout",
+      "type": "sequence_element_definition"
+    },
+    "readout.tstart": {
+      "name": "readout.tstart",
+      "script": "return deph_tstart + deph_dur",
+      "sources": {
+        "deph_dur": "deph.duration",
+        "deph_tstart": "deph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "reph": {
+      "blueprint_id": "8dece21c-da93-4414-a1d0-60a7fa8daf29",
+      "name": "reph",
+      "type": "sequence_element_definition"
+    },
+    "reph.ft": {
+      "name": "reph.ft",
+      "script": "if spoiling then\n  return max_reph_dur.spoil.ft\nelse\n  return max_reph_dur.no_spoil.ft\nend",
+      "sources": {
+        "max_reph_dur": "max_reph_durations",
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.is_atomic": {
+      "name": "reph.is_atomic",
+      "type": "atomic_definition"
+    },
+    "reph.phase_m0": {
+      "name": "reph.phase_m0",
+      "script": "return -phase_m0",
+      "sources": {
+        "phase_m0": "deph.phase_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.read_m0": {
+      "name": "reph.read_m0",
+      "script": "reph_moment = helper_functions.k_to_m0(dk_reph) - read_ft_m0_inc_after - m0_rdt\nif spoiling then\n  return reph_moment + 2 * helper_functions.dx_to_m0(res)\nelse\n  return reph_moment\nend",
+      "sources": {
+        "dk_reph": "readout.read_info_dk_reph",
+        "helper_functions": "helper_functions",
+        "m0_rdt": "readout.read.m0_rdt",
+        "read_adc_factor": "readout.read_adc_factor",
+        "read_ft_m0_inc_after": "readout.read_ft_m0_inc_after",
+        "res": "readout.read_info_res",
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.rt": {
+      "name": "reph.rt",
+      "script": "if spoiling then\n  return max_reph_dur.spoil.rt\nelse\n  return max_reph_dur.no_spoil.rt\nend",
+      "sources": {
+        "max_reph_dur": "max_reph_durations",
+        "spoiling": "spoiling"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.slice_m0": {
+      "name": "reph.slice_m0",
+      "script": "return -helper_functions.k_to_m0(k_cur[\"slice\"])",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "k_cur": "readout.phase_info_k_cur"
+      },
+      "type": "parameter_definition"
+    },
+    "reph.tstart": {
+      "name": "reph.tstart",
+      "script": "return readout_tstart + readout_dur",
+      "sources": {
+        "readout_dur": "readout.duration",
+        "readout_tstart": "readout.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "spoiling": {
+      "name": "spoiling",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_te": {
+      "name": "t_after_te",
+      "script": "return {\n  no_spoil=t_after_te + 2*max_reph_dur[\"no_spoil\"].rt + max_reph_dur[\"no_spoil\"].ft,\n  spoil=t_after_te + 2*max_reph_dur[\"spoil\"].rt + max_reph_dur[\"spoil\"].ft\n}",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "max_reph_dur": "max_reph_durations",
+        "t_after_te": "readout.t_after_te"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_te": {
+      "name": "t_before_te",
+      "script": "return 2*max_deph_dur.rt + max_deph_dur.ft + t_before_te",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "max_deph_dur": "max_deph_durations",
+        "t_before_te": "readout.t_before_te"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "9949bc6a-d414-4aa9-bff2-41f07a101fb6",
+  "name": "Line encoding",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

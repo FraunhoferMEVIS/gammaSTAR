@@ -1,0 +1,43 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if not enabled then\n  return 0\nelse\n  return trig_dur\nend",
+      "sources": {
+        "enabled": "enabled",
+        "trig_dur": "trig.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "trig": {
+      "blueprint_id": "TriggerPulse",
+      "name": "trig",
+      "type": "sequence_element_definition"
+    },
+    "trig.set_enabled": {
+      "name": "trig.set_enabled",
+      "script": "return enabled",
+      "sources": {
+        "enabled": "enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "trig.tstart": {
+      "name": "trig.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "c88ef39e-8227-4bb9-bf2e-14dcf842c629",
+  "name": "Trigger",
+  "properties": {
+    "tags": []
+  }
+}

@@ -1,0 +1,121 @@
+{
+  "definitions": {
+    "acq_size": {
+      "name": "acq_size",
+      "script": "return {mat_size[1], mat_size[2], mat_size[3]}",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "average": {
+      "blueprint_id": "Loop",
+      "name": "average",
+      "type": "sequence_element_definition"
+    },
+    "average.kernel": {
+      "blueprint_id": "a6bcd65a-b25b-4fe4-894f-c7fdf4fc8beb",
+      "name": "average.kernel",
+      "type": "sequence_element_definition"
+    },
+    "average.kernel.tstart": {
+      "name": "average.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "average.length": {
+      "name": "average.length",
+      "script": "return 16",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "average.tstart": {
+      "name": "average.tstart",
+      "script": "return idx_average * 3",
+      "sources": {
+        "idx_average": "idx_average"
+      },
+      "type": "parameter_definition"
+    },
+    "default_export": {
+      "blueprint_id": "54ea5fd1-0f57-4248-9508-77f5b861edd2",
+      "name": "default_export",
+      "type": "extending_definition"
+    },
+    "default_helper": {
+      "blueprint_id": "83cef442-e8d2-4218-843e-280ca227259b",
+      "name": "default_helper",
+      "type": "extending_definition"
+    },
+    "default_info": {
+      "blueprint_id": "415679b9-f8fb-4010-95f9-651d1ddac19a",
+      "name": "default_info",
+      "type": "extending_definition"
+    },
+    "default_protocol": {
+      "blueprint_id": "f7f39ac8-0440-4dd2-9702-4d7cc10b854a",
+      "name": "default_protocol",
+      "type": "extending_definition"
+    },
+    "default_system": {
+      "blueprint_id": "bd6d2ae9-7b07-4b88-ad69-9cadc1ea3194",
+      "name": "default_system",
+      "type": "extending_definition"
+    },
+    "default_tests": {
+      "blueprint_id": "39d352df-a9f8-4299-8446-96505f85d269",
+      "name": "default_tests",
+      "type": "extending_definition"
+    },
+    "fov": {
+      "name": "fov",
+      "script": "return {0.512, 0.512, 0.512}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "idx_average_forwarding": {
+      "forward_as": "idx_average",
+      "name": "idx_average_forwarding",
+      "source_to_forward": "average.counter",
+      "type": "forwarding_definition"
+    },
+    "info.description": {
+      "name": "info.description",
+      "script": "return [[\n# Demo FID\n\nThis is a **demo FID sequence** consisting only of global RF excitation and readout to illustrate the blueprint, definition and sequence definition data structure concepts of the framework.\n\nThe Protocol is not available for the sake of simplicity.\n]]",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "mat_size": {
+      "name": "mat_size",
+      "script": "return {512, 1, 1}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "004ebbab-558f-4a05-8cce-e907f52a4f37",
+  "name": "Demo FID sequence",
+  "properties": {
+    "tags": [
+      "sequence"
+    ]
+  }
+}

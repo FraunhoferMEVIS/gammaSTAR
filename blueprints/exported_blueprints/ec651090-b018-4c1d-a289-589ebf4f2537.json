@@ -1,0 +1,195 @@
+{
+  "definitions": {
+    "TE_prot": {
+      "name": "TE_prot",
+      "par": "prot.TE",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The echo time (TE) is the time interval between the center of the RF excitation pulse and the acquisition of the k-space center.",
+        "groups": [
+          [
+            "Demo Protocol"
+          ]
+        ],
+        "max": 100,
+        "min": 0,
+        "name": "Echo Time",
+        "step": 0.1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "TR_prot": {
+      "name": "TR_prot",
+      "par": "prot.TR",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The repetition time (TR) is the time interval between RF excitations.",
+        "groups": [
+          [
+            "Demo Protocol"
+          ]
+        ],
+        "max": 10000,
+        "min": 0,
+        "name": "Repetition Time",
+        "step": 0.1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "acq_size": {
+      "name": "acq_size",
+      "script": "return {mat_size[1], mat_size[2], mat_size[3]}",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "default_export": {
+      "blueprint_id": "54ea5fd1-0f57-4248-9508-77f5b861edd2",
+      "name": "default_export",
+      "type": "extending_definition"
+    },
+    "default_helper": {
+      "blueprint_id": "83cef442-e8d2-4218-843e-280ca227259b",
+      "name": "default_helper",
+      "type": "extending_definition"
+    },
+    "default_info": {
+      "blueprint_id": "415679b9-f8fb-4010-95f9-651d1ddac19a",
+      "name": "default_info",
+      "type": "extending_definition"
+    },
+    "default_protocol": {
+      "blueprint_id": "f7f39ac8-0440-4dd2-9702-4d7cc10b854a",
+      "name": "default_protocol",
+      "type": "extending_definition"
+    },
+    "default_system": {
+      "blueprint_id": "bd6d2ae9-7b07-4b88-ad69-9cadc1ea3194",
+      "name": "default_system",
+      "type": "extending_definition"
+    },
+    "default_tests": {
+      "blueprint_id": "39d352df-a9f8-4299-8446-96505f85d269",
+      "name": "default_tests",
+      "type": "extending_definition"
+    },
+    "fov": {
+      "name": "fov",
+      "script": "return {0.256, 0.256, 0.005}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "info.description": {
+      "name": "info.description",
+      "script": "return [[\n# Demo FLASH\n\nThis is a **demo FLASH sequence** consisting only of RF sinc excitation and Cartesian k-space readout to illustrate the blueprint, definition and sequence definition data structure concepts of the framework.\n]]",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_TE_test": {
+      "name": "is_right_TE_test",
+      "test_parameter_definition": {
+        "name": "is_right_TE",
+        "script": "return is_right_TE",
+        "sources": {
+          "is_right_TE": "structure.line.kernel.is_right_TE"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_right_TR_test": {
+      "name": "is_right_TR_test",
+      "test_parameter_definition": {
+        "name": "is_right_TR",
+        "script": "return is_right_TR",
+        "sources": {
+          "is_right_TR": "structure.is_right_TR"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "mat_size": {
+      "name": "mat_size",
+      "script": "return {mat_size, mat_size, 1}",
+      "sources": {
+        "mat_size": "prot.mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "mat_size_prot": {
+      "name": "mat_size_prot",
+      "par": "prot.mat_size",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Matrix dimension in in x/frequency and y/phase direction (single slice).",
+        "groups": [
+          [
+            "Demo Protocol"
+          ]
+        ],
+        "max": 512,
+        "min": 2,
+        "name": "Matrix Size",
+        "step": 2,
+        "value_type": "int"
+      }
+    },
+    "prot.TE": {
+      "name": "prot.TE",
+      "script": "return 5e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.TR": {
+      "name": "prot.TR",
+      "script": "return 10e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.mat_size": {
+      "name": "prot.mat_size",
+      "script": "return 64",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ui_sorting": {
+      "name": "prot.ui_sorting",
+      "script": "return {\n  {\"Demo Protocol\"}\n}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "structure": {
+      "blueprint_id": "6a51b261-d293-4f41-8fc2-bc929691c1b2",
+      "name": "structure",
+      "type": "sequence_element_definition"
+    },
+    "structure.tstart": {
+      "name": "structure.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "ec651090-b018-4c1d-a289-589ebf4f2537",
+  "name": "Demo FLASH sequence",
+  "properties": {
+    "tags": [
+      "sequence"
+    ]
+  }
+}

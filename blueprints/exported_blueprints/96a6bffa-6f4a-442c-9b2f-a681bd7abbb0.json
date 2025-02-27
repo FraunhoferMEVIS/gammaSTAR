@@ -1,0 +1,214 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_reph_tend",
+      "sources": {
+        "grad_reph_tend": "grad_reph.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.amp": {
+      "name": "grad.amp",
+      "script": "return grad_shape.amp",
+      "sources": {
+        "grad_shape": "grad_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return grad_shape.ft",
+      "sources": {
+        "grad_shape": "grad_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.rt": {
+      "name": "grad.rt",
+      "script": "return grad_shape.rt",
+      "sources": {
+        "grad_shape": "grad_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_reph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad_reph",
+      "type": "sequence_element_definition"
+    },
+    "grad_reph.direction": {
+      "name": "grad_reph.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.gradient_settings": {
+      "name": "grad_reph.gradient_settings",
+      "script": "return grad_set",
+      "sources": {
+        "grad_set": "gradient_settings_reduced_performance"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.m0": {
+      "name": "grad_reph.m0",
+      "script": "return -.5 * grad_m0",
+      "sources": {
+        "grad_m0": "grad.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_reph.tstart": {
+      "name": "grad_reph.tstart",
+      "script": "return grad_tend",
+      "sources": {
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_shape": {
+      "name": "grad_shape",
+      "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nif m0_ft == 0 then\n    return {rut=0, ft=0, rdt=0, amp=0}\nend\nlocal ft = m0_ft / max_grad_amp\nft = math.max(ft, min_rf_dur)\nrastered_ft = math.ceil(ft/(2*raster_time)) * 2*raster_time\namp = m0_ft / rastered_ft\nlocal ramp = amp / max_grad_slew\nrastered_ramp = math.ceil(ramp/raster_time) * raster_time\nreturn {rt=rastered_ramp, ft=rastered_ft, amp=amp}",
+      "sources": {
+        "grad_set": "gradient_settings",
+        "m0_ft": "rf.slice_m0_ft",
+        "min_rf_dur": "min_rf_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "max_rf_amp": {
+      "name": "max_rf_amp",
+      "script": "return 5e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "min_rf_duration": {
+      "name": "min_rf_duration",
+      "script": "local raster_time = rf_set.raster_time\nlocal duration, samples = 2.56e-3, 256\nlocal filter_value, alpha = 1, 0.5 -- Hanning\nlocal amp_int = 0\nlocal rf_samples = samples+1\nfor i = 0, rf_samples-1 do\n  x = (-0.5 + i/(rf_samples-1)) * t_bw_product * math.pi\n  if x == 0 then\n    amp_int = amp_int + 1\n  else\n    if filter then\n      filter_value = 1 - alpha + alpha * math.cos(-math.pi + 2*math.pi*i/(rf_samples-1))\n    end\n    amp_int = amp_int + filter_value * math.sin(x)/x\n  end\nend\nlocal rf_amp = (flip_angle/180*math.pi)/(2*math.pi*gamma*duration) * rf_samples/amp_int\nduration = duration * rf_amp / max_rf_amp\nreturn math.ceil(duration/raster_time)*raster_time",
+      "sources": {
+        "filter": "rf.filter",
+        "flip_angle": "rf.flip_angle",
+        "gamma": "sys_gamma",
+        "max_rf_amp": "max_rf_amp",
+        "rf_set": "rf.rf_settings",
+        "t_bw_product": "rf.t_bw_product"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rf": {
+      "blueprint_id": "dba91fdb-cbcb-43c1-9fc5-7b0870b3d125",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return grad_ft",
+      "sources": {
+        "grad_ft": "grad.ft"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.rf.frequency": {
+      "name": "rf.rf.frequency",
+      "script": "return gamma * slice_shift * slice_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "slice_amp": "grad.amp",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.rf.type": {
+      "name": "rf.rf.type",
+      "script": "return 'Excitation'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.t_bw_product": {
+      "name": "rf.t_bw_product",
+      "script": "if thickness >= 0.01 then\n  return 10.4\nelse\n  return 5.2\nend",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return grad_rut",
+      "sources": {
+        "grad_rut": "grad.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return grad_tcenter",
+      "sources": {
+        "grad_tcenter": "grad.tcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "return slice_fov",
+      "sources": {
+        "slice_fov": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "96a6bffa-6f4a-442c-9b2f-a681bd7abbb0",
+  "name": "Slice selection in minimal time",
+  "properties": {
+    "tags": []
+  }
+}

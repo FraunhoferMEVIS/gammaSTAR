@@ -1,0 +1,356 @@
+{
+  "definitions": {
+    "TimeBetweenGrads": {
+      "name": "TimeBetweenGrads",
+      "script": "return se1_dur + math.abs(TEcontribAfter-TEcontribBefore)",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "se1_dur": "spinecho1.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "bValue_ref": {
+      "name": "bValue_ref",
+      "script": "local d1 = grad_times[1] + 2*rt\nlocal d1_2 = d1 * d1\nlocal d1_3 = d1_2 * d1\nlocal d2 = grad_times[2] + 2*rt\nlocal d2_2 = d2 * d2\nlocal d2_3 = d2_2 * d2\nlocal d3 = grad_times[3] + 2*rt\nlocal d3_2 = d3 * d3\nlocal d3_3 = d3_2 * d3\nlocal d4 = grad_times[4] + 2*rt\nlocal d4_2 = d4 * d4\nlocal d4_3 = d4_2 * d4\nlocal amp = 1e-3\nlocal b = (2*math.pi*gamma)^2 * amp^2\nreturn b * (d1_3/3 + d2_3/3 + d3_3/3 + d4_3/3 + 2*d1_2*se_dur + d2_2*se_dur + d3_2*se_dur + d1_2*d2 + d1_2*d3 + d1_2*d4 + d1*d2_2 + d2_2*d3 + d2_2*d4 - d1*d3_2 - d2*d3_2 + d3_2*d4 - d1*d4_2 - d2*d4_2 + d3*d4_2 + 2*d1*d2*d3 + d1*d2*d4 - 2*d1*d3*d4 - 2*d2*d3*d4 + 2*d1*d2*se_dur - 2*d1*d3*se_dur - 2*d2*d3*se_dur)",
+      "sources": {
+        "gamma": "sys_gamma",
+        "grad_times": "grad_times",
+        "rt": "bipolar1.rt",
+        "se_dur": "spinecho1.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar1": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "bipolar1",
+      "type": "sequence_element_definition"
+    },
+    "bipolar1.bValue_ref": {
+      "name": "bipolar1.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar1.direction": {
+      "name": "bipolar1.direction",
+      "script": "return diff_dir",
+      "sources": {
+        "diff_dir": "diffusion_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar1.ft": {
+      "name": "bipolar1.ft",
+      "script": "return grad_times[1]",
+      "sources": {
+        "grad_times": "grad_times"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar1.is_atomic": {
+      "name": "bipolar1.is_atomic",
+      "type": "atomic_definition"
+    },
+    "bipolar1.rt": {
+      "name": "bipolar1.rt",
+      "script": "return math.ceil(max_grad_amp / max_grad_slew / grad_set.raster_time) * grad_set.raster_time",
+      "sources": {
+        "grad_set": "gradient_settings",
+        "max_grad_amp": "max_grad_amp",
+        "max_grad_slew": "max_grad_slew"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar1.sign": {
+      "name": "bipolar1.sign",
+      "script": "return -1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "bipolar1.tstart": {
+      "name": "bipolar1.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "bipolar2": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "bipolar2",
+      "type": "sequence_element_definition"
+    },
+    "bipolar2.bValue_ref": {
+      "name": "bipolar2.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "bipolar1.bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar2.direction": {
+      "name": "bipolar2.direction",
+      "script": "return diff_dir",
+      "sources": {
+        "diff_dir": "bipolar1.direction"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar2.ft": {
+      "name": "bipolar2.ft",
+      "script": "return grad_times[2]",
+      "sources": {
+        "grad_times": "grad_times"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar2.is_atomic": {
+      "name": "bipolar2.is_atomic",
+      "type": "atomic_definition"
+    },
+    "bipolar2.rt": {
+      "name": "bipolar2.rt",
+      "script": "return rt",
+      "sources": {
+        "rt": "bipolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar2.tstart": {
+      "name": "bipolar2.tstart",
+      "script": "return se1_tstart + se1_dur",
+      "sources": {
+        "se1_dur": "spinecho1.duration",
+        "se1_tstart": "spinecho1.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar3": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "bipolar3",
+      "type": "sequence_element_definition"
+    },
+    "bipolar3.bValue_ref": {
+      "name": "bipolar3.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "bipolar1.bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar3.direction": {
+      "name": "bipolar3.direction",
+      "script": "return diff_dir",
+      "sources": {
+        "diff_dir": "bipolar1.direction"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar3.ft": {
+      "name": "bipolar3.ft",
+      "script": "return grad_times[3]",
+      "sources": {
+        "grad_times": "grad_times"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar3.is_atomic": {
+      "name": "bipolar3.is_atomic",
+      "type": "atomic_definition"
+    },
+    "bipolar3.rt": {
+      "name": "bipolar3.rt",
+      "script": "return rt",
+      "sources": {
+        "rt": "bipolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar3.sign": {
+      "name": "bipolar3.sign",
+      "script": "return -1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "bipolar3.tstart": {
+      "name": "bipolar3.tstart",
+      "script": "return bip2_tend",
+      "sources": {
+        "bip2_tend": "bipolar2.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar4": {
+      "blueprint_id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+      "name": "bipolar4",
+      "type": "sequence_element_definition"
+    },
+    "bipolar4.bValue_ref": {
+      "name": "bipolar4.bValue_ref",
+      "script": "return bValue_ref",
+      "sources": {
+        "bValue_ref": "bipolar1.bValue_ref"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar4.direction": {
+      "name": "bipolar4.direction",
+      "script": "return diff_dir",
+      "sources": {
+        "diff_dir": "bipolar1.direction"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar4.ft": {
+      "name": "bipolar4.ft",
+      "script": "return grad_times[4]",
+      "sources": {
+        "grad_times": "grad_times"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar4.is_atomic": {
+      "name": "bipolar4.is_atomic",
+      "type": "atomic_definition"
+    },
+    "bipolar4.rt": {
+      "name": "bipolar4.rt",
+      "script": "return rt",
+      "sources": {
+        "rt": "bipolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "bipolar4.tstart": {
+      "name": "bipolar4.tstart",
+      "script": "return se2_tstart + se2_dur",
+      "sources": {
+        "se2_dur": "spinecho2.duration",
+        "se2_tstart": "spinecho2.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "deltaDelta": {
+      "name": "deltaDelta",
+      "script": "--from Bernstein page 278\n--actually for monopolar diffusion gradients but used as a starting point\n--COEFFICIENTS OF CUBIC POLYNOMIAL\nlocal B = complex.to({3/2*TimeBetweenGrads,0})\nlocal D = complex.to({-3/2*b_max / (2*math.pi*gamma)^2 / (max_grad_amp^2),0})\n--HELPER VARIABLES\nlocal Bpow2 = complex.mul(B,B)\nlocal Bpow3 = complex.mul(Bpow2,B)\nlocal Dpow2 = complex.mul(D,D)\nlocal CubeRoot2 = complex.pow(complex.to(2),1/3)\nlocal SqrRoot3 = complex.sqrt(complex.to(3))\n--FIND FIRST ROOT OF CUBIC POLYNOMIAL\nlocal V1 = complex.mul(complex.to(27),Dpow2)\nV1 = complex.add(V1,complex.mul(complex.to(4),complex.mul(Bpow3,D)))\nV1 = complex.sqrt(V1)\nV1 = complex.mul(V1,complex.mul(complex.to(3),SqrRoot3))\nV1 = complex.sub(V1,complex.mul(complex.to(2),Bpow3))\nV1 = complex.sub(V1,complex.mul(complex.to(27),D))\nV1 = complex.pow(V1,1/3)\nlocal delta = complex.div(V1,CubeRoot2)\ndelta = complex.add(delta,complex.div(complex.mul(CubeRoot2,Bpow2),V1))\ndelta = complex.div(delta,complex.to(3))\ndelta = complex.sub(delta,complex.div(B,complex.to(3)))\nlocal Delta = delta[1] + rt + TimeBetweenGrads\nlocal raster_time = grad_set.raster_time\nlocal rastered_delta = math.ceil(delta[1]/raster_time) * raster_time\nlocal rastered_Delta = math.ceil(Delta/raster_time) * raster_time\nreturn {rastered_delta,rastered_Delta}",
+      "sources": {
+        "TimeBetweenGrads": "TimeBetweenGrads",
+        "b_max": "max_bValue",
+        "complex": "helper_complex",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "max_grad_amp": "max_grad_amp",
+        "rt": "bipolar1.rt"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return bip4_tend",
+      "sources": {
+        "bip4_tend": "bipolar4.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_times": {
+      "name": "grad_times",
+      "script": "function calc_b_value(ft1, ft2, ft3, ft4)\n  local d1 = ft1 + 2*rt\n  local d1_2 = d1 * d1\n  local d1_3 = d1_2 * d1\n  local d2 = ft2 + 2*rt\n  local d2_2 = d2 * d2\n  local d2_3 = d2_2 * d2\n  local d3 = ft3 + 2*rt\n  local d3_2 = d3 * d3\n  local d3_3 = d3_2 * d3\n  local d4 = ft4 + 2*rt\n  local d4_2 = d4 * d4\n  local d4_3 = d4_2 * d4\n  local amp = max_grad_amp\n  local b = (2*math.pi*gamma)^2 * amp^2\n  return b * (d1_3/3 + d2_3/3 + d3_3/3 + d4_3/3 + 2*d1_2*se_dur + d2_2*se_dur + d3_2*se_dur + d1_2*d2 + d1_2*d3 + d1_2*d4 + d1*d2_2 + d2_2*d3 + d2_2*d4 - d1*d3_2 - d2*d3_2 + d3_2*d4 - d1*d4_2 - d2*d4_2 + d3*d4_2 + 2*d1*d2*d3 + d1*d2*d4 - 2*d1*d3*d4 - 2*d2*d3*d4 + 2*d1*d2*se_dur - 2*d1*d3*se_dur - 2*d2*d3*se_dur)\nend\n\nlocal delta = deltaDelta[1]\nlocal delta_last = -1e-6\nlocal delta_step = 0.1\nlocal do_repeat = false\nlocal iteration = false\nlocal temp, T3, T4, T5, T6, ETRF, ET3, ET4, ET5, ET6, EGrad4, TGrad1, TGrad2, TGrad3, TGrad4\nrepeat\n  temp = (TEcontribBefore + TEcontribAfter)/2\n  T3 = se_dur + delta\n  T4 = T3 + temp\n  T5 = T4 + se_dur\n  T6 = 2 * (se_dur + delta)\n  ETRF = math.exp(-se_dur/lambda)\n  ET3 = math.exp(-T3/lambda)\n  ET4 = math.exp(-T4/lambda)\n  ET5 = math.exp(-T5/lambda)\n  ET6 = math.exp(-T6/lambda)\n  EGrad4 = (1 + (2 * ET3) + ET6) / (1 + ETRF + ET4 + ET5)\n  TGrad4 = -lambda * math.log(EGrad4)\n  TGrad3 = delta - TGrad4\n  TGrad1 = 0.5 * (delta + TGrad3 - TGrad4 - (TEcontribAfter + TEcontribBefore))\n  TGrad2 = delta - TGrad1\n  if not iteration then\n    if (calc_b_value(TGrad1, TGrad2, TGrad3, TGrad4) < b_max) then\n      iteration = true\n      do_repeat = true\n    else\n      do_repeat = false\n    end\n  end\n  if iteration then\n    if (calc_b_value(TGrad1, TGrad2, TGrad3, TGrad4) < b_max) then\n      delta = delta + delta_step\n    else\n      delta_last = delta\n      delta = delta - delta_step\n    end\n    delta_step = delta_step / 2\n    if (delta_step < 2.5e-6) then\n      delta = delta_last\n      iteration = false\n    end\n  end\nuntil (not do_repeat)\nlocal raster_time = grad_set.raster_time\nlocal ft1 = math.ceil(TGrad1/raster_time) * raster_time\nlocal ft2 = math.ceil(TGrad2/raster_time) * raster_time\nlocal ft3 = math.ceil(TGrad3/raster_time) * raster_time\nlocal ft4 = math.ceil(TGrad4/raster_time) * raster_time\nft2 = ft3 + ft4 - ft1\nlocal se_shift = ft2 + ft3 - ft1 - ft4 - TEcontribAfter - TEcontribBefore\nlocal grad_corr = (se_shift / (2*raster_time)) * raster_time\nft2 = ft2 - grad_corr\nft3 = ft3 - grad_corr\nft2 = math.ceil(ft2/raster_time) * raster_time\nft3 = math.ceil(ft3/raster_time) * raster_time\nreturn {ft1,ft2,ft3,ft4}",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "b_max": "max_bValue",
+        "deltaDelta": "deltaDelta",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "lambda": "lambda",
+        "max_grad_amp": "max_grad_amp",
+        "rt": "bipolar1.rt",
+        "se_dur": "spinecho1.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "lambda": {
+      "name": "lambda",
+      "script": "return 0.06",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "spinecho1": {
+      "blueprint_id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+      "name": "spinecho1",
+      "type": "sequence_element_definition"
+    },
+    "spinecho1.combine_gradients": {
+      "name": "spinecho1.combine_gradients",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "spinecho1.is_atomic": {
+      "name": "spinecho1.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spinecho1.tstart": {
+      "name": "spinecho1.tstart",
+      "script": "return bip1_tend",
+      "sources": {
+        "bip1_tend": "bipolar1.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "spinecho2": {
+      "blueprint_id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+      "name": "spinecho2",
+      "type": "sequence_element_definition"
+    },
+    "spinecho2.combine_gradients": {
+      "name": "spinecho2.combine_gradients",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "spinecho2.is_atomic": {
+      "name": "spinecho2.is_atomic",
+      "type": "atomic_definition"
+    },
+    "spinecho2.sinc.grad.amp": {
+      "name": "spinecho2.sinc.grad.amp",
+      "script": "return -se1_grad_amp",
+      "sources": {
+        "se1_grad_amp": "spinecho1.sinc.grad.amp"
+      },
+      "type": "parameter_definition"
+    },
+    "spinecho2.tstart": {
+      "name": "spinecho2.tstart",
+      "script": "return bip3_tend",
+      "sources": {
+        "bip3_tend": "bipolar3.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return duration / 2 + (TEcontribAfter - TEcontribBefore) / 2",
+      "sources": {
+        "TEcontribAfter": "TEcontribAfter",
+        "TEcontribBefore": "TEcontribBefore",
+        "duration": "duration"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "71d5bda9-14db-4ba7-be19-0c812a7b5f7d",
+  "name": "Spinecho with bipolar diffusion gradient",
+  "properties": {}
+}

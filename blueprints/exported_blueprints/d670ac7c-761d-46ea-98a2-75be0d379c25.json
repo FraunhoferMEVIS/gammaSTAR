@@ -1,0 +1,855 @@
+{
+  "definitions": {
+    "LoopInfo": {
+      "name": "LoopInfo",
+      "script": "return {max_slice=slice, max_contrast=#echo, max_measurement=meas}",
+      "sources": {
+        "echo": "prot.TE",
+        "meas": "prot.measurements",
+        "slice": "prot.slices"
+      },
+      "type": "parameter_definition"
+    },
+    "PNSPaths": {
+      "name": "PNSPaths",
+      "script": "return {\"root.structure.repetition.line\"}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "TE_prot": {
+      "name": "TE_prot",
+      "par": "prot.TE",
+      "sources": {
+        "is_min_TE": "root.prot.minimal_TE"
+      },
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The echo time (TE) is the time interval between the center (if symmetric) of the RF excitation pulse and the acquisition of the k-space center. Mostly, it determines the strength of the T2(*) weighting. TE must be sufficiently long. If necessary, the repetition time must be increased.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "is_readonly_function": "return is_min_TE == true",
+        "max": 100,
+        "min": 0,
+        "name": "Echo Time",
+        "step": 0.1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_dimensions": "[-1]",
+        "value_type": "float"
+      }
+    },
+    "TR_prot": {
+      "name": "TR_prot",
+      "par": "prot.TR",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The repetition time (TR) is the time interval between corresponding consecutive points on a repeating series of pulses and echoes. Mostly, it determines the strength of the T1 weighting. TR must be sufficiently long.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "max": 10000,
+        "min": 0,
+        "name": "Repetition Time",
+        "step": 1,
+        "unit": "ms",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "acq_size": {
+      "name": "acq_size",
+      "script": "return {mat_size[1], number_spirals, mat_size[3]}",
+      "sources": {
+        "mat_size": "mat_size",
+        "number_spirals": "prot.number_spirals"
+      },
+      "type": "parameter_definition"
+    },
+    "adc_delay_prot": {
+      "name": "adc_delay_prot",
+      "par": "prot.adc_delay",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "ADC starts earlier due to rf<->adc switching and it is needed for correction.",
+        "groups": [
+          [
+            "Correction",
+            ""
+          ]
+        ],
+        "max": 100,
+        "min": 0,
+        "name": "ADC Delay",
+        "step": 10,
+        "unit": "us",
+        "unit_scaling": "1e-6",
+        "value_type": "float"
+      }
+    },
+    "correction_averages_prot": {
+      "name": "correction_averages_prot",
+      "par": "prot.correction_averages",
+      "sources": {
+        "is_corr": "root.prot.is_correction"
+      },
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Number of averages for correction.",
+        "groups": [
+          [
+            "Correction",
+            ""
+          ]
+        ],
+        "is_visible_function": "return is_corr",
+        "max": 128,
+        "min": 1,
+        "name": "Averages",
+        "step": 1,
+        "value_type": "int"
+      }
+    },
+    "correction_slice_distance_prot": {
+      "name": "correction_slice_distance_prot",
+      "par": "prot.correction_slice_distance",
+      "sources": {
+        "is_corr": "root.prot.is_correction"
+      },
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Distance of correction slice from isocenter.",
+        "groups": [
+          [
+            "Correction",
+            ""
+          ]
+        ],
+        "is_visible_function": "return is_corr",
+        "max": 100,
+        "min": 0,
+        "name": "Slice Distance",
+        "step": 1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "default_export": {
+      "blueprint_id": "54ea5fd1-0f57-4248-9508-77f5b861edd2",
+      "name": "default_export",
+      "type": "extending_definition"
+    },
+    "default_helper": {
+      "blueprint_id": "83cef442-e8d2-4218-843e-280ca227259b",
+      "name": "default_helper",
+      "type": "extending_definition"
+    },
+    "default_info": {
+      "blueprint_id": "415679b9-f8fb-4010-95f9-651d1ddac19a",
+      "name": "default_info",
+      "type": "extending_definition"
+    },
+    "default_protocol": {
+      "blueprint_id": "f7f39ac8-0440-4dd2-9702-4d7cc10b854a",
+      "name": "default_protocol",
+      "type": "extending_definition"
+    },
+    "default_system": {
+      "blueprint_id": "bd6d2ae9-7b07-4b88-ad69-9cadc1ea3194",
+      "name": "default_system",
+      "type": "extending_definition"
+    },
+    "default_tests": {
+      "blueprint_id": "39d352df-a9f8-4299-8446-96505f85d269",
+      "name": "default_tests",
+      "type": "extending_definition"
+    },
+    "expo.adc_sample_time": {
+      "name": "expo.adc_sample_time",
+      "script": "return adc_sample_time",
+      "sources": {
+        "adc_sample_time": "structure.repetition.line.slice.kernel.echo.encoding.adc.sample_time"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.adc_samples": {
+      "name": "expo.adc_samples",
+      "script": "return samples",
+      "sources": {
+        "samples": "structure.repetition.line.slice.kernel.echo.encoding.adc.number_of_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.read_amplitude": {
+      "name": "expo.read_amplitude",
+      "script": "return amp",
+      "sources": {
+        "amp": "prot.ro_grad_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.read_slewrate": {
+      "name": "expo.read_slewrate",
+      "script": "return slewrate",
+      "sources": {
+        "slewrate": "prot.ro_grad_slew"
+      },
+      "type": "parameter_definition"
+    },
+    "flip_angle_prot": {
+      "name": "flip_angle_prot",
+      "par": "prot.flip_angle",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The flip angle (FA) is the amount of rotation the net magnetization experiences relative to the main magnetic field. There is an optimal flip angle to maximize the signal for spoiled gradient echo sequences FA = arccos(exp(-TR/T1)) called Ernst angle.",
+        "groups": [
+          [
+            "Contrast",
+            "Excitation"
+          ]
+        ],
+        "max": 360,
+        "min": 0,
+        "name": "Flip Angle Excitation",
+        "step": 1,
+        "unit": "°",
+        "value_type": "int"
+      }
+    },
+    "fov": {
+      "name": "fov",
+      "script": "return {fov, fov, slice_thick}",
+      "sources": {
+        "fov": "prot.fov_inplane",
+        "slice_thick": "prot.thickness_exc_1"
+      },
+      "type": "parameter_definition"
+    },
+    "fov_inplane_prot": {
+      "name": "fov_inplane_prot",
+      "par": "prot.fov_inplane",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The field-of-view determines the size of the image. The nominal resolution is determined by the *Field-of-View* divided by the *Matrix Size*.",
+        "groups": [
+          [
+            "Geometry",
+            "FOV"
+          ]
+        ],
+        "max": 500,
+        "min": 10,
+        "name": "FOV Inplane",
+        "step": 1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "gadgetron_config_prot": {
+      "name": "gadgetron_config_prot",
+      "par": "recon.gadgetron_config",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "groups": [
+          [
+            "Recon"
+          ]
+        ],
+        "name": "Gadgetron Config",
+        "unit": ".xml",
+        "value_type": "string"
+      }
+    },
+    "gadgetron_parameter_map_prot": {
+      "name": "gadgetron_parameter_map_prot",
+      "par": "recon.gadgetron_parameter_map",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "groups": [
+          [
+            "Recon"
+          ]
+        ],
+        "name": "Gadgetron Parameter Map",
+        "unit": ".xml",
+        "value_type": "string"
+      }
+    },
+    "gadgetron_style_sheet_prot": {
+      "name": "gadgetron_style_sheet_prot",
+      "par": "recon.gadgetron_style_sheet",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "groups": [
+          [
+            "Recon"
+          ]
+        ],
+        "name": "Gadgetron Style Sheet",
+        "unit": ".xml",
+        "value_type": "string"
+      }
+    },
+    "info.description": {
+      "name": "info.description",
+      "script": "return [[\n# 2D spiral\n\nMost MR sequences acquire k-space data on a Cartesian grid for simple application of the efficient fast Fourier transformation.\n\nThe **spiral sequence** acquires k-space from k-space center to the edge in a spiral manner. It can be performed as a single shot or with interleaved trajectories. There are several modes for achieving different k-space sampling densities, namely *constant angular velocity*[^Ahn] (simple but time-inefficient) and *constant linear velocity*[^Meyer] (SNR-efficient). This sequence is a non-Cartesian data acquisition scheme for decreased motion sensitivity, which needs *gridding* (i.e., mapping onto a Cartesian grid) as a postprocessing step. \n\n[^Ahn]: Ahn CB, Kim JH, Cho ZH. IEEE Trans Med Imaging 1986;5(1):2-7\n[^Meyer]: Meyer CH, Hu BS, Nishimura DG, Macovski A. Magn Reson Med 1992;28(2):202-13\n]]",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_correction_prot": {
+      "name": "is_correction_prot",
+      "par": "prot.is_correction",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Enable k-space trajectory correction.",
+        "groups": [
+          [
+            "Correction",
+            ""
+          ]
+        ],
+        "name": "Correction",
+        "value_type": "bool"
+      }
+    },
+    "is_right_TE_test": {
+      "name": "is_right_TE_test",
+      "test_parameter_definition": {
+        "name": "is_right_TE",
+        "script": "return is_right_TE",
+        "sources": {
+          "is_right_TE": "structure.repetition.line.slice.kernel.is_right_TE"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "is_right_TR_test": {
+      "name": "is_right_TR_test",
+      "test_parameter_definition": {
+        "name": "is_right_TR",
+        "script": "return is_right_TR",
+        "sources": {
+          "is_right_TR": "structure.is_right_TR"
+        },
+        "type": "parameter_definition"
+      },
+      "type": "test_definition"
+    },
+    "mat_size": {
+      "name": "mat_size",
+      "script": "return {mat_size, mat_size, slices}",
+      "sources": {
+        "mat_size": "prot.mat_size_inplane",
+        "slices": "prot.slices"
+      },
+      "type": "parameter_definition"
+    },
+    "mat_size_inplane_prot": {
+      "name": "mat_size_inplane_prot",
+      "par": "prot.mat_size_inplane",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The matrix size determines the size of the final image along the according direction.",
+        "groups": [
+          [
+            "Geometry",
+            "Resolution"
+          ]
+        ],
+        "is_readonly_function": "return true",
+        "max": 1024,
+        "min": 2,
+        "name": "Matrix Size Inplane",
+        "step": 2,
+        "value_type": "int"
+      }
+    },
+    "measurements_prot": {
+      "name": "measurements_prot",
+      "par": "prot.measurements",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Number of measurements to increase signal-to-noise ratio, for instance.",
+        "groups": [
+          [
+            "Special"
+          ]
+        ],
+        "max": 128,
+        "min": 1,
+        "name": "Measurements",
+        "step": 1,
+        "value_type": "int"
+      }
+    },
+    "minimal_TE_prot": {
+      "name": "minimal_TE_prot",
+      "par": "prot.minimal_TE",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Set to minimal echo times.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "name": "Minmal TE(s)",
+        "value_type": "bool"
+      }
+    },
+    "number_TE_prot": {
+      "name": "number_TE_prot",
+      "par": "prot.number_TE",
+      "sources": {
+        "is_min_TE": "root.prot.minimal_TE"
+      },
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The number of echo times.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "is_visible_function": "return (is_min_TE == true) and true or false",
+        "max": 10,
+        "min": 1,
+        "name": "Number of TE",
+        "step": 1,
+        "value_type": "int"
+      }
+    },
+    "number_spirals_prot": {
+      "name": "number_spirals_prot",
+      "par": "prot.number_spirals",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Number of spiral arms.",
+        "groups": [
+          [
+            "Special"
+          ]
+        ],
+        "max": 1000,
+        "min": 1,
+        "name": "Number of Spirals",
+        "step": 1,
+        "value_type": "int"
+      }
+    },
+    "offcenter_exc_1_prot": {
+      "name": "offcenter_exc_1_prot",
+      "par": "prot.offcenter_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The shifting of the center of the image volume from the center of the magnetic field for positioning of the measured area.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 10000,
+        "min": -10000,
+        "name": "Offcenter",
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_dimensions": "[3]",
+        "value_type": "float"
+      }
+    },
+    "orientation_exc_1_prot": {
+      "name": "orientation_exc_1_prot",
+      "par": "prot.orientation_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Orientations determine the directions of the read/phase/slice directions.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 1,
+        "min": -1,
+        "name": "Orientation",
+        "value_dimensions": "[3,3]",
+        "value_type": "float"
+      }
+    },
+    "prot.TE": {
+      "name": "prot.TE",
+      "script": "if is_min_TE == true then\n  local TE = {}\n  for cTE=1,#kernel_info.minTE do\n    table.insert(TE, kernel_info.minTE[cTE])\n  end\n  return TE\nelse\n  return {3e-3}\nend",
+      "sources": {
+        "is_min_TE": "minimal_TE",
+        "kernel_info": "structure.repetition.line.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "prot.TR": {
+      "name": "prot.TR",
+      "script": "return 100e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.adc_delay": {
+      "name": "prot.adc_delay",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.correction_averages": {
+      "name": "prot.correction_averages",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.correction_slice_distance": {
+      "name": "prot.correction_slice_distance",
+      "script": "return 0.04",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.flip_angle": {
+      "name": "prot.flip_angle",
+      "script": "return 15",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.fov_inplane": {
+      "name": "prot.fov_inplane",
+      "script": "return 256e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.is_correction": {
+      "name": "prot.is_correction",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.mat_size_inplane": {
+      "name": "prot.mat_size_inplane",
+      "script": "return math.ceil(matrix_eff/2)*2",
+      "sources": {
+        "matrix_eff": "structure.repetition.line.slice.kernel.echo.encoding.spiral.matrix_eff"
+      },
+      "type": "parameter_definition"
+    },
+    "prot.measurements": {
+      "name": "prot.measurements",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.minimal_TE": {
+      "name": "prot.minimal_TE",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.number_TE": {
+      "name": "prot.number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.number_spirals": {
+      "name": "prot.number_spirals",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.offcenter_exc_1": {
+      "name": "prot.offcenter_exc_1",
+      "script": "return {0,0,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.orientation_exc_1": {
+      "name": "prot.orientation_exc_1",
+      "script": "return {{1,0,0},{0,1,0},{0,0,1}}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.readout_duration": {
+      "name": "prot.readout_duration",
+      "script": "return 20e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ro_grad_amp": {
+      "name": "prot.ro_grad_amp",
+      "script": "return 15e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ro_grad_slew": {
+      "name": "prot.ro_grad_slew",
+      "script": "return 150",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_distance_factor": {
+      "name": "prot.slice_distance_factor",
+      "script": "return 0.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_reorder_scheme": {
+      "name": "prot.slice_reorder_scheme",
+      "script": "return 'Interleaved'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slices": {
+      "name": "prot.slices",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.thickness_exc_1": {
+      "name": "prot.thickness_exc_1",
+      "script": "return 5e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ui_sorting": {
+      "name": "prot.ui_sorting",
+      "script": "return {\n  {\"Contrast\", \n    {{\"Timing\"}, {\"Excitation\"}}\n  }, {\"Geometry\", \n    {{\"FOV\"}, {\"Resolution\"}, {\"Slices\"}, {\"Positioning\"}}\n  }}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "readout_duration_prot": {
+      "name": "readout_duration_prot",
+      "par": "prot.readout_duration",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The readout duration determines the length of one ADC event. This parameter determines the receiver bandwidth and is a trade-off between high signal-to-noise ratio and short echo times.",
+        "groups": [
+          [
+            "Contrast",
+            "Timing"
+          ]
+        ],
+        "max": 50000,
+        "min": 1000,
+        "name": "Readout Duration",
+        "step": 10,
+        "unit": "us",
+        "unit_scaling": "1e-6",
+        "value_type": "float"
+      }
+    },
+    "recon": {
+      "blueprint_id": "Reconstruction",
+      "name": "recon",
+      "type": "sequence_element_definition"
+    },
+    "recon.gadgetron_config": {
+      "name": "recon.gadgetron_config",
+      "script": "return \"Generic_Cartesian_Grappa\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "recon.gadgetron_parameter_map": {
+      "name": "recon.gadgetron_parameter_map",
+      "script": "return \"IsmrmrdParameterMap_Siemens\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "recon.gadgetron_style_sheet": {
+      "name": "recon.gadgetron_style_sheet",
+      "script": "return \"IsmrmrdParameterMap_Siemens\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ro_grad_amp_prot": {
+      "name": "ro_grad_amp_prot",
+      "par": "prot.ro_grad_amp",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Maximum readout gradient amplitude.",
+        "groups": [
+          [
+            "Special"
+          ]
+        ],
+        "max": 100,
+        "min": 0,
+        "name": "Gradient Amplitude",
+        "step": 0.01,
+        "unit": "mT/m",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "ro_grad_slew_prot": {
+      "name": "ro_grad_slew_prot",
+      "par": "prot.ro_grad_slew",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "Maximum readout gradient slew rate.",
+        "groups": [
+          [
+            "Special"
+          ]
+        ],
+        "max": 1000,
+        "min": 1,
+        "name": "Gradient Slew Rate",
+        "step": 1,
+        "unit": "T/m/s",
+        "value_type": "int"
+      }
+    },
+    "slice_distance_factor_prot": {
+      "name": "slice_distance_factor_prot",
+      "par": "prot.slice_distance_factor",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The slice distance factor determines the distance between two neighboring slices.",
+        "groups": [
+          [
+            "Geometry",
+            "Slices"
+          ]
+        ],
+        "max": 800,
+        "min": 0,
+        "name": "Slice Distance Factor",
+        "step": 5,
+        "unit": "%",
+        "unit_scaling": "1e-2",
+        "value_type": "float"
+      }
+    },
+    "slice_reorder_scheme_prot": {
+      "name": "slice_reorder_scheme_prot",
+      "par": "prot.slice_reorder_scheme",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The slice reorder scheme determines the order in which the slices are acquired.",
+        "groups": [
+          [
+            "Geometry",
+            "Slices"
+          ]
+        ],
+        "name": "Slice Reorder Scheme",
+        "options": [
+          {
+            "label": "Ascending",
+            "value": "Ascending"
+          },
+          {
+            "label": "Descending",
+            "value": "Descending"
+          },
+          {
+            "label": "Interleaved",
+            "value": "Interleaved"
+          }
+        ],
+        "value_type": "drop_down"
+      }
+    },
+    "slices_prot": {
+      "name": "slices_prot",
+      "par": "prot.slices",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The number of slices times the slice thickness determines the field-of-view along the slice direction.",
+        "groups": [
+          [
+            "Geometry",
+            "Slices"
+          ]
+        ],
+        "max": 64,
+        "min": 1,
+        "name": "Number of Slices",
+        "step": 1,
+        "unit": "",
+        "value_type": "int"
+      }
+    },
+    "structure": {
+      "blueprint_id": "1da2b19d-b6ba-4ca8-be98-b1c30cb8b728",
+      "name": "structure",
+      "type": "sequence_element_definition"
+    },
+    "structure.tstart": {
+      "name": "structure.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "thickness_exc_1_prot": {
+      "name": "thickness_exc_1_prot",
+      "par": "prot.thickness_exc_1",
+      "sources": {},
+      "type": "protocol_definition",
+      "ui_properties": {
+        "description": "The slice thickness determines the nominal resolution of the final image along the slice direction.",
+        "groups": [
+          [
+            "Geometry",
+            "Positioning"
+          ]
+        ],
+        "max": 20,
+        "min": 0.5,
+        "name": "Thickness",
+        "step": 0.1,
+        "unit": "mm",
+        "unit_scaling": "1e-3",
+        "value_type": "float"
+      }
+    },
+    "tstart": {
+      "name": "tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "d670ac7c-761d-46ea-98a2-75be0d379c25",
+  "name": "2D spiral sequence",
+  "properties": {
+    "tags": [
+      "sequence"
+    ]
+  }
+}

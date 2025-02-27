@@ -1,0 +1,178 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_times.duration",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "gradient_times": {
+      "name": "gradient_times",
+      "script": "local raster_time = grad_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal max_grad_amp = grad_set.max_grad_amp\nlocal max_moment = math.max(math.abs(phase_moment), math.abs(slice_moment), math.abs(read_moment))\nlocal rt = math.sqrt(max_moment/max_grad_slew)\nrastered_ramp = math.ceil(rt/raster_time) * raster_time\namp = max_moment / rastered_ramp\nrastered_ft = 0\nif (amp > max_grad_amp) then\n  rt = max_grad_amp / max_grad_slew\n  rastered_ramp = math.ceil(rt/raster_time) * raster_time\n  local flat_time = (max_moment - rastered_ramp * max_grad_amp) / max_grad_amp\n  rastered_ft = math.ceil(flat_time/raster_time) * raster_time\nend\nreturn {rt=rastered_ramp, ft=rastered_ft, duration=2*rastered_ramp+rastered_ft}",
+      "sources": {
+        "grad_set": "gradient_settings",
+        "phase_moment": "phase_m0",
+        "read_moment": "read_m0",
+        "slice_moment": "slice_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "phase": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "phase",
+      "type": "sequence_element_definition"
+    },
+    "phase.direction": {
+      "name": "phase.direction",
+      "script": "return phase_dir",
+      "sources": {
+        "phase_dir": "orientation_info_phase_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.ft": {
+      "name": "phase.ft",
+      "script": "return grad_times.ft",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.m0": {
+      "name": "phase.m0",
+      "script": "return phase_m0",
+      "sources": {
+        "phase_m0": "phase_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.rt": {
+      "name": "phase.rt",
+      "script": "return grad_times.rt",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "phase.tstart": {
+      "name": "phase.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_m0": {
+      "name": "phase_m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.direction": {
+      "name": "read.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read.ft": {
+      "name": "read.ft",
+      "script": "return grad_times.ft",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "read.m0": {
+      "name": "read.m0",
+      "script": "return read_m0",
+      "sources": {
+        "read_m0": "read_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "read.rt": {
+      "name": "read.rt",
+      "script": "return grad_times.rt",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tstart": {
+      "name": "read.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_m0": {
+      "name": "read_m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "slice",
+      "type": "sequence_element_definition"
+    },
+    "slice.direction": {
+      "name": "slice.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "slice.ft": {
+      "name": "slice.ft",
+      "script": "return grad_times.ft",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "slice.m0": {
+      "name": "slice.m0",
+      "script": "return slice_m0",
+      "sources": {
+        "slice_m0": "slice_m0"
+      },
+      "type": "parameter_definition"
+    },
+    "slice.rt": {
+      "name": "slice.rt",
+      "script": "return grad_times.rt",
+      "sources": {
+        "grad_times": "gradient_times"
+      },
+      "type": "parameter_definition"
+    },
+    "slice.tstart": {
+      "name": "slice.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_m0": {
+      "name": "slice_m0",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f2e4f057-bbee-449c-9005-35ea9fe5a9f3",
+  "name": "Gradient moment on all axes in minimal time",
+  "properties": {}
+}

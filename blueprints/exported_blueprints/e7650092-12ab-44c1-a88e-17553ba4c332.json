@@ -1,0 +1,54 @@
+{
+  "definitions": {
+    "amp": {
+      "name": "amp",
+      "script": "return sign * trap_description.amp",
+      "sources": {
+        "sign": "sign",
+        "trap_description": "trap_description"
+      },
+      "type": "parameter_definition"
+    },
+    "rdt": {
+      "name": "rdt",
+      "script": "return trap_description.rdt",
+      "sources": {
+        "trap_description": "trap_description"
+      },
+      "type": "parameter_definition"
+    },
+    "rut": {
+      "name": "rut",
+      "script": "return trap_description.rut",
+      "sources": {
+        "trap_description": "trap_description"
+      },
+      "type": "parameter_definition"
+    },
+    "sign": {
+      "name": "sign",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "trap_description": {
+      "name": "trap_description",
+      "script": "local amp = 1e-3 * math.sqrt(b/b_ref)\nreturn {rut=rastered_ramp, ft=rastered_ft, rdt=rastered_ramp, amp=amp}",
+      "sources": {
+        "b": "bValue",
+        "b_ref": "bValue_ref",
+        "rastered_ft": "ft",
+        "rastered_ramp": "rt"
+      },
+      "type": "parameter_definition"
+    },
+    "trap_extends": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "trap_extends",
+      "type": "extending_definition"
+    }
+  },
+  "id": "e7650092-12ab-44c1-a88e-17553ba4c332",
+  "name": "Gradient for diffusion",
+  "properties": {}
+}

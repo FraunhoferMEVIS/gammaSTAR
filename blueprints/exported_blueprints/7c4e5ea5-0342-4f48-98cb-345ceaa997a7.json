@@ -1,0 +1,183 @@
+{
+  "definitions": {
+    "combine_gradients": {
+      "name": "combine_gradients",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "crusher1": {
+      "blueprint_id": "a617f7f1-771e-42dc-ad41-3f3a41b24490",
+      "name": "crusher1",
+      "type": "sequence_element_definition"
+    },
+    "crusher1.spoiling_moment": {
+      "name": "crusher1.spoiling_moment",
+      "script": "return gradient_sign * spoiling_moment",
+      "sources": {
+        "gradient_sign": "gradient_sign",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "crusher1.tstart": {
+      "name": "crusher1.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "crusher2": {
+      "blueprint_id": "a617f7f1-771e-42dc-ad41-3f3a41b24490",
+      "name": "crusher2",
+      "type": "sequence_element_definition"
+    },
+    "crusher2.spoiling_moment": {
+      "name": "crusher2.spoiling_moment",
+      "script": "return gradient_sign * spoiling_moment",
+      "sources": {
+        "gradient_sign": "gradient_sign",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "crusher2.tstart": {
+      "name": "crusher2.tstart",
+      "script": "if combine_gradients == true then\n  return sinc_tstart + grad_tftend  \nelse\n  return sinc_tstart + grad_tend\nend",
+      "sources": {
+        "combine_gradients": "combine_gradients",
+        "grad_tend": "sinc.grad.tend",
+        "grad_tftend": "sinc.grad.tftend",
+        "sinc_tstart": "sinc.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return crusher2_tstart + crusher2_dur",
+      "sources": {
+        "crusher2_dur": "crusher2.duration",
+        "crusher2_tstart": "crusher2.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "flip_angle_se": {
+      "name": "flip_angle_se",
+      "script": "return 180",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "gradient_sign": {
+      "name": "gradient_sign",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc": {
+      "blueprint_id": "1704a926-1ea6-4061-92d8-e3f2be4b71fd",
+      "name": "sinc",
+      "type": "sequence_element_definition"
+    },
+    "sinc.grad.amp": {
+      "name": "sinc.grad.amp",
+      "script": "return gradient_sign * rf_slice_amp",
+      "sources": {
+        "gradient_sign": "gradient_sign",
+        "rf_slice_amp": "sinc.rf.slice_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc.rf.flip_angle": {
+      "name": "sinc.rf.flip_angle",
+      "script": "return rf_angle",
+      "sources": {
+        "rf_angle": "flip_angle_se"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc.rf.rf.type": {
+      "name": "sinc.rf.rf.type",
+      "script": "return 'Spinecho'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc.rf.t_bw_product": {
+      "name": "sinc.rf.t_bw_product",
+      "script": "return 5.2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sinc.rf_duration": {
+      "name": "sinc.rf_duration",
+      "script": "if angle <= 120 then\n  return 2.56e-3\nelse\n  return 3.2e-3\nend",
+      "sources": {
+        "angle": "sinc.rf.flip_angle"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc.thickness": {
+      "name": "sinc.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "sinc.tstart": {
+      "name": "sinc.tstart",
+      "script": "if combine_gradients == true then\n  return crusher1_dur - grad_rut\nelse\n  return crusher1_dur\nend",
+      "sources": {
+        "combine_gradients": "combine_gradients",
+        "crusher1_dur": "crusher1.duration",
+        "grad_rut": "sinc.grad.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return sinc_tstart + grad_tcenter",
+      "sources": {
+        "grad_tcenter": "sinc.grad.tcenter",
+        "sinc_tstart": "sinc.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "return 1.1 * slice_fov",
+      "sources": {
+        "slice_fov": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "7c4e5ea5-0342-4f48-98cb-345ceaa997a7",
+  "name": "Spinecho",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

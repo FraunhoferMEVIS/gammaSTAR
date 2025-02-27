@@ -1,0 +1,89 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if watsat_enabled then\n  return watsat_dur\nelseif fatsat_enabled then\n  return fatsat_dur\nelse\n  return 0\nend",
+      "sources": {
+        "fatsat_dur": "fatsat.duration",
+        "fatsat_enabled": "fatsat.enabled",
+        "watsat_dur": "watsat.duration",
+        "watsat_enabled": "watsat.enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return (fatsat_enabled or watsat_enabled) and true or false",
+      "sources": {
+        "fatsat_enabled": "fatsat.enabled",
+        "watsat_enabled": "watsat.enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "fatsat": {
+      "blueprint_id": "78e28907-94e1-4455-9cf3-ede60831b263",
+      "name": "fatsat",
+      "type": "sequence_element_definition"
+    },
+    "fatsat.spoiling_moment": {
+      "name": "fatsat.spoiling_moment",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "fatsat.tstart": {
+      "name": "fatsat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "saturation_mode": {
+      "name": "saturation_mode",
+      "script": "-- None, fat_saturation, water_saturation, 4x_water_saturation\nreturn 'None'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "watsat": {
+      "blueprint_id": "033ac042-a7bc-4bf4-b5a5-be8385941094",
+      "name": "watsat",
+      "type": "sequence_element_definition"
+    },
+    "watsat.spoiling_moment": {
+      "name": "watsat.spoiling_moment",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "watsat.tstart": {
+      "name": "watsat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "af23ab59-ef56-498a-8af0-bd73d29e5caf",
+  "name": "Fat/Water saturation",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

@@ -1,0 +1,10 @@
+{
+  "definitions": {},
+  "id": "Protocol",
+  "name": "Protocol",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

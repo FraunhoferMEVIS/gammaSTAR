@@ -1,0 +1,28 @@
+{
+  "definitions": {
+    "info": {
+      "blueprint_id": "Info",
+      "name": "info",
+      "type": "sequence_element_definition"
+    },
+    "info.is_epi": {
+      "name": "info.is_epi",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "info.seq_dim": {
+      "name": "info.seq_dim",
+      "script": "return 2",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "415679b9-f8fb-4010-95f9-651d1ddac19a",
+  "name": "Default info",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

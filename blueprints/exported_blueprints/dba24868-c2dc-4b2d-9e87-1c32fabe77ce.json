@@ -1,0 +1,226 @@
+{
+  "definitions": {
+    "adc_delay": {
+      "name": "adc_delay",
+      "script": "if read_type == \"Trapez\" or read_type == \"TrapezRamp\" then\n  return read_trapez_shape.adc_delay\nelseif read_type == \"Sine\" then\n  return read_sine_shape.adc_delay\nend",
+      "sources": {
+        "read_sine_shape": "read_sine_shape",
+        "read_trapez_shape": "read_trapez_shape",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "amp": {
+      "name": "amp",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\") then\n  return read_trapez_amp\nelseif read_type == \"Sine\" then\n  return read_sine_shape.amp\nend",
+      "sources": {
+        "read_sine_shape": "read_sine_shape",
+        "read_trapez_amp": "read_trapez.amp",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\")then\n  return read_trapez_tend\nelseif read_type == \"Sine\" then\n  return read_sine_tend\nend",
+      "sources": {
+        "read_sine_tend": "read_sine.tend",
+        "read_trapez_tend": "read_trapez.tend",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "ft": {
+      "name": "ft",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\") then\n  return read_trapez_ft\nelseif read_type == \"Sine\" then\n  return 0\nend",
+      "sources": {
+        "read_trapez_ft": "read_trapez.ft",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "m0_rd_abs": {
+      "name": "m0_rd_abs",
+      "script": "if read_type == \"Trapez\" then\n  return 0.5 * read_trapez_rdt * read_trapez_shape.amp\nelseif read_type == \"TrapezRamp\" then\n  local adc_delay_end = read_trapez_tend - adc_delay - adc_dur\n  return 0.5 * adc_delay_end * read_trapez_shape.amp * adc_delay_end/read_trapez_rdt\nelseif read_type == \"Sine\" then\n  return sine_shape.m0_rd\nend",
+      "sources": {
+        "adc_delay": "adc_delay",
+        "adc_dur": "adc_duration",
+        "read_trapez_rdt": "read_trapez.rt",
+        "read_trapez_shape": "read_trapez_shape",
+        "read_trapez_tend": "read_trapez.tend",
+        "read_type": "read_type",
+        "sine_shape": "read_sine_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "m0_ru_abs": {
+      "name": "m0_ru_abs",
+      "script": "if read_type == \"Trapez\" then\n  return 0.5 * read_trapez_rut * read_trapez_shape.amp\nelseif read_type == \"TrapezRamp\" then\n  return 0.5 * adc_delay * read_trapez_shape.amp * adc_delay/read_trapez_rut\nelseif read_type == \"Sine\" then\n  return sine_shape.m0_ru\nend",
+      "sources": {
+        "adc_delay": "adc_delay",
+        "read_trapez_rut": "read_trapez.rt",
+        "read_trapez_shape": "read_trapez_shape",
+        "read_type": "read_type",
+        "sine_shape": "read_sine_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rdt": {
+      "name": "rdt",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\") then\n  return read_trapez_rdt\nelseif read_type == \"Sine\" then\n  return read_sine_dur/2\nend",
+      "sources": {
+        "read_sine_dur": "read_sine.duration",
+        "read_trapez_rdt": "read_trapez.rt",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "read_sine": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "read_sine",
+      "type": "sequence_element_definition"
+    },
+    "read_sine.direction": {
+      "name": "read_sine.direction",
+      "script": "if is_reverse == 1 then\n  return {-read_dir[1],-read_dir[2],-read_dir[3]}\nelse\n  return read_dir\nend\n",
+      "sources": {
+        "is_reverse": "is_reverse",
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read_sine.enabled": {
+      "name": "read_sine.enabled",
+      "script": "if (read_type == \"Sine\") then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read_sine.samples": {
+      "name": "read_sine.samples",
+      "script": "return sine_shape.samples",
+      "sources": {
+        "sine_shape": "read_sine_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_sine.tstart": {
+      "name": "read_sine.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_sine_shape": {
+      "name": "read_sine_shape",
+      "script": "local m0 = helper_functions.k_to_m0(dk)\nlocal grad_raster_time = grad_set.raster_time\nlocal adc_raster_time = adc_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\n\nlocal t, v = {}, {}\nlocal samples = {t=t, v=v}\nlocal m0_ru, m0_rd, amp = 0, 0, 0\nlocal grad_samples = math.ceil(adc_dur/0.85/grad_raster_time)\nlocal grad_dur = grad_samples * grad_raster_time\nlocal adc_delay = math.floor((grad_dur - adc_dur)/2/adc_raster_time) * adc_raster_time\n\nif read_type == 'Sine' then\n  amp = math.pi * m0 / grad_dur / (math.cos(math.pi/grad_dur*adc_delay) - math.cos(math.pi/grad_dur*(adc_delay+adc_dur)))\n  table.insert(t, 0)\n  table.insert(v, 0)\n  for sample = 1, grad_samples do\n    table.insert(t, sample*grad_raster_time)\n    table.insert(v, amp*math.sin(math.pi/grad_dur*t[#t]))\n  end\n  local calc_m0 = helper_functions.calc_grad_moment(samples, {adc_delay, adc_delay+adc_dur})\n  samples.v = LuaHelper:scale_values_in_multi_array(v, m0/calc_m0)\n  m0_ru = helper_functions.calc_grad_moment(samples, {0, adc_delay})\n  m0_rd = helper_functions.calc_grad_moment(samples, {adc_delay+adc_dur, grad_dur})\n  return {samples=samples,amp=amp,m0_ru=m0_ru,m0_rd=m0_rd, adc_delay=adc_delay}\nend\nreturn {samples=samples,amp=amp,m0_ru=m0_ru,m0_rd=m0_rd,adc_delay=adc_delay}",
+      "sources": {
+        "adc_dur": "adc_duration",
+        "adc_set": "adc_settings",
+        "dk": "read_info_dk",
+        "grad_set": "gradient_settings_reduced_performance",
+        "helper_functions": "helper_functions",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read_trapez",
+      "type": "sequence_element_definition"
+    },
+    "read_trapez.amp": {
+      "name": "read_trapez.amp",
+      "script": "return (0.5 - is_reverse) * 2 * read_shape.amp",
+      "sources": {
+        "is_reverse": "is_reverse",
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.direction": {
+      "name": "read_trapez.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.enabled": {
+      "name": "read_trapez.enabled",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\") then\n  return true\nelse\n  return false\nend",
+      "sources": {
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.ft": {
+      "name": "read_trapez.ft",
+      "script": "return read_shape.ft",
+      "sources": {
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.rt": {
+      "name": "read_trapez.rt",
+      "script": "return read_shape.rt",
+      "sources": {
+        "read_shape": "read_trapez_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "read_trapez.tstart": {
+      "name": "read_trapez.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_trapez_shape": {
+      "name": "read_trapez_shape",
+      "script": "local m0 = helper_functions.k_to_m0(dk)\nlocal grad_raster_time = grad_set.raster_time\nlocal adc_raster_time = adc_set.raster_time\nlocal max_grad_slew = grad_set.max_grad_slew\nlocal rastered_ft = math.ceil(adc_dur/grad_raster_time) * grad_raster_time\nlocal amp = m0 / rastered_ft\nlocal rt = amp / max_grad_slew\nlocal rastered_ramp = math.ceil(rt/grad_raster_time) * grad_raster_time\nif read_type == 'Trapez' then\n  local adc_start = math.floor(math.abs(rastered_ft - adc_dur) / 2 / adc_raster_time) * adc_raster_time\n  return {amp=amp, rt=rastered_ramp, ft=rastered_ft, adc_delay=rastered_ramp+adc_start}\nelseif read_type == 'TrapezRamp' then\n  local grad_time = 2 * rastered_ramp + rastered_ft\n  local adc_time_on_ramp_left, adc_time_on_ramp_right, adc_ramp_time = 0, 0, 0\n  while adc_dur / grad_time < 0.85 and rastered_ft > adc_ramp_time do\n    rastered_ft = rastered_ft - grad_raster_time\n    adc_time_on_ramp_left = math.ceil(math.abs(rastered_ft - adc_dur) / 2 / adc_raster_time) * adc_raster_time\n    adc_time_on_ramp_right = adc_dur - (rastered_ft + adc_time_on_ramp_left)\n    adc_ramp_time = adc_time_on_ramp_left + adc_time_on_ramp_right\n    local help_sq = adc_time_on_ramp_left*adc_time_on_ramp_left + adc_time_on_ramp_right*adc_time_on_ramp_right\n    rt = (m0 + 0.5*max_grad_slew*help_sq) / (max_grad_slew*(rastered_ft+adc_ramp_time))\n    rastered_ramp = math.ceil(rt/grad_raster_time) * grad_raster_time\n    amp = m0 / (rastered_ft + adc_ramp_time - 0.5/rastered_ramp*help_sq)\n    grad_time = rastered_ft + 2*rastered_ramp\n  end\n  return {amp=amp, rt=rastered_ramp, ft=rastered_ft, adc_delay=rastered_ramp-adc_time_on_ramp_left}\nend\nreturn {amp=0, rt=0, ft=0, adc_delay=0}",
+      "sources": {
+        "adc_dur": "adc_duration",
+        "adc_set": "adc_settings",
+        "dk": "read_info_dk",
+        "grad_set": "gradient_settings_reduced_performance",
+        "helper_functions": "helper_functions",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    },
+    "read_type": {
+      "name": "read_type",
+      "script": "return 'Trapez'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rut": {
+      "name": "rut",
+      "script": "if (read_type == \"Trapez\" or read_type == \"TrapezRamp\") then\n  return read_trapez_rut\nelseif read_type == \"Sine\" then\n  return read_sine_dur/2\nend",
+      "sources": {
+        "read_sine_dur": "read_sine.duration",
+        "read_trapez_rut": "read_trapez.rt",
+        "read_type": "read_type"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "dba24868-c2dc-4b2d-9e87-1c32fabe77ce",
+  "name": "Gradient for EPI single readout",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

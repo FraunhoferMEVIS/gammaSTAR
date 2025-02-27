@@ -1,0 +1,128 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return pulse_length * q2tips_dur",
+      "sources": {
+        "pulse_length": "pulse.length",
+        "q2tips_dur": "pulse.q2tip.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "num_pulses": {
+      "name": "num_pulses",
+      "script": "return 4",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "pulse": {
+      "blueprint_id": "Loop",
+      "name": "pulse",
+      "type": "sequence_element_definition"
+    },
+    "pulse.length": {
+      "name": "pulse.length",
+      "script": "return num_pulses",
+      "sources": {
+        "num_pulses": "num_pulses"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip": {
+      "blueprint_id": "936d71cf-9557-4492-aaf8-ffe9e3d5ef9b",
+      "name": "pulse.q2tip",
+      "type": "sequence_element_definition"
+    },
+    "pulse.q2tip.grad.amp": {
+      "name": "pulse.q2tip.grad.amp",
+      "script": "return (-1)^(pulse_counter) * rf_slice_amp",
+      "sources": {
+        "pulse_counter": "pulse.counter",
+        "rf_slice_amp": "pulse.q2tip.rf.slice_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.rf.spoilphase": {
+      "name": "pulse.q2tip.rf.spoilphase",
+      "script": "Phase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "i": "pulse.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.spoil.phase_m0": {
+      "name": "pulse.q2tip.spoil.phase_m0",
+      "script": "local factor = math.ceil((counter+1)/3)\nfactor = ((factor-1) % 3) + 1\nif (counter%3 == 0) then\n  return factor * spoiling_moment\nelse\n  return 0\nend",
+      "sources": {
+        "counter": "pulse.counter",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.spoil.read_m0": {
+      "name": "pulse.q2tip.spoil.read_m0",
+      "script": "local factor = math.ceil((counter+1)/3)\nfactor = ((factor-1) % 3) + 1\nif (counter%3 == 1) then\n  return factor * spoiling_moment\nelse\n  return 0\nend",
+      "sources": {
+        "counter": "pulse.counter",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.spoil.slice_m0": {
+      "name": "pulse.q2tip.spoil.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.spoil_durations": {
+      "name": "pulse.q2tip.spoil_durations",
+      "script": "local max_factor = math.min(3,math.ceil(length/3))\nreturn helper_functions.calc_gradient_shape_from_moment(max_factor*spoiling_moment, grad_set)",
+      "sources": {
+        "grad_set": "pulse.q2tip.spoil.gradient_settings",
+        "helper_functions": "helper_functions",
+        "length": "pulse.length",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.q2tip.tstart": {
+      "name": "pulse.q2tip.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "pulse.tstart": {
+      "name": "pulse.tstart",
+      "script": "return pulse_counter * pulse_dur",
+      "sources": {
+        "pulse_counter": "pulse.counter",
+        "pulse_dur": "pulse.q2tip.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "a04f9a40-7e2a-4d77-8603-8f3b68575a62",
+  "name": "Q2TIPS",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

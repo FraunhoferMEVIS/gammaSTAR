@@ -1,0 +1,82 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_tstart + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_tstart": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding": {
+      "blueprint_id": "748eeac4-d1c7-4997-a396-594b4b5e71ea",
+      "name": "encoding",
+      "type": "sequence_element_definition"
+    },
+    "encoding.t_since_excitation": {
+      "name": "encoding.t_since_excitation",
+      "script": "return t_after_center",
+      "sources": {
+        "t_after_center": "ssel.t_after_center"
+      },
+      "type": "parameter_definition"
+    },
+    "encoding.tstart": {
+      "name": "encoding.tstart",
+      "script": "return ssel_dur",
+      "sources": {
+        "ssel_dur": "ssel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "local ret_table = {minTE=minTE, acq_slices=acq_slices}\nfor k,v in pairs(readout_info) do\n  ret_table[k] = v\nend\nreturn ret_table",
+      "sources": {
+        "acq_slices": "ssel.slice_info_acq_lines",
+        "minTE": "encoding.minimalTE",
+        "readout_info": "encoding.echo.partition.line.single_readout.readout_info"
+      },
+      "type": "parameter_definition"
+    },
+    "spoil": {
+      "blueprint_id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return enc_tstart + enc_dur",
+      "sources": {
+        "enc_dur": "encoding.duration",
+        "enc_tstart": "encoding.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel": {
+      "blueprint_id": "420b5e15-2362-4c7c-a9a5-89cbbd784c1c",
+      "name": "ssel",
+      "type": "sequence_element_definition"
+    },
+    "ssel.is_atomic": {
+      "name": "ssel.is_atomic",
+      "type": "atomic_definition"
+    },
+    "ssel.sinc.rf.spoilphase": {
+      "name": "ssel.sinc.rf.spoilphase",
+      "script": "return math.pi / 2",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ssel.tstart": {
+      "name": "ssel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "8c7c9aec-b2f3-44e9-85fc-ef6ca8d2f5d1",
+  "name": "SE EPI diffusion kernel",
+  "properties": {}
+}

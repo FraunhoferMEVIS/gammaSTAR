@@ -1,0 +1,207 @@
+{
+  "definitions": {
+    "ACQ_FIRST_IN_ENCODE_STEP1": {
+      "name": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "script": "return line_counter == 0",
+      "sources": {
+        "line_counter": "line_counter"
+      },
+      "type": "parameter_definition"
+    },
+    "ACQ_FIRST_IN_ENCODE_STEP1_forwarding": {
+      "forward_as": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "name": "ACQ_FIRST_IN_ENCODE_STEP1_forwarding",
+      "source_to_forward": "ACQ_FIRST_IN_ENCODE_STEP1",
+      "type": "forwarding_definition"
+    },
+    "ACQ_LAST_IN_ENCODE_STEP1": {
+      "name": "ACQ_LAST_IN_ENCODE_STEP1",
+      "script": "return line_counter == (line_length - 1)",
+      "sources": {
+        "line_counter": "line_counter",
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "ACQ_LAST_IN_ENCODE_STEP1_forwarding": {
+      "forward_as": "ACQ_LAST_IN_ENCODE_STEP1",
+      "name": "ACQ_LAST_IN_ENCODE_STEP1_forwarding",
+      "source_to_forward": "ACQ_LAST_IN_ENCODE_STEP1",
+      "type": "forwarding_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return spoil_start + spoil_dur",
+      "sources": {
+        "spoil_dur": "spoil.duration",
+        "spoil_start": "spoil.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "echo": {
+      "blueprint_id": "Loop",
+      "name": "echo",
+      "type": "sequence_element_definition"
+    },
+    "echo.encoding": {
+      "blueprint_id": "a0b8ea87-5eea-487a-95d7-f9af239ec8c9",
+      "name": "echo.encoding",
+      "type": "sequence_element_definition"
+    },
+    "echo.encoding.tstart": {
+      "name": "echo.encoding.tstart",
+      "script": "return TE[echo_counter+1]-TE[1]",
+      "sources": {
+        "TE": "TE",
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.idx_contrast": {
+      "name": "echo.idx_contrast",
+      "script": "return echo_counter",
+      "sources": {
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.length": {
+      "name": "echo.length",
+      "script": "return #TE",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.rot_matrix": {
+      "name": "echo.rot_matrix",
+      "script": "sinphi = math.sin(phi[line_counter+1])\ncosphi = math.cos(phi[line_counter+1])\nreturn {\n{cosphi, -sinphi, 0},\n{sinphi, cosphi, 0},\n{0, 0, 1}}",
+      "sources": {
+        "line_counter": "line_counter",
+        "phi": "rot_angle_phi"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "return ssel_t_before_center + TE[1] - enc_t_before_center",
+      "sources": {
+        "TE": "TE",
+        "enc_t_before_center": "echo.encoding.t_before_center",
+        "ssel_t_before_center": "ssel.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "flex_encoding_encodingLimits_kspace_encoding_step_1": {
+      "name": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "script": "return {0, line_length - 1, 0}",
+      "sources": {
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "flex_encoding_encodingLimits_kspace_encoding_step_1forwarding": {
+      "forward_as": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "name": "flex_encoding_encodingLimits_kspace_encoding_step_1forwarding",
+      "source_to_forward": "flex_encoding_encodingLimits_kspace_encoding_step_1",
+      "type": "forwarding_definition"
+    },
+    "idx_contrast_forwarding": {
+      "forward_as": "echo.idx_contrast",
+      "name": "idx_contrast_forwarding",
+      "source_to_forward": "echo.idx_contrast",
+      "type": "forwarding_definition"
+    },
+    "idx_kspace_encode_step_1_forwarding": {
+      "forward_as": "idx_kspace_encode_step_1",
+      "name": "idx_kspace_encode_step_1_forwarding",
+      "source_to_forward": "line_counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local is_right = true\nif lt(echo_tstart, ssel_dur) then\n  is_right = false\nend\nfor i=1,#TE-1 do\n  if lt(TE[i+1]-TE[i], enc_dur) then\n    is_right = false\n  end\nend \nreturn is_right  ",
+      "sources": {
+        "TE": "TE",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration",
+        "ssel_dur": "ssel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "return {minTE=minTE, acq_lines={total=acq_size[2]}, acq_slices=acq_slices}",
+      "sources": {
+        "acq_size": "acq_size",
+        "acq_slices": "ssel.slice_info_acq_lines",
+        "minTE": "minimalTE"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "local TE_min = ssel_t_after_center + 10e-6 + enc_t_before_center\nlocal TE_inc = enc_dur + 10e-6\nlocal TE_times = {}\nfor cTE=1,number_TE do\n  table.insert(TE_times, TE_min + (cTE-1)*TE_inc)\nend\nreturn TE_times",
+      "sources": {
+        "enc_dur": "echo.encoding.duration",
+        "enc_t_before_center": "echo.encoding.t_before_center",
+        "number_TE": "number_TE",
+        "ssel_t_after_center": "ssel.t_after_center"
+      },
+      "type": "parameter_definition"
+    },
+    "number_TE": {
+      "name": "number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rot_angle_phi": {
+      "name": "rot_angle_phi",
+      "script": "local tab = {}\nfor counter = 0, line_length-1 do\n  tab[counter+1] = counter/line_length * 2 * math.pi\nend\nreturn tab",
+      "sources": {
+        "line_length": "line_length"
+      },
+      "type": "parameter_definition"
+    },
+    "rot_matrix_forwarding": {
+      "forward_as": "echo.rot_matrix",
+      "name": "rot_matrix_forwarding",
+      "source_to_forward": "echo.rot_matrix",
+      "type": "forwarding_definition"
+    },
+    "spoil": {
+      "blueprint_id": "7d18eab4-00c8-4a65-9786-7f9905112849",
+      "name": "spoil",
+      "type": "sequence_element_definition"
+    },
+    "spoil.tstart": {
+      "name": "spoil.tstart",
+      "script": "return echo_tstart + TE[#TE] - TE[1] + enc_dur",
+      "sources": {
+        "TE": "TE",
+        "echo_tstart": "echo.tstart",
+        "enc_dur": "echo.encoding.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "ssel": {
+      "blueprint_id": "420b5e15-2362-4c7c-a9a5-89cbbd784c1c",
+      "name": "ssel",
+      "type": "sequence_element_definition"
+    },
+    "ssel.is_atomic": {
+      "name": "ssel.is_atomic",
+      "type": "atomic_definition"
+    },
+    "ssel.tstart": {
+      "name": "ssel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "87e713e3-04e4-40b6-b8a0-9fd68b50352b",
+  "name": "2D spiral kernel",
+  "properties": {}
+}

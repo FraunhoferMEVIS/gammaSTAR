@@ -1,0 +1,160 @@
+{
+  "definitions": {
+    "prot": {
+      "blueprint_id": "Protocol",
+      "name": "prot",
+      "type": "sequence_element_definition"
+    },
+    "prot.PAT_factor_phase": {
+      "name": "prot.PAT_factor_phase",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.PAT_factor_slice": {
+      "name": "prot.PAT_factor_slice",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.PAT_mode": {
+      "name": "prot.PAT_mode",
+      "script": "return 'None'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.PAT_ref_lines_phase": {
+      "name": "prot.PAT_ref_lines_phase",
+      "script": "return 32",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.PAT_ref_lines_slice": {
+      "name": "prot.PAT_ref_lines_slice",
+      "script": "return 16",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.echo_train_length": {
+      "name": "prot.echo_train_length",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.multiband_factor": {
+      "name": "prot.multiband_factor",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.offcenter_exc_1": {
+      "name": "prot.offcenter_exc_1",
+      "script": "return {0,0,0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.orientation_exc_1": {
+      "name": "prot.orientation_exc_1",
+      "script": "return {{1,0,0},{0,1,0},{0,0,1}}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.partitions": {
+      "name": "prot.partitions",
+      "script": "return nil",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.phase_oversampling": {
+      "name": "prot.phase_oversampling",
+      "script": "return 0.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.phase_partial_fourier": {
+      "name": "prot.phase_partial_fourier",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.point_of_interest": {
+      "name": "prot.point_of_interest",
+      "script": "return \"\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.read_oversampling": {
+      "name": "prot.read_oversampling",
+      "script": "return 1.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.read_partial_fourier": {
+      "name": "prot.read_partial_fourier",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.rot_matrix": {
+      "name": "prot.rot_matrix",
+      "script": "return {{1,0,0},{0,1,0},{0,0,1}}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_distance_factor": {
+      "name": "prot.slice_distance_factor",
+      "script": "return 0.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_oversampling": {
+      "name": "prot.slice_oversampling",
+      "script": "return 0.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_partial_fourier": {
+      "name": "prot.slice_partial_fourier",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slice_reorder_scheme": {
+      "name": "prot.slice_reorder_scheme",
+      "script": "return 'Interleaved'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.slices": {
+      "name": "prot.slices",
+      "script": "return nil",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.thickness_exc_1": {
+      "name": "prot.thickness_exc_1",
+      "script": "return -1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.turbo_factor": {
+      "name": "prot.turbo_factor",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "prot.ui_specification": {
+      "name": "prot.ui_specification",
+      "script": "return '[]'",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "f7f39ac8-0440-4dd2-9702-4d7cc10b854a",
+  "name": "Default protocol",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

@@ -1,0 +1,205 @@
+{
+  "definitions": {
+    "adc": {
+      "blueprint_id": "ADC",
+      "name": "adc",
+      "type": "sequence_element_definition"
+    },
+    "adc.frequency": {
+      "name": "adc.frequency",
+      "script": "return gamma * read_offcenter * read_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "read_amp": "read.amp",
+        "read_offcenter": "read_info_offcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.number_of_samples": {
+      "name": "adc.number_of_samples",
+      "script": "return num_samples",
+      "sources": {
+        "num_samples": "read_info_num_samples"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.phase": {
+      "name": "adc.phase",
+      "script": "Phase = spoilphase\nif reorder_scheme == 'Phase' then\n  Phase = Phase + 2 * math.pi * phase_offcenter * k_cur[\"phase\"]\nelseif reorder_scheme == 'Slice' then\n  Phase = Phase + 2 * math.pi * slice_offcenter * k_cur[\"slice\"]\nelseif reorder_scheme ~= 'No' then\n  Phase = Phase + 2 * math.pi * (phase_offcenter * k_cur[\"phase\"] + slice_offcenter * k_cur[\"slice\"]) + (k_cur[\"slice\"]/kmin[\"slice\"]) * math.pi / acq_size[\"slice\"]\nend\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "acq_size": "phase_info_acq_size",
+        "k_cur": "phase_info_k_cur",
+        "kmin": "phase_info_kmin",
+        "phase_offcenter": "phase_info_offcenter",
+        "reorder_scheme": "phase_info_comb_reorder_scheme",
+        "slice_offcenter": "slice_info_offcenter",
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.sample_time": {
+      "name": "adc.sample_time",
+      "script": "local min_dwell_time = adc_settings.min_dwell_time\nreturn math.floor(readout_dur / num_samples / min_dwell_time) * min_dwell_time",
+      "sources": {
+        "adc_settings": "adc_settings",
+        "num_samples": "adc.number_of_samples",
+        "readout_dur": "readout_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "adc.tstart": {
+      "name": "adc.tstart",
+      "script": "local raster_time = adc_settings.raster_time\nlocal rel_tstart = math.floor((read_ft - adc_dur) / 2 / raster_time) * raster_time\nreturn read_rut + rel_tstart",
+      "sources": {
+        "adc_dur": "adc.duration",
+        "adc_settings": "adc_settings",
+        "read_ft": "read.ft",
+        "read_rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return read_tend",
+      "sources": {
+        "read_tend": "read.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "is_atomic": {
+      "name": "is_atomic",
+      "type": "atomic_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "phase_info": {
+      "blueprint_id": "12d7fb94-fecf-48e7-96e4-448b84fe5c2e",
+      "name": "phase_info",
+      "type": "extending_definition"
+    },
+    "read": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "read",
+      "type": "sequence_element_definition"
+    },
+    "read.direction": {
+      "name": "read.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "read.ft": {
+      "name": "read.ft",
+      "script": "local grad_raster_time = grad_set.raster_time\nreturn math.ceil(adc_dur/grad_raster_time) * grad_raster_time",
+      "sources": {
+        "adc_dur": "adc.duration",
+        "grad_set": "gradient_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "read.m0_ft": {
+      "name": "read.m0_ft",
+      "script": "return read_adc_factor * helper_functions.k_to_m0(dk)",
+      "sources": {
+        "dk": "read_info_dk",
+        "helper_functions": "helper_functions",
+        "read_adc_factor": "read_adc_factor"
+      },
+      "type": "parameter_definition"
+    },
+    "read.tstart": {
+      "name": "read.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "read_adc_factor": {
+      "name": "read_adc_factor",
+      "script": "return read_ft / adc_dur",
+      "sources": {
+        "adc_dur": "adc.duration",
+        "read_ft": "read.ft"
+      },
+      "type": "parameter_definition"
+    },
+    "read_ft_m0_inc_after": {
+      "name": "read_ft_m0_inc_after",
+      "script": "return ((read_tend - read_rdt) - adc_tend) * read_amp",
+      "sources": {
+        "adc_tend": "adc.tend",
+        "read_amp": "read.amp",
+        "read_rdt": "read.rdt",
+        "read_tend": "read.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "read_ft_m0_inc_before": {
+      "name": "read_ft_m0_inc_before",
+      "script": "return (adc_tstart - (read_tstart + read_rut)) * read_amp",
+      "sources": {
+        "adc_tstart": "adc.tstart",
+        "read_amp": "read.amp",
+        "read_rut": "read.rut",
+        "read_tstart": "read.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "read_info": {
+      "blueprint_id": "c3c23c8b-97b1-43b7-a392-c2bc8b57bc14",
+      "name": "read_info",
+      "type": "extending_definition"
+    },
+    "readout_info": {
+      "name": "readout_info",
+      "script": "return {num_lines=num_lines, acq_lines=acq_lines, segs=segs}",
+      "sources": {
+        "acq_lines": "phase_info_acq_lines",
+        "num_lines": "phase_info_num_lines",
+        "segs": "phase_info_reorder_segments"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_te": {
+      "name": "t_after_te",
+      "script": "return duration - t_before_te",
+      "sources": {
+        "duration": "duration",
+        "t_before_te": "t_before_te"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_te": {
+      "name": "t_before_te",
+      "script": "return read_rut + (PF - 0.5)/PF * read_ft",
+      "sources": {
+        "PF": "read_partial_fourier",
+        "read_ft": "read.ft",
+        "read_rut": "read.rut"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "6b149f92-d87a-4e59-b0a6-ec1c6fe225c0",
+  "name": "Single readout",
+  "properties": {
+    "tags": [
+      "adc"
+    ]
+  }
+}

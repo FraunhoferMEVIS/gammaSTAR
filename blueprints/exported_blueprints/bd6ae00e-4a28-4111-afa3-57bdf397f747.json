@@ -1,0 +1,246 @@
+{
+  "definitions": {
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.slicegroup.segment.slice.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "idx_segment_forwarding": {
+      "forward_as": "repetition.slicegroup.segment.slice.kernel.idx_segment",
+      "name": "idx_segment_forwarding",
+      "source_to_forward": "repetition.slicegroup.segment.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TI": {
+      "name": "is_right_TI",
+      "script": "if inversion_recovery ~= 'None' then\n  return ge(t_before_center+TI[#TI]-t_before_exc, inv_dur)\nelse\n  return true\nend",
+      "sources": {
+        "TI": "TI",
+        "inv_dur": "repetition.slicegroup.segment.slice.invrec.duration",
+        "inversion_recovery": "inversion_recovery",
+        "t_before_center": "repetition.slicegroup.segment.slice.invrec.t_before_center",
+        "t_before_exc": "repetition.slicegroup.segment.slice.kernel.t_before_exc"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "if inversion_recovery ~= 'None' then\n  return le(slice_length*(t_before_center+TI[#TI]-t_before_exc+kernel_dur), TR)\nelse\n  return le(slice_length*kernel_dur, TR)\nend",
+      "sources": {
+        "TI": "TI",
+        "TR": "TR",
+        "inversion_recovery": "inversion_recovery",
+        "kernel_dur": "repetition.slicegroup.segment.slice.kernel.duration",
+        "slice_length": "repetition.slicegroup.segment.slice.length",
+        "t_before_center": "repetition.slicegroup.segment.slice.invrec.t_before_center",
+        "t_before_exc": "repetition.slicegroup.segment.slice.kernel.t_before_exc"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_phase": {
+      "name": "is_right_matrix_phase",
+      "script": "local factor = 1\nif PAT_mode ~= 'None' then\n  factor = PAT_factor\nend\nreturn (kernel_info.num_lines['phase'] / factor) % ETL == 0",
+      "sources": {
+        "ETL": "echo_train_length",
+        "PAT_factor": "PAT_factor_phase",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.slicegroup.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_matrix_slice": {
+      "name": "is_right_matrix_slice",
+      "script": "if seq_dim == 3 then\n  local factor = 1\n  if PAT_mode ~= 'None' then\n    factor = PAT_factor\n  end\n  return (kernel_info.num_lines['slice'] / factor) % 1 == 0\nend\nreturn true",
+      "sources": {
+        "PAT_factor": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "kernel_info": "repetition.slicegroup.segment.slice.kernel.kernel_info",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "pat_ref": {
+      "blueprint_id": "e4a0eb30-8e11-48a4-a7e9-0ce6fef43d1b",
+      "name": "pat_ref",
+      "type": "sequence_element_definition"
+    },
+    "pat_ref.tstart": {
+      "name": "pat_ref.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.length": {
+      "name": "repetition.slicegroup.length",
+      "script": "if seq_dim == 2 then\n  return slice_groups\nend\nreturn 1",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slice_groups": "slice_groups"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup.segment",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.segment.length": {
+      "name": "repetition.slicegroup.segment.length",
+      "script": "return kernel_info.segs['total']",
+      "sources": {
+        "kernel_info": "repetition.slicegroup.segment.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice": {
+      "blueprint_id": "Loop",
+      "name": "repetition.slicegroup.segment.slice",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.segment.slice.invrec": {
+      "blueprint_id": "9d05018d-2fc8-42a8-9671-24307c01d347",
+      "name": "repetition.slicegroup.segment.slice.invrec",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.segment.slice.invrec.tstart": {
+      "name": "repetition.slicegroup.segment.slice.invrec.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice.kernel": {
+      "blueprint_id": "1fe4fd19-1bd8-478b-8c77-97fa00e904b9",
+      "name": "repetition.slicegroup.segment.slice.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.slicegroup.segment.slice.kernel.readout.echo.line.single_readout.encoding.readout.adc.set_enabled": {
+      "name": "repetition.slicegroup.segment.slice.kernel.readout.echo.line.single_readout.encoding.readout.adc.set_enabled",
+      "script": "if seq_dim == 2 then\n  local total_slice_counter = slicegroup_counter*slice_length + slice_counter\n  if total_slice_counter < slices then\n    return true\n  end\n  return false\nend\nreturn true",
+      "sources": {
+        "seq_dim": "info_seq_dim",
+        "slice_counter": "repetition.slicegroup.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.segment.slice.length",
+        "slicegroup_counter": "repetition.slicegroup.counter",
+        "slices": "slices"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice.kernel.tstart": {
+      "name": "repetition.slicegroup.segment.slice.kernel.tstart",
+      "script": "if inversion_recovery ~= 'None' then\n  return t_before_center + TI[#TI] - t_before_exc\nelse\n  return 0\nend",
+      "sources": {
+        "TI": "TI",
+        "inversion_recovery": "inversion_recovery",
+        "t_before_center": "repetition.slicegroup.segment.slice.invrec.t_before_center",
+        "t_before_exc": "repetition.slicegroup.segment.slice.kernel.t_before_exc"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice.length": {
+      "name": "repetition.slicegroup.segment.slice.length",
+      "script": "if seq_dim == 2 then\n  return math.ceil(kernel_info.acq_slices/slicegroup_length)\nend\nreturn 1",
+      "sources": {
+        "kernel_info": "repetition.slicegroup.segment.slice.kernel.kernel_info",
+        "seq_dim": "info_seq_dim",
+        "slicegroup_length": "repetition.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice.slice_info_line_pos": {
+      "name": "repetition.slicegroup.segment.slice.slice_info_line_pos",
+      "script": "local total_slice_counter = slicegroup_counter*slice_length + slice_counter\nif total_slice_counter < slices then\n  return total_slice_counter\nend\nreturn 0",
+      "sources": {
+        "slice_counter": "repetition.slicegroup.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.segment.slice.length",
+        "slicegroup_counter": "repetition.slicegroup.counter",
+        "slices": "slices"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.slice.tstart": {
+      "name": "repetition.slicegroup.segment.slice.tstart",
+      "script": "return slice_counter/slice_length * TR",
+      "sources": {
+        "TR": "TR",
+        "slice_counter": "repetition.slicegroup.segment.slice.counter",
+        "slice_length": "repetition.slicegroup.segment.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.segment.tstart": {
+      "name": "repetition.slicegroup.segment.tstart",
+      "script": "return seg_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_counter": "repetition.slicegroup.segment.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.slicegroup.tstart": {
+      "name": "repetition.slicegroup.tstart",
+      "script": "return slicegroup_counter * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "seg_length": "repetition.slicegroup.segment.length",
+        "slicegroup_counter": "repetition.slicegroup.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return pat_ref_dur + rep_counter * slicegroup_length * seg_length * TR",
+      "sources": {
+        "TR": "TR",
+        "pat_ref_dur": "pat_ref.duration",
+        "rep_counter": "repetition.counter",
+        "seg_length": "repetition.slicegroup.segment.length",
+        "slicegroup_length": "repetition.slicegroup.length"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "repetition.slicegroup.segment.slice.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "repetition.slicegroup.segment.slice.slice_info_line_pos",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "bd6ae00e-4a28-4111-afa3-57bdf397f747",
+  "name": "RARE structure",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

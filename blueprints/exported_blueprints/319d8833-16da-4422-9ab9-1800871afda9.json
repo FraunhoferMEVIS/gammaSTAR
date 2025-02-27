@@ -1,0 +1,173 @@
+{
+  "definitions": {
+    "corr": {
+      "blueprint_id": "9194db6f-a62c-4ecf-bbd9-d6885cabcab4",
+      "name": "corr",
+      "type": "sequence_element_definition"
+    },
+    "corr.tstart": {
+      "name": "corr.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.line.slice.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_right_TR": {
+      "name": "is_right_TR",
+      "script": "return le(slice_length*kernel_dur, TR)",
+      "sources": {
+        "TR": "TR",
+        "kernel_dur": "repetition.line.slice.kernel.duration",
+        "slice_length": "repetition.line.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "offcenter_excitation_forwarding": {
+      "forward_as": "offcenter",
+      "name": "offcenter_excitation_forwarding",
+      "source_to_forward": "offcenter_exc_1",
+      "type": "forwarding_definition"
+    },
+    "orientation_excitation_forwarding": {
+      "forward_as": "orientation",
+      "name": "orientation_excitation_forwarding",
+      "source_to_forward": "orientation_exc_1",
+      "type": "forwarding_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return measurements",
+      "sources": {
+        "measurements": "measurements"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line": {
+      "blueprint_id": "Loop",
+      "name": "repetition.line",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.length": {
+      "name": "repetition.line.length",
+      "script": "return kernel_info.acq_lines[\"total\"]",
+      "sources": {
+        "kernel_info": "repetition.line.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice": {
+      "blueprint_id": "Loop",
+      "name": "repetition.line.slice",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.slice.kernel": {
+      "blueprint_id": "f8a0f9f0-0ab3-4636-b1c8-fe347b774154",
+      "name": "repetition.line.slice.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.slice.kernel.line_counter": {
+      "name": "repetition.line.slice.kernel.line_counter",
+      "script": "return line_counter",
+      "sources": {
+        "line_counter": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.kernel.line_length": {
+      "name": "repetition.line.slice.kernel.line_length",
+      "script": "return line_length",
+      "sources": {
+        "line_length": "repetition.line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.kernel.slice_info_line_pos": {
+      "name": "repetition.line.slice.kernel.slice_info_line_pos",
+      "script": "return slice_counter",
+      "sources": {
+        "slice_counter": "repetition.line.slice.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.kernel.spoilphase": {
+      "name": "repetition.line.slice.kernel.spoilphase",
+      "script": "local i = line_counter * slice_length + slice_counter\nPhase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "line_counter": "repetition.line.counter",
+        "slice_counter": "repetition.line.slice.counter",
+        "slice_length": "repetition.line.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.kernel.tstart": {
+      "name": "repetition.line.slice.kernel.tstart",
+      "script": "return slice_counter/slice_length * TR",
+      "sources": {
+        "TR": "TR",
+        "slice_counter": "repetition.line.slice.counter",
+        "slice_length": "repetition.line.slice.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.length": {
+      "name": "repetition.line.slice.length",
+      "script": "return kernel_info.acq_slices",
+      "sources": {
+        "kernel_info": "repetition.line.slice.kernel.kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.slice.tstart": {
+      "name": "repetition.line.slice.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.tstart": {
+      "name": "repetition.line.tstart",
+      "script": "return line_counter * TR",
+      "sources": {
+        "TR": "TR",
+        "line_counter": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return corr_dur + rep_counter * line_length * TR",
+      "sources": {
+        "TR": "TR",
+        "corr_dur": "corr.duration",
+        "line_length": "repetition.line.length",
+        "rep_counter": "repetition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos_forwarding": {
+      "forward_as": "repetition.line.slice.kernel.slice_info_line_pos",
+      "name": "slice_info_line_pos_forwarding",
+      "source_to_forward": "repetition.line.slice.kernel.slice_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "repetition.line.slice.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "repetition.line.slice.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "319d8833-16da-4422-9ab9-1800871afda9",
+  "name": "2D radial structure",
+  "properties": {}
+}

@@ -1,0 +1,15 @@
+{
+  "definitions": {
+    "is_enabled": {
+      "name": "is_enabled",
+      "type": "is_enabled_definition"
+    }
+  },
+  "id": "GradPulse",
+  "name": "GradPulse",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

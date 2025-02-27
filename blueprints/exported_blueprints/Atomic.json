@@ -1,0 +1,22 @@
+{
+  "definitions": {
+    "full_basic_repr": {
+      "name": "full_basic_repr",
+      "script": "return {\nGradPulse=full_basic_repr_GradPulse,\nRFPulse=full_basic_repr_RFPulse,\nADC=full_basic_repr_ADC,\nTriggerPulse=full_basic_repr_TriggerPulse\n}",
+      "sources": {
+        "full_basic_repr_ADC": "full_basic_repr_ADC",
+        "full_basic_repr_GradPulse": "full_basic_repr_GradPulse",
+        "full_basic_repr_RFPulse": "full_basic_repr_RFPulse",
+        "full_basic_repr_TriggerPulse": "full_basic_repr_TriggerPulse"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "Atomic",
+  "name": "Atomic",
+  "properties": {
+    "tags": [
+      "basic"
+    ]
+  }
+}

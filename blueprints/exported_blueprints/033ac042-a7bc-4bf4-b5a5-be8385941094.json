@@ -1,0 +1,130 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return pulse_length * sat_dur\nelse\n  return 0\nend",
+      "sources": {
+        "enabled": "enabled",
+        "pulse_length": "pulse.length",
+        "sat_dur": "pulse.sat.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return ((sat_mode == 'water_saturation') or (sat_mode == '4x_water_saturation')) and true or false",
+      "sources": {
+        "sat_mode": "saturation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "num_pulses": {
+      "name": "num_pulses",
+      "script": "if sat_mode == '4x_water_saturation' then\n  return 4\nelse\n  return 1\nend",
+      "sources": {
+        "sat_mode": "saturation_mode"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse": {
+      "blueprint_id": "Loop",
+      "name": "pulse",
+      "type": "sequence_element_definition"
+    },
+    "pulse.length": {
+      "name": "pulse.length",
+      "script": "return num_pulses",
+      "sources": {
+        "num_pulses": "num_pulses"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat": {
+      "blueprint_id": "9d35e0c4-6094-4714-81e6-a8733a20dab6",
+      "name": "pulse.sat",
+      "type": "sequence_element_definition"
+    },
+    "pulse.sat.rf.spoilphase": {
+      "name": "pulse.sat.rf.spoilphase",
+      "script": "Phase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "i": "pulse.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat.spoil.phase_m0": {
+      "name": "pulse.sat.spoil.phase_m0",
+      "script": "local factor = math.ceil((counter+1)/3)\nfactor = ((factor-1) % 3) + 1\nif (counter%3 == 0) then\n  return factor * spoiling_moment\nelse\n  return 0\nend",
+      "sources": {
+        "counter": "pulse.counter",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat.spoil.read_m0": {
+      "name": "pulse.sat.spoil.read_m0",
+      "script": "local factor = math.ceil((counter+1)/3)\nfactor = ((factor-1) % 3) + 1\nif (counter%3 == 1) then\n  return factor * spoiling_moment\nelse\n  return 0\nend",
+      "sources": {
+        "counter": "pulse.counter",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat.spoil.slice_m0": {
+      "name": "pulse.sat.spoil.slice_m0",
+      "script": "return spoiling_moment",
+      "sources": {
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat.spoil_durations": {
+      "name": "pulse.sat.spoil_durations",
+      "script": "local max_factor = math.min(3,math.ceil(length/3))\nreturn helper_functions.calc_gradient_shape_from_moment(max_factor*spoiling_moment, grad_set)",
+      "sources": {
+        "grad_set": "pulse.sat.spoil.gradient_settings",
+        "helper_functions": "helper_functions",
+        "length": "pulse.length",
+        "spoiling_moment": "spoiling_moment"
+      },
+      "type": "parameter_definition"
+    },
+    "pulse.sat.tstart": {
+      "name": "pulse.sat.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "pulse.tstart": {
+      "name": "pulse.tstart",
+      "script": "return pulse_counter * sat_dur",
+      "sources": {
+        "pulse_counter": "pulse.counter",
+        "sat_dur": "pulse.sat.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoiling_moment": {
+      "name": "spoiling_moment",
+      "script": "return 2 * helper_functions.dx_to_m0(slice_res)",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "slice_res": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "033ac042-a7bc-4bf4-b5a5-be8385941094",
+  "name": "Water saturation",
+  "properties": {
+    "tags": [
+      "preparation"
+    ]
+  }
+}

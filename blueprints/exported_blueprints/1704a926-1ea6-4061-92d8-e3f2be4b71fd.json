@@ -1,0 +1,143 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "return grad_tend",
+      "sources": {
+        "grad_tend": "grad.tend"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.amp": {
+      "name": "grad.amp",
+      "script": "return rf_slice_amp",
+      "sources": {
+        "rf_slice_amp": "rf.slice_amp"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rf": {
+      "blueprint_id": "dba91fdb-cbcb-43c1-9fc5-7b0870b3d125",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return rf_dur",
+      "sources": {
+        "rf_dur": "rf_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.rf.frequency": {
+      "name": "rf.rf.frequency",
+      "script": "return gamma * slice_shift * slice_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "slice_amp": "grad.amp",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.t_bw_product": {
+      "name": "rf.t_bw_product",
+      "script": "if thickness >= 0.01 then\n  return 10.4\nend\nreturn 5.2",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.thickness": {
+      "name": "rf.thickness",
+      "script": "return thickness",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return grad_tstart + grad_rut",
+      "sources": {
+        "grad_rut": "grad.rut",
+        "grad_tstart": "grad.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "rf_duration": {
+      "name": "rf_duration",
+      "script": "if thickness >= 0.01 then\n  return 3.2e-3\nend\nreturn 2.56e-3",
+      "sources": {
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return grad_tcenter",
+      "sources": {
+        "grad_tcenter": "grad.tcenter"
+      },
+      "type": "parameter_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "return slice_fov",
+      "sources": {
+        "slice_fov": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "1704a926-1ea6-4061-92d8-e3f2be4b71fd",
+  "name": "SINC pulse",
+  "properties": {
+    "tags": []
+  }
+}

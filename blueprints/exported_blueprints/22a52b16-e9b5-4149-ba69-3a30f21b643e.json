@@ -1,0 +1,303 @@
+{
+  "definitions": {
+    "FOCI_parameters": {
+      "name": "FOCI_parameters",
+      "script": "return {FOCI_factor=10, mu=1.8, beta=1100, flip_angle=503.88} --optimized FOCI for 14 uT",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "calc_rf_and_grad": {
+      "name": "calc_rf_and_grad",
+      "script": "if mode == 'ahp' then\n  duration = 2*duration\n  rf_samples = 2*rf_samples\nend\nlocal FOCI_factor = FOCI_parameters[\"FOCI_factor\"]\nlocal beta = FOCI_parameters[\"beta\"]\nlocal mu = FOCI_parameters[\"mu\"]\nlocal flip_angle = FOCI_parameters[\"flip_angle\"]\n\nlocal samples_t, samples_am, samples_fm = {}, {}, {}\nlocal dwell_time_rf = duration / rf_samples\nfor i = 0, rf_samples-1 do\n  table.insert(samples_t, (i+0.5)*dwell_time_rf)\nend\n\nlocal dwell_time_grad = grad_set.raster_time\n--gradient\nlocal grad_shape={t={}, v={}}\nlocal rut, rdt = 0, 0\nlocal grad_amp = (beta * mu)/math.pi / gamma / thickness * FOCI_factor\nif FOCI_factor ~= 1 then\n  local ramp_samples = math.ceil(grad_amp / grad_set.max_grad_slew / dwell_time_grad)\n  table.insert(grad_shape.t, 0)\n  table.insert(grad_shape.v, 0)  \n  for i = 1, ramp_samples do\n    table.insert(grad_shape.t, i*dwell_time_grad)\n    table.insert(grad_shape.v, i/ramp_samples*grad_amp)\n  end\n  local grad_ft_samples = math.ceil(duration/dwell_time_grad)\n  for i = 1, grad_ft_samples do\n    local factor = 1 / helper_functions.cosh(beta*((i-0.5*(grad_ft_samples-1))/(0.5*(grad_ft_samples-1)))*duration/2)\n    local Modulation\n    if (factor * FOCI_factor < 1) then\n      Modulation = FOCI_factor\n    else\n      Modulation = 1/factor\n    end\n    table.insert(grad_shape.t, (ramp_samples+i)*dwell_time_grad)\n    table.insert(grad_shape.v, grad_amp*Modulation/FOCI_factor)\n  end\n  for i = 1, ramp_samples do\n    table.insert(grad_shape.t, (ramp_samples+grad_ft_samples+i)*dwell_time_grad)\n    table.insert(grad_shape.v, grad_amp * (1 - i / ramp_samples))\n  end\n  rut = ramp_samples*dwell_time_grad\n  rdt = ramp_samples*dwell_time_grad\nend\n\n--rf\nlocal contphs = {0}\nlocal samples_fm_wo_shift={}\nlocal contphs_wo_shift = {0}\nfor i = 1, rf_samples do\n  local t = (-1+2*samples_t[i]/duration)*duration/2\n  samples_am[i] = 1 / helper_functions.cosh(beta*t)\n  samples_fm[i] = -beta * mu / (2*math.pi) * helper_functions.tanh(beta*t)\n  samples_fm_wo_shift[i] = samples_fm[i]\n  if FOCI_factor ~= 1 then\n    samples_fm[i] = samples_fm[i] - gamma * grad_amp/FOCI_factor * slice_shift\n  end\n  local Modulation\n  if ((samples_am[i] * FOCI_factor) < 1) then\n    Modulation = FOCI_factor\n  else\n    Modulation = 1/samples_am[i]\n  end\n  samples_am[i] = samples_am[i] * Modulation\n  samples_fm[i] = samples_fm[i] * Modulation\n  samples_fm_wo_shift[i] = samples_fm_wo_shift[i] * Modulation\n  if i > 1 then\n    contphs_wo_shift[i] = contphs_wo_shift[i-1] + (2*math.pi*0.5*(samples_fm_wo_shift[i-1] + samples_fm_wo_shift[i])) * dwell_time_rf\n  end\nend\n\nlocal RealAmp, ImagAmp = 0, 0\nfor i = 1, rf_samples do\n  RealAmp = RealAmp + samples_am[i]*math.cos(contphs_wo_shift[i]) -- no shift for flip angle calculation\n  ImagAmp = RealAmp + samples_am[i]*math.sin(contphs_wo_shift[i])\nend\nlocal eff_amp = math.sqrt(ImagAmp^2+RealAmp^2)\n\nlocal rf_amp = (flip_angle/180*math.pi)/(2*math.pi*gamma*duration) * rf_samples/eff_amp\nfor i = 1, rf_samples do\n  samples_am[i] = samples_am[i] * rf_amp\nend\nif mode == 'ahp' then\n  for i = #samples_t/2+1, #samples_t do\n    samples_t[i] = nil\n    samples_am[i] = nil\n    samples_fm[i] = nil\n  end\n  if FOCI_factor ~= 1 then\n    local half_grad_dur = grad_shape.t[#grad_shape.t] / 2\n    for i = #grad_shape.t, half_grad_dur/dwell_time_grad+2, -1 do\n      grad_shape.t[i] = nil\n      grad_shape.v[i] = nil\n    end\n    local rdt_samples = math.ceil(grad_shape.v[#grad_shape.v] / grad_set.max_grad_slew / dwell_time_grad)\n    rdt = rdt_samples * dwell_time_grad\n    local last_time = grad_shape.t[#grad_shape.t]\n    local last_value = grad_shape.v[#grad_shape.v]\n    for i = 1, rdt_samples do\n      table.insert(grad_shape.t, last_time+i*dwell_time_grad)\n      table.insert(grad_shape.v, last_value * (1 - i / rdt_samples))\n    end\n  end\nend\nreturn {{t=samples_t,am=samples_am,fm=samples_fm}, {amp=grad_amp,samples=grad_shape,rut=rut,rdt=rdt}}",
+      "sources": {
+        "FOCI_parameters": "FOCI_parameters",
+        "duration": "duration",
+        "gamma": "sys_gamma",
+        "grad_set": "gradient_settings",
+        "helper_functions": "helper_functions",
+        "mode": "mode",
+        "rf_samples": "number_of_samples",
+        "slice_shift": "slice_info_shift",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "gradient_shape": {
+      "name": "gradient_shape",
+      "script": "return rf_and_grad[2]",
+      "sources": {
+        "rf_and_grad": "calc_rf_and_grad"
+      },
+      "type": "parameter_definition"
+    },
+    "mode": {
+      "name": "mode",
+      "script": "return 'afp'",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "number_of_samples": {
+      "name": "number_of_samples",
+      "script": "return duration / rf_set.raster_time",
+      "sources": {
+        "duration": "duration",
+        "rf_set": "rf_settings"
+      },
+      "type": "parameter_definition"
+    },
+    "rf": {
+      "blueprint_id": "RFPulse",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return duration",
+      "sources": {
+        "duration": "duration"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.frequency": {
+      "name": "rf.frequency",
+      "script": "if FOCI_parameters[\"FOCI_factor\"] == 1 then\n  return gamma * slice_shift * grad_shape.amp\nelse\n  return 0\nend",
+      "sources": {
+        "FOCI_parameters": "FOCI_parameters",
+        "gamma": "sys_gamma",
+        "grad_shape": "gradient_shape",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.phase": {
+      "name": "rf.phase",
+      "script": "return math.pi",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf.samples": {
+      "name": "rf.samples",
+      "script": "return rf_and_grad[1]",
+      "sources": {
+        "rf_and_grad": "calc_rf_and_grad"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + asymmetry*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tend + (asymmetry-1)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tcenter + (1-asymmetry)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - asymmetry * duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "22a52b16-e9b5-4149-ba69-3a30f21b643e",
+  "name": "RF FOCI",
+  "properties": {}
+}

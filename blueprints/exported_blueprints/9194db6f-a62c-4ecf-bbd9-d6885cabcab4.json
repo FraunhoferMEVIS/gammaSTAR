@@ -1,0 +1,296 @@
+{
+  "definitions": {
+    "ACQ_IS_RTFEEDBACK_DATA": {
+      "name": "ACQ_IS_RTFEEDBACK_DATA",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "ACQ_IS_RTFEEDBACK_DATA_forwarding": {
+      "forward_as": "ACQ_IS_RTFEEDBACK_DATA",
+      "name": "ACQ_IS_RTFEEDBACK_DATA_forwarding",
+      "source_to_forward": "ACQ_IS_RTFEEDBACK_DATA",
+      "type": "forwarding_definition"
+    },
+    "UTE": {
+      "name": "UTE",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "adc_delay": {
+      "name": "adc_delay",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "corr_TE": {
+      "name": "corr_TE",
+      "script": "return {minTE[1] + 40e-6}",
+      "sources": {
+        "minTE": "repetition.line.kernel.minimalTE"
+      },
+      "type": "parameter_definition"
+    },
+    "corr_TR": {
+      "name": "corr_TR",
+      "script": "return math.ceil((kernel_dur+2e-4)/1e-4)*1e-4",
+      "sources": {
+        "kernel_dur": "repetition.line.kernel.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "correction_angles": {
+      "name": "correction_angles",
+      "script": "return 180",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "correction_averages": {
+      "name": "correction_averages",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "density_adaption": {
+      "name": "density_adaption",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "if enabled then\n  return rep_length * line_length * corr_TR\nelse\n  return 0\nend",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "enabled": "enabled",
+        "line_length": "repetition.line.length",
+        "rep_length": "repetition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return is_corr",
+      "sources": {
+        "is_corr": "is_correction"
+      },
+      "type": "parameter_definition"
+    },
+    "idx_repetition_forwarding": {
+      "forward_as": "repetition.line.kernel.idx_repetition",
+      "name": "idx_repetition_forwarding",
+      "source_to_forward": "repetition.counter",
+      "type": "forwarding_definition"
+    },
+    "is_correction": {
+      "name": "is_correction",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition": {
+      "blueprint_id": "Loop",
+      "name": "repetition",
+      "type": "sequence_element_definition"
+    },
+    "repetition.length": {
+      "name": "repetition.length",
+      "script": "return corr_averages",
+      "sources": {
+        "corr_averages": "correction_averages"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line": {
+      "blueprint_id": "Loop",
+      "name": "repetition.line",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.kernel": {
+      "blueprint_id": "f8a0f9f0-0ab3-4636-b1c8-fe347b774154",
+      "name": "repetition.line.kernel",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.kernel.TE": {
+      "name": "repetition.line.kernel.TE",
+      "script": "return corr_TE",
+      "sources": {
+        "corr_TE": "corr_TE"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.adc.duration": {
+      "name": "repetition.line.kernel.echo.UTEencoding.adc.duration",
+      "script": "return 200e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.adc.header.user_int": {
+      "name": "repetition.line.kernel.echo.UTEencoding.adc.header.user_int",
+      "script": "\nreturn {2,line_length,rep_length,1e6*adc_dur,1e6*deph_dur,0,0,0} -- method,lines,scans,adc_duration,deph_duration",
+      "sources": {
+        "adc_dur": "repetition.line.kernel.echo.UTEencoding.adc.duration",
+        "deph_dur": "repetition.line.kernel.echo.UTEencoding.deph.duration",
+        "line_length": "repetition.line.length",
+        "rep_length": "repetition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.adc.number_of_samples": {
+      "name": "repetition.line.kernel.echo.UTEencoding.adc.number_of_samples",
+      "script": "return math.floor(adc_dur/(1e-6)/2 + 0.5)*2",
+      "sources": {
+        "adc_dur": "repetition.line.kernel.echo.UTEencoding.adc.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.add_reph_moment": {
+      "name": "repetition.line.kernel.echo.UTEencoding.add_reph_moment",
+      "script": "return -deph_m0",
+      "sources": {
+        "deph_m0": "repetition.line.kernel.echo.UTEencoding.deph.m0"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.deph": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "repetition.line.kernel.echo.UTEencoding.deph",
+      "type": "sequence_element_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.deph.direction": {
+      "name": "repetition.line.kernel.echo.UTEencoding.deph.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "repetition.line.kernel.echo.UTEencoding.orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.deph.duration": {
+      "name": "repetition.line.kernel.echo.UTEencoding.deph.duration",
+      "script": "return 40e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.deph.m0": {
+      "name": "repetition.line.kernel.echo.UTEencoding.deph.m0",
+      "script": "local slew\nlocal ramp_time = deph_dur/2\nif DA then\n  slew = UTE_DA_shape.amp/UTE_DA_shape.rut\nelse\n  slew = UTE_amp/UTE_rut\nend\nreturn -slew*ramp_time*ramp_time",
+      "sources": {
+        "DA": "density_adaption",
+        "UTE_DA_shape": "repetition.line.kernel.echo.UTEencoding.read.read_uniform_shape",
+        "UTE_amp": "repetition.line.kernel.echo.UTEencoding.read.read_trapez.amp",
+        "UTE_rut": "repetition.line.kernel.echo.UTEencoding.read.read_trapez.rut",
+        "deph_dur": "repetition.line.kernel.echo.UTEencoding.deph.duration"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.deph.tstart": {
+      "name": "repetition.line.kernel.echo.UTEencoding.deph.tstart",
+      "script": "return adc_delay",
+      "sources": {
+        "adc_delay": "adc_delay"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.UTEencoding.read.tstart": {
+      "name": "repetition.line.kernel.echo.UTEencoding.read.tstart",
+      "script": "return deph_tstart + deph_dur",
+      "sources": {
+        "deph_dur": "repetition.line.kernel.echo.UTEencoding.deph.duration",
+        "deph_tstart": "repetition.line.kernel.echo.UTEencoding.deph.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.echo.encoding.readout.adc.header.user_int": {
+      "name": "repetition.line.kernel.echo.encoding.readout.adc.header.user_int",
+      "script": "\nreturn {1,line_length,rep_length,0,0,0,0,0} -- method,lines,scans",
+      "sources": {
+        "line_length": "repetition.line.length",
+        "rep_length": "repetition.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.line_counter": {
+      "name": "repetition.line.kernel.line_counter",
+      "script": "return line_counter",
+      "sources": {
+        "line_counter": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.line_length": {
+      "name": "repetition.line.kernel.line_length",
+      "script": "return line_length",
+      "sources": {
+        "line_length": "repetition.line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.rot_angle_phi": {
+      "name": "repetition.line.kernel.rot_angle_phi",
+      "script": "local tab = {}\nif UTE then\n  for i = 0, corr_angles-1 do\n    table.insert(tab, i/corr_angles*2*math.pi)\n  end  \nelse\n  tab = {0, math.pi, math.pi/2, 3*math.pi/2}\nend\nreturn tab",
+      "sources": {
+        "UTE": "UTE",
+        "corr_angles": "correction_angles"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.spoilphase": {
+      "name": "repetition.line.kernel.spoilphase",
+      "script": "Phase = .5 * helper_constants.spoilphase_inc_inc * (i^2 + i + 2) * math.pi / 180.\nPhase = LuaHelper:reduce_angle_to_pi_interval(Phase, true)\nreturn Phase",
+      "sources": {
+        "helper_constants": "helper_constants",
+        "i": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.ssel.sinc.rf.flip_angle": {
+      "name": "repetition.line.kernel.ssel.sinc.rf.flip_angle",
+      "script": "return 5",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.kernel.tstart": {
+      "name": "repetition.line.kernel.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "repetition.line.length": {
+      "name": "repetition.line.length",
+      "script": "return #rot_angle_phi",
+      "sources": {
+        "rot_angle_phi": "repetition.line.kernel.rot_angle_phi"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.line.tstart": {
+      "name": "repetition.line.tstart",
+      "script": "return line_counter * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "line_counter": "repetition.line.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "repetition.tstart": {
+      "name": "repetition.tstart",
+      "script": "return rep_counter * line_length * corr_TR",
+      "sources": {
+        "corr_TR": "corr_TR",
+        "line_length": "repetition.line.length",
+        "rep_counter": "repetition.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "spoilphase_forwarding": {
+      "forward_as": "repetition.line.kernel.spoilphase",
+      "name": "spoilphase_forwarding",
+      "source_to_forward": "repetition.line.kernel.spoilphase",
+      "type": "forwarding_definition"
+    }
+  },
+  "id": "9194db6f-a62c-4ecf-bbd9-d6885cabcab4",
+  "name": "2D radial correction",
+  "properties": {}
+}

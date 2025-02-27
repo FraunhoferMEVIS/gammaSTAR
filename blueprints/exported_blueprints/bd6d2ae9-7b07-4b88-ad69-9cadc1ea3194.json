@@ -1,0 +1,134 @@
+{
+  "definitions": {
+    "adc_settings": {
+      "name": "adc_settings",
+      "script": "return {raster_time=raster_time, min_dwell_time=min_dwell_time}",
+      "sources": {
+        "min_dwell_time": "sys.min_dwell_time_adc",
+        "raster_time": "sys.raster_time_adc"
+      },
+      "type": "parameter_definition"
+    },
+    "gradient_settings": {
+      "name": "gradient_settings",
+      "script": "local grad_amp = math.min(0.04, max_grad_amp)\nlocal grad_slew = math.min(170, max_grad_slew)\nreturn {max_grad_slew=grad_slew, max_grad_amp=grad_amp, raster_time=raster_time}",
+      "sources": {
+        "max_grad_amp": "sys.max_grad_amp",
+        "max_grad_slew": "sys.max_grad_slew",
+        "raster_time": "sys.raster_time_grad"
+      },
+      "type": "parameter_definition"
+    },
+    "gradient_settings_reduced_performance": {
+      "name": "gradient_settings_reduced_performance",
+      "script": "local grad_amp = math.min(0.04, max_grad_amp)\nlocal grad_slew = math.min(170, max_grad_slew)\nreturn {max_grad_slew=.6*grad_slew, max_grad_amp=.6*grad_amp, raster_time=raster_time}",
+      "sources": {
+        "max_grad_amp": "sys.max_grad_amp",
+        "max_grad_slew": "sys.max_grad_slew",
+        "raster_time": "sys.raster_time_grad"
+      },
+      "type": "parameter_definition"
+    },
+    "rf_settings": {
+      "name": "rf_settings",
+      "script": "return {max_rf_amp=max_rf_amp, raster_time=raster_time}",
+      "sources": {
+        "max_rf_amp": "sys.max_rf_amp",
+        "raster_time": "sys.raster_time_rf"
+      },
+      "type": "parameter_definition"
+    },
+    "sys": {
+      "blueprint_id": "System",
+      "name": "sys",
+      "type": "sequence_element_definition"
+    },
+    "sys.acoustic_resonance_frequencies": {
+      "name": "sys.acoustic_resonance_frequencies",
+      "script": "-- {frequency, bandwidth}\nreturn {{585, 100}, {1120, 220}}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.coil_values_for_pns": {
+      "name": "sys.coil_values_for_pns",
+      "script": "-- values for GE scanner from paper \"Peripheral Nerve Stimulation-Optimal Gradient Waveform Design\"\n-- by Schulte & Noeske Magnetic Resonance in Medicine 74:518–522 (2015)\n-- alpha: effective coil length [m]\n-- r: rheobase [T/s]\n-- c: chronaxie time constant [s]\n-- Smin: stimulation slew rate[T/m/s] = r/alpha\nreturn {alpha=0.333, r=23.4, c=334*1e-6, Smin=70.27}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.fat_shift": {
+      "name": "sys.fat_shift",
+      "script": "return -3.35 * 1e-6 * (sys_frequency[1] + sys_frequency[2])",
+      "sources": {
+        "sys_frequency": "sys.frequency"
+      },
+      "type": "parameter_definition"
+    },
+    "sys.frequency": {
+      "name": "sys.frequency",
+      "script": "return {123200000, 0}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.gamma": {
+      "name": "sys.gamma",
+      "script": "return 42.575575e6 --23Na: 11.26e6 1H: 42.575575e6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.max_grad_amp": {
+      "name": "sys.max_grad_amp",
+      "script": "return 43e-3",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.max_grad_slew": {
+      "name": "sys.max_grad_slew",
+      "script": "return 180.180174",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.max_rf_amp": {
+      "name": "sys.max_rf_amp",
+      "script": "return 21.58e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.min_dwell_time_adc": {
+      "name": "sys.min_dwell_time_adc",
+      "script": "return 0.1e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.raster_time_adc": {
+      "name": "sys.raster_time_adc",
+      "script": "return 1e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.raster_time_grad": {
+      "name": "sys.raster_time_grad",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.raster_time_rf": {
+      "name": "sys.raster_time_rf",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "sys.raster_time_trigger": {
+      "name": "sys.raster_time_trigger",
+      "script": "return 10e-6",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "bd6d2ae9-7b07-4b88-ad69-9cadc1ea3194",
+  "name": "Default system",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

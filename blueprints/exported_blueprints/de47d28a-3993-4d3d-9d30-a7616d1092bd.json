@@ -1,0 +1,556 @@
+{
+  "definitions": {
+    "duration": {
+      "name": "duration",
+      "script": "local max_dur = 0\nif rf_enabled then\n  max_dur = math.max(max_dur, rf_dur)\nend\nif grad_enabled then\n  max_dur = math.max(max_dur, grad_tend)\nend\nif grad_arb_read_enabled then\n  max_dur = math.max(max_dur, grad_arb_read_tend)\nend\nif grad_arb_phase_enabled then\n  max_dur = math.max(max_dur, grad_arb_phase_tend)\nend\nif grad_arb_slice_enabled then\n  max_dur = math.max(max_dur, grad_arb_slice_tend)\nend\nreturn max_dur",
+      "sources": {
+        "grad_arb_phase_enabled": "grad_arb_phase.enabled",
+        "grad_arb_phase_tend": "grad_arb_phase.tend",
+        "grad_arb_read_enabled": "grad_arb_read.enabled",
+        "grad_arb_read_tend": "grad_arb_read.tend",
+        "grad_arb_slice_enabled": "grad_arb_slice.enabled",
+        "grad_arb_slice_tend": "grad_arb_slice.tend",
+        "grad_enabled": "grad.enabled",
+        "grad_tend": "grad.tend",
+        "rf_dur": "rf.duration",
+        "rf_enabled": "rf.enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "enabled": {
+      "name": "enabled",
+      "script": "return true",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "external_json_file": {
+      "name": "external_json_file",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "external_shape": {
+      "name": "external_shape",
+      "script": "if next(json_file) == nil then\n  return {\n    rf={tstart=0, am={}, fm={}, t={}, dur=20e-6, amp_int=0, asym=0, type=\"Undefined\"},\n    grad_ref_1mm_1ms=0,\n    gradx={t={}, v={}},\n    grady={t={}, v={}},\n    gradz={t={}, v={}}\n  }\nend\n\n-- rf samples\nlocal samples = math.max(#(json_file[\"rf_am\"] or {}), #(json_file[\"rf_abs\"] or {}))\n\nlocal rf_t = json_file[\"rf_t\"]\nlocal ext_rf_dur_fix = json_file[\"rf_dur_fix\"]\nlocal actual_rf_dur, rf_dwell_time\nif rf_duration ~= nil and ext_rf_dur_fix[\"fix\"] == false then\n  actual_rf_dur = rf_duration\nelse\n  actual_rf_dur = ext_rf_dur_fix[\"dur\"] * 1e-6\nend\nif rf_t == nil then\n  rf_dwell_time = actual_rf_dur / samples\n  rf_t = {}\n  for i = 1, samples do\n    rf_t[i] = (i - 0.5) * rf_dwell_time\n  end\nelse\n  local ratio = actual_rf_dur / (ext_rf_dur_fix[\"dur\"] * 1e-6)\n  for i = 1, #rf_t do\n    rf_t[i] = (rf_t[i] * 1e-6) * ratio\n  end\nend\n\nlocal rf_am = json_file[\"rf_am\"] --still in [uT] (or normalized)\nlocal rf_fm = json_file[\"rf_fm\"]\nif rf_fm == nil then\n  rf_fm = {}\n  for i = 1, samples do\n    rf_fm[i] = 0\n  end\nend\n\nif json_file[\"rf_abs\"] ~= nil then\n  local t_us = LuaHelper:scale_values_in_multi_array(rf_t, 1e6)\n  rf_am, rf_fm = LuaHelper:get_rf_am_and_fm_from_abs_and_phase(t_us, json_file[\"rf_abs\"], json_file[\"rf_phs\"], actual_rf_dur * 1e6)\nend\n\n--grad samples\nlocal gradx_t = json_file[\"gradx_t\"] or {}\nlocal grady_t = json_file[\"grady_t\"] or {}\nlocal gradz_t = json_file[\"gradz_t\"] or {}\nlocal gradx_v = json_file[\"gradx_v\"] or {} --still in [mT/m] (or normalized)\nlocal grady_v = json_file[\"grady_v\"] or {} --still in [mT/m] (or normalized)\nlocal gradz_v = json_file[\"gradz_v\"] or {} --still in [mT/m] (or normalized)\nlocal new_gradx_t, new_grady_t, new_gradz_t = {}, {}, {}\nfor i = 1, #gradx_t do\n  new_gradx_t[i] = gradx_t[i] * 1e-6  \nend\nfor i = 1, #grady_t do\n  new_grady_t[i] = grady_t[i] * 1e-6  \nend  \nfor i = 1, #gradz_t do\n  new_gradz_t[i] = gradz_t[i] * 1e-6  \nend  \n\nreturn {\n  rf={tstart=(json_file[\"rf_tstart\"] or 0)*1e-6, am=rf_am, fm=rf_fm, t=rf_t, dur=actual_rf_dur, amp_int=json_file[\"rf_amp_int\"], asym=json_file[\"rf_asym\"], type=json_file[\"rf_type\"] or \"Undefined\"},\n  grad_ref_1mm_1ms=(json_file[\"grad_ref_1mm_1ms\"] or 0)/1000,\n  gradx={t=new_gradx_t, v=gradx_v},\n  grady={t=new_grady_t, v=grady_v},\n  gradz={t=new_gradz_t, v=gradz_v}\n}",
+      "sources": {
+        "json_file": "external_json_file",
+        "rf_duration": "rf_duration"
+      },
+      "type": "parameter_definition"
+    },
+    "grad": {
+      "blueprint_id": "fa6e1a33-0e34-4b83-a56f-95f5e878230b",
+      "name": "grad",
+      "type": "sequence_element_definition"
+    },
+    "grad.amp": {
+      "name": "grad.amp",
+      "script": "if ext_shape[\"grad_ref_1mm_1ms\"] ~= 0 and not grad_arb_slice_enabled then\n  return ext_shape[\"grad_ref_1mm_1ms\"] / (thickness/0.001 * rf_dur/0.001)\nend\nreturn 0",
+      "sources": {
+        "ext_shape": "external_shape",
+        "grad_arb_slice_enabled": "grad_arb_slice.enabled",
+        "rf_dur": "rf.duration",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.direction": {
+      "name": "grad.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.enabled": {
+      "name": "grad.enabled",
+      "script": "return ext_shape[\"grad_ref_1mm_1ms\"] ~= 0 and not grad_arb_slice_enabled",
+      "sources": {
+        "ext_shape": "external_shape",
+        "grad_arb_slice_enabled": "grad_arb_slice.enabled"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.ft": {
+      "name": "grad.ft",
+      "script": "return ext_shape[\"rf\"][\"dur\"]",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad.tstart": {
+      "name": "grad.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_arb_phase": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "grad_arb_phase",
+      "type": "sequence_element_definition"
+    },
+    "grad_arb_phase.direction": {
+      "name": "grad_arb_phase.direction",
+      "script": "return phase_dir",
+      "sources": {
+        "phase_dir": "orientation_info_phase_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_phase.enabled": {
+      "name": "grad_arb_phase.enabled",
+      "script": "return #ext_shape[\"grady\"][\"v\"] > 0",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_phase.samples": {
+      "name": "grad_arb_phase.samples",
+      "script": "local v = ext_shape[\"grady\"][\"v\"]\nlocal ref_grad = ext_shape[\"grad_ref_1mm_1ms\"]\nlocal new_samples_v, scale = {}, nil\nif ref_grad == 0 then\n  scale = 1e-3\nelse\n  scale = ref_grad / (thickness/0.001) / (rf_duration/0.001)\nend\nfor i = 1, #v do\n  new_samples_v[i] = v[i] * scale\nend\nreturn {t=(ext_shape[\"grady\"][\"t\"] or {}), v=new_samples_v}",
+      "sources": {
+        "ext_shape": "external_shape",
+        "rf_duration": "rf.duration",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_phase.tstart": {
+      "name": "grad_arb_phase.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_arb_read": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "grad_arb_read",
+      "type": "sequence_element_definition"
+    },
+    "grad_arb_read.direction": {
+      "name": "grad_arb_read.direction",
+      "script": "return read_dir",
+      "sources": {
+        "read_dir": "orientation_info_read_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_read.enabled": {
+      "name": "grad_arb_read.enabled",
+      "script": "return #ext_shape[\"gradx\"][\"v\"] > 0",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_read.samples": {
+      "name": "grad_arb_read.samples",
+      "script": "local v = ext_shape[\"gradx\"][\"v\"]\nlocal ref_grad = ext_shape[\"grad_ref_1mm_1ms\"]\nlocal new_samples_v, scale = {}, nil\nif ref_grad == 0 then\n  scale = 1e-3\nelse\n  scale = ref_grad / (thickness/0.001) / (rf_duration/0.001)\nend\nfor i = 1, #v do\n  new_samples_v[i] = v[i] * scale\nend\nreturn {t=(ext_shape[\"gradx\"][\"t\"] or {}), v=new_samples_v}",
+      "sources": {
+        "ext_shape": "external_shape",
+        "rf_duration": "rf.duration",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_read.tstart": {
+      "name": "grad_arb_read.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "grad_arb_slice": {
+      "blueprint_id": "57cf5ac4-75ff-4ec7-8c3c-65fcda338f6f",
+      "name": "grad_arb_slice",
+      "type": "sequence_element_definition"
+    },
+    "grad_arb_slice.direction": {
+      "name": "grad_arb_slice.direction",
+      "script": "return slice_dir",
+      "sources": {
+        "slice_dir": "orientation_info_slice_direction"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_slice.enabled": {
+      "name": "grad_arb_slice.enabled",
+      "script": "return #ext_shape[\"gradz\"][\"v\"] > 0",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_slice.samples": {
+      "name": "grad_arb_slice.samples",
+      "script": "local v = ext_shape[\"gradz\"][\"v\"]\nlocal ref_grad = ext_shape[\"grad_ref_1mm_1ms\"]\nlocal new_samples_v, scale = {}, nil\nif ref_grad == 0 then\n  scale = 1e-3\nelse\n  scale = ref_grad / (thickness/0.001) / (rf_duration/0.001)\nend\nfor i = 1, #v do\n  new_samples_v[i] = v[i] * scale\nend\nreturn {t=(ext_shape[\"gradz\"][\"t\"] or {}), v=new_samples_v}",
+      "sources": {
+        "ext_shape": "external_shape",
+        "rf_duration": "rf.duration",
+        "thickness": "thickness"
+      },
+      "type": "parameter_definition"
+    },
+    "grad_arb_slice.tstart": {
+      "name": "grad_arb_slice.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "is_right_external_json": {
+      "name": "is_right_external_json",
+      "script": "if enabled and next(json_file) == nil then\n  return false\nend\nreturn true",
+      "sources": {
+        "enabled": "enabled",
+        "json_file": "external_json_file"
+      },
+      "type": "parameter_definition"
+    },
+    "orientation_info": {
+      "blueprint_id": "3c907235-30a5-4319-8c39-05eada1271e3",
+      "name": "orientation_info",
+      "type": "extending_definition"
+    },
+    "rf": {
+      "blueprint_id": "RFPulse",
+      "name": "rf",
+      "type": "sequence_element_definition"
+    },
+    "rf.asymmetry": {
+      "name": "rf.asymmetry",
+      "script": "return ext_shape[\"rf\"][\"asym\"] or 0",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.duration": {
+      "name": "rf.duration",
+      "script": "return ext_shape[\"rf\"][\"dur\"] or 0",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.frequency": {
+      "name": "rf.frequency",
+      "script": "return gamma * slice_shift * slice_amp",
+      "sources": {
+        "gamma": "sys_gamma",
+        "slice_amp": "grad.amp",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.phase": {
+      "name": "rf.phase",
+      "script": "return spoilphase",
+      "sources": {
+        "spoilphase": "spoilphase"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.samples": {
+      "name": "rf.samples",
+      "script": "local samples = (#shape[\"t\"])\nlocal new_samples_am, scale = {}, nil\nif shape[\"amp_int\"] == nil then\n  scale = 1e-6\nelse\n  scale = (flip_angle/180*math.pi)/(2*math.pi*gamma*duration) * samples/shape[\"amp_int\"]\nend\nfor i = 1, samples do\n  new_samples_am[i] = shape[\"am\"][i] * scale\nend\n\nlocal new_samples_fm = {}\nfor i = 1, samples do\n  new_samples_fm[i] = shape[\"fm\"][i] + (fm_add[i] or 0)\nend\nreturn {t=shape[\"t\"], am=new_samples_am, fm=new_samples_fm}    ",
+      "sources": {
+        "duration": "rf.duration",
+        "flip_angle": "flip_angle",
+        "fm_add": "rf_fm_arb_slice_shift",
+        "gamma": "sys_gamma",
+        "grad_samples": "grad_arb_slice.samples",
+        "shape": "rf_shape",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.tstart": {
+      "name": "rf.tstart",
+      "script": "if grad_enabled == true then\n  return grad_rut\nend\nreturn ext_shape[\"rf\"][\"tstart\"] or 0",
+      "sources": {
+        "ext_shape": "external_shape",
+        "grad_enabled": "grad.enabled",
+        "grad_rut": "grad.rut"
+      },
+      "type": "parameter_definition"
+    },
+    "rf.type": {
+      "name": "rf.type",
+      "script": "return ext_shape[\"rf\"][\"type\"]",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "rf_duration": {
+      "name": "rf_duration",
+      "script": "return nil",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "rf_fm_arb_slice_shift": {
+      "name": "rf_fm_arb_slice_shift",
+      "script": "local fm_add = {}\nif #grad_samples[\"v\"] > 0 then\n  local cur_grad_i, cur_grad_t = 1, grad_samples[\"t\"][1]\n  for i,t in ipairs(rf_shape[\"t\"]) do\n    while cur_grad_t < rf_tstart + t do\n      cur_grad_i = cur_grad_i + 1\n      cur_grad_t = grad_samples[\"t\"][cur_grad_i]\n    end\n    local grad_amp_prev = grad_samples[\"v\"][cur_grad_i-1]\n    local grad_amp_next = grad_samples[\"v\"][cur_grad_i]\n    local ratio = (t-grad_samples[\"t\"][cur_grad_i-1]) / (grad_samples[\"t\"][cur_grad_i]-grad_samples[\"t\"][cur_grad_i-1])\n    local grad_amp = grad_amp_prev + ratio * (grad_amp_next - grad_amp_prev)\n    fm_add[i] = -gamma * grad_amp * slice_shift\n  end\nend\nreturn fm_add",
+      "sources": {
+        "gamma": "sys_gamma",
+        "grad_samples": "grad_arb_slice.samples",
+        "rf_shape": "rf_shape",
+        "rf_tstart": "rf.tstart",
+        "slice_shift": "slice_info_shift"
+      },
+      "type": "parameter_definition"
+    },
+    "rf_shape": {
+      "name": "rf_shape",
+      "script": " -- am still in [uT] (or normalized)\nreturn {t=ext_shape[\"rf\"][\"t\"], am=ext_shape[\"rf\"][\"am\"], fm=ext_shape[\"rf\"][\"fm\"], amp_int=ext_shape[\"rf\"][\"amp_int\"]}",
+      "sources": {
+        "ext_shape": "external_shape"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info": {
+      "blueprint_id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+      "name": "slice_info",
+      "type": "extending_definition"
+    },
+    "spoilphase": {
+      "name": "spoilphase",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "t_after_center": {
+      "name": "t_after_center",
+      "script": "return duration - t_before_center",
+      "sources": {
+        "duration": "duration",
+        "t_before_center": "t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "t_before_center": {
+      "name": "t_before_center",
+      "script": "return rf_tstart + rf_dur * rf_asym",
+      "sources": {
+        "rf_asym": "rf.asymmetry",
+        "rf_dur": "rf.duration",
+        "rf_tstart": "rf.tstart"
+      },
+      "type": "parameter_definition"
+    },
+    "tcenter_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tstart + asymmetry*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tcenter",
+              "script": "return tend + (asymmetry-1)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tcenter_conditional",
+      "type": "conditional_definition"
+    },
+    "tend_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tstart + duration",
+              "sources": {
+                "duration": "duration",
+                "tstart": "tstart"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tend",
+              "script": "return tcenter + (1-asymmetry)*duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tend_conditional",
+      "type": "conditional_definition"
+    },
+    "thickness": {
+      "name": "thickness",
+      "script": "return nil",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "tstart_conditional": {
+      "conditionals": [
+        {
+          "body": [],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tstart"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tend - duration",
+              "sources": {
+                "duration": "duration",
+                "tend": "tend"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tend"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [
+            {
+              "name": "tstart",
+              "script": "return tcenter - asymmetry * duration",
+              "sources": {
+                "asymmetry": "rf.asymmetry",
+                "duration": "duration",
+                "tcenter": "tcenter"
+              },
+              "type": "parameter_definition"
+            }
+          ],
+          "condition": {
+            "arguments": {
+              "parameter_names": [
+                "tcenter"
+              ]
+            },
+            "type": "parameters_defined"
+          }
+        },
+        {
+          "body": [],
+          "condition": {
+            "arguments": {},
+            "type": "else"
+          }
+        }
+      ],
+      "name": "tstart_conditional",
+      "type": "conditional_definition"
+    }
+  },
+  "id": "de47d28a-3993-4d3d-9d30-a7616d1092bd",
+  "name": "RF external pulse",
+  "properties": {
+    "tags": [
+      ""
+    ]
+  }
+}

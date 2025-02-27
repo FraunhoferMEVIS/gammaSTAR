@@ -1,0 +1,314 @@
+{
+  "definitions": {
+    "slice_info_acq_lines": {
+      "name": "slice_info_acq_lines",
+      "script": "return lines",
+      "sources": {
+        "lines": "slice_info_num_lines"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_acq_size": {
+      "name": "slice_info_acq_size",
+      "script": "--The number of slices without consideration of multiband\nif (seq_dim == 3) then\n  return 1\nelse\n  return acq_size[3]\nend",
+      "sources": {
+        "acq_size": "acq_size",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_dk_next": {
+      "name": "slice_info_caipi_dk_next",
+      "script": "if is_last then\n  return 0\nelse\n  return k_next - k_cur\nend",
+      "sources": {
+        "is_last": "slice_info_caipi_is_last",
+        "k_cur": "slice_info_caipi_k_cur",
+        "k_next": "slice_info_caipi_k_next"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_dk_prev": {
+      "name": "slice_info_caipi_dk_prev",
+      "script": "if is_first then\n  return 0\nelse\n  return k_cur - k_prev\nend",
+      "sources": {
+        "is_first": "slice_info_caipi_is_first",
+        "k_cur": "slice_info_caipi_k_cur",
+        "k_prev": "slice_info_caipi_k_prev"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_fov": {
+      "name": "slice_info_caipi_fov",
+      "script": "if (seq_dim == 3) then\n  return fov * (1+os)\nelse\n  return mb_factor * num_lines * fov * (1+DF)\nend",
+      "sources": {
+        "DF": "slice_distance_factor",
+        "fov": "slice_info_fov",
+        "mb_factor": "multiband_factor",
+        "num_lines": "slice_info_num_lines",
+        "os": "slice_oversampling",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_is_first": {
+      "name": "slice_info_caipi_is_first",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_is_last": {
+      "name": "slice_info_caipi_is_last",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_cur": {
+      "name": "slice_info_caipi_k_cur",
+      "script": "return k_shift_cur * kmin",
+      "sources": {
+        "k_shift_cur": "slice_info_caipi_k_shift_cur",
+        "kmin": "slice_info_caipi_kmin"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_next": {
+      "name": "slice_info_caipi_k_next",
+      "script": "return k_shift_next * kmin",
+      "sources": {
+        "k_shift_next": "slice_info_caipi_k_shift_next",
+        "kmin": "slice_info_caipi_kmin"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_prev": {
+      "name": "slice_info_caipi_k_prev",
+      "script": "return k_shift_prev * kmin",
+      "sources": {
+        "k_shift_prev": "slice_info_caipi_k_shift_prev",
+        "kmin": "slice_info_caipi_kmin"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_shift_cur": {
+      "name": "slice_info_caipi_k_shift_cur",
+      "script": "if (seq_dim == 3) then\n  if (PAT_mode == 'caipi' and PAT_factor_slice > 1) then\n    return (line_cur/PAT_factor_phase) % PAT_factor_slice\n  else\n    return 0\n  end\nelse\n  if (mb_factor > 1) then\n    return (-(mb_factor-1)/2 + line_cur % mb_factor)\n  else\n    return 0\n  end\nend",
+      "sources": {
+        "PAT_factor_phase": "PAT_factor_phase",
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "line_cur": "slice_info_caipi_line_cur",
+        "mb_factor": "multiband_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_shift_next": {
+      "name": "slice_info_caipi_k_shift_next",
+      "script": "if (seq_dim == 3) then\n  if (PAT_mode == 'caipi' and PAT_factor_slice > 1) then\n    return (line_next/PAT_factor_phase) % PAT_factor_slice\n  else\n    return 0\n  end\nelse\n  if (mb_factor > 1) then\n    return (-(mb_factor-1)/2 + line_next % mb_factor)\n  else\n    return 0\n  end\nend",
+      "sources": {
+        "PAT_factor_phase": "PAT_factor_phase",
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "line_next": "slice_info_caipi_line_next",
+        "mb_factor": "multiband_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_k_shift_prev": {
+      "name": "slice_info_caipi_k_shift_prev",
+      "script": "if (seq_dim == 3) then\n  if (PAT_mode == 'caipi' and PAT_factor_slice > 1) then\n    return (line_prev/PAT_factor_phase) % PAT_factor_slice\n  else\n    return 0\n  end\nelse\n  if (mb_factor > 1) then\n    return (-(mb_factor-1)/2 + line_prev % mb_factor)\n  else\n    return 0\n  end\nend",
+      "sources": {
+        "PAT_factor_phase": "PAT_factor_phase",
+        "PAT_factor_slice": "PAT_factor_slice",
+        "PAT_mode": "PAT_mode",
+        "line_prev": "slice_info_caipi_line_prev",
+        "mb_factor": "multiband_factor",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_kmin": {
+      "name": "slice_info_caipi_kmin",
+      "script": "return 1/caipi_fov",
+      "sources": {
+        "caipi_fov": "slice_info_caipi_fov"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_cur": {
+      "name": "slice_info_caipi_line_cur",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_next": {
+      "name": "slice_info_caipi_line_next",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_line_prev": {
+      "name": "slice_info_caipi_line_prev",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_shift": {
+      "name": "slice_info_caipi_shift",
+      "script": "return slice_shift + thickness/2",
+      "sources": {
+        "slice_shift": "slice_info_shift",
+        "thickness": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_shift_bottom": {
+      "name": "slice_info_caipi_shift_bottom",
+      "script": "return slice_shift - num_lines*(mb_factor-1)/2*thickness*(1+DF)",
+      "sources": {
+        "DF": "slice_distance_factor",
+        "mb_factor": "multiband_factor",
+        "num_lines": "slice_info_num_lines",
+        "slice_shift": "slice_info_shift",
+        "thickness": "slice_info_res"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_caipi_shift_middle": {
+      "name": "slice_info_caipi_shift_middle",
+      "script": "if ((mb_factor % 2) == 1) then\n  return slice_shift\nelse\n  return slice_shift - 0.5*thickness*(1+DF)\nend",
+      "sources": {
+        "DF": "slice_distance_factor",
+        "mb_factor": "multiband_factor",
+        "slice_shift": "slice_info_shift",
+        "thickness": "slice_info_fov"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_fov": {
+      "name": "slice_info_fov",
+      "script": "return fov[3]",
+      "sources": {
+        "fov": "fov"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_is_first_slice": {
+      "name": "slice_info_is_first_slice",
+      "script": "return pos == 0",
+      "sources": {
+        "pos": "slice_info_line_pos"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_is_last_slice": {
+      "name": "slice_info_is_last_slice",
+      "script": "return pos == num_lines-1",
+      "sources": {
+        "num_lines": "slice_info_num_lines",
+        "pos": "slice_info_line_pos"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_center": {
+      "name": "slice_info_line_center",
+      "script": "return (num_lines-1)/2",
+      "sources": {
+        "num_lines": "slice_info_num_lines"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_cur": {
+      "name": "slice_info_line_cur",
+      "script": "return tab[1+pos]",
+      "sources": {
+        "pos": "slice_info_line_pos",
+        "tab": "slice_info_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_line_pos": {
+      "name": "slice_info_line_pos",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "slice_info_mat_size": {
+      "name": "slice_info_mat_size",
+      "script": "return mat_size[3]",
+      "sources": {
+        "mat_size": "mat_size"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_num_lines": {
+      "name": "slice_info_num_lines",
+      "script": "return acq_size / mb_factor",
+      "sources": {
+        "acq_size": "slice_info_acq_size",
+        "mb_factor": "multiband_factor"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_offcenter": {
+      "name": "slice_info_offcenter",
+      "script": "rot_offcenter = helper_functions.rot_vec(helper_functions.mat_transp(rot_matrix), offcenter)\nreturn rot_offcenter[3]",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "offcenter": "offcenter",
+        "rot_matrix": "rot_matrix"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_offcenter_actual": {
+      "name": "slice_info_offcenter_actual",
+      "script": "if (seq_dim == 3) then\n  return offcenter\nelse\n  offcenter_new = {}\n  for k, v in pairs(offcenter) do\n    offcenter_new[k] = v\n  end\n  offcenter_new[3] = offcenter_new[3] + (line_cur - center_line) * res * (1.0 + DF)\n  return offcenter_new\nend",
+      "sources": {
+        "DF": "slice_distance_factor",
+        "center_line": "slice_info_line_center",
+        "line_cur": "slice_info_line_cur",
+        "offcenter": "offcenter",
+        "res": "slice_info_res",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_reorder": {
+      "name": "slice_info_reorder",
+      "script": "tab = {}\nif (scheme == 'Ascending') then\n  for i=0,num_lines-1,1 do\n    table.insert(tab,i)\n  end\nelseif (scheme == 'Descending') then\n  for i=num_lines-1,0,-1 do\n    table.insert(tab,i)\n  end\nelseif (scheme == 'Interleaved') then\n  if (num_lines % 2 == 0) then\n    for i=1,num_lines-1,2 do\n      table.insert(tab,i)\n    end\n    for i=0,num_lines-1,2 do\n      table.insert(tab,i)\n    end\n  elseif (num_lines > 1) then\n    for i=0,num_lines-1,2 do\n      table.insert(tab,i)\n    end\n    for i=1,num_lines-1,2 do\n      table.insert(tab,i)\n    end\n  else\n    table.insert(tab,0)\n  end\nend\nreturn tab",
+      "sources": {
+        "num_lines": "slice_info_num_lines",
+        "scheme": "slice_reorder_scheme"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_res": {
+      "name": "slice_info_res",
+      "script": "if (seq_dim == 3) then\n  return fov / mat_size\nelse\n  return fov\nend",
+      "sources": {
+        "fov": "slice_info_fov",
+        "mat_size": "slice_info_mat_size",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "slice_info_shift": {
+      "name": "slice_info_shift",
+      "script": "rot_offcenter = helper_functions.rot_vec(helper_functions.mat_transp(rot_matrix), offcenter_actual)\nreturn rot_offcenter[3]",
+      "sources": {
+        "helper_functions": "helper_functions",
+        "offcenter_actual": "slice_info_offcenter_actual",
+        "rot_matrix": "rot_matrix"
+      },
+      "type": "parameter_definition"
+    }
+  },
+  "id": "6f0a2d68-7f97-43c9-ac7f-dc3fb673ad73",
+  "name": "Slice info",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

@@ -1,0 +1,194 @@
+{
+  "definitions": {
+    "LoopInfo": {
+      "name": "LoopInfo",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "PNSPaths": {
+      "name": "PNSPaths",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "RegridTable": {
+      "name": "RegridTable",
+      "script": "return kernel_info.RegridTable or {}",
+      "sources": {
+        "kernel_info": "kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "expo": {
+      "blueprint_id": "c54aab35-2bd3-41e3-b892-35a072404b69",
+      "name": "expo",
+      "type": "sequence_element_definition"
+    },
+    "expo.LoopLengthAverage": {
+      "name": "expo.LoopLengthAverage",
+      "script": "return LoopInfo.max_average or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.LoopLengthContrast": {
+      "name": "expo.LoopLengthContrast",
+      "script": "return LoopInfo.max_contrast or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.LoopLengthMeasurement": {
+      "name": "expo.LoopLengthMeasurement",
+      "script": "return LoopInfo.max_measurement or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.LoopLengthPhase": {
+      "name": "expo.LoopLengthPhase",
+      "script": "return LoopInfo.max_phase or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.LoopLengthSet": {
+      "name": "expo.LoopLengthSet",
+      "script": "return LoopInfo.max_set or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.LoopLengthSlice": {
+      "name": "expo.LoopLengthSlice",
+      "script": "return LoopInfo.max_slice or 1",
+      "sources": {
+        "LoopInfo": "LoopInfo"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridADCdelay": {
+      "name": "expo.RegridADCdelay",
+      "script": "return RegridTable[\"ADCdelay\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridADCduration": {
+      "name": "expo.RegridADCduration",
+      "script": "return RegridTable[\"ADCduration\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridADCsamples": {
+      "name": "expo.RegridADCsamples",
+      "script": "return RegridTable[\"ADCsamples\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridGradientFT": {
+      "name": "expo.RegridGradientFT",
+      "script": "return RegridTable[\"GradientFT\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridGradientRDT": {
+      "name": "expo.RegridGradientRDT",
+      "script": "return RegridTable[\"GradientRDT\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridGradientRUT": {
+      "name": "expo.RegridGradientRUT",
+      "script": "return RegridTable[\"GradientRUT\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.RegridMode": {
+      "name": "expo.RegridMode",
+      "script": "return RegridTable[\"Mode\"]",
+      "sources": {
+        "RegridTable": "RegridTable"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.apply_freq_corr": {
+      "name": "expo.apply_freq_corr",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "expo.echo_spacing": {
+      "name": "expo.echo_spacing",
+      "script": "return kernel_info.echo_spacing",
+      "sources": {
+        "kernel_info": "kernel_info"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.feedback_paths": {
+      "name": "expo.feedback_paths",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "expo.image_scale_factor": {
+      "name": "expo.image_scale_factor",
+      "script": "return 1.0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "expo.is_POI_stop": {
+      "name": "expo.is_POI_stop",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "expo.is_feedback": {
+      "name": "expo.is_feedback",
+      "script": "return #fb_paths > 0",
+      "sources": {
+        "fb_paths": "expo.feedback_paths"
+      },
+      "type": "parameter_definition"
+    },
+    "expo.paths_for_PNS_estimation": {
+      "name": "expo.paths_for_PNS_estimation",
+      "script": "return PNSPaths",
+      "sources": {
+        "PNSPaths": "PNSPaths"
+      },
+      "type": "parameter_definition"
+    },
+    "kernel_info": {
+      "name": "kernel_info",
+      "script": "return {}",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "54ea5fd1-0f57-4248-9508-77f5b861edd2",
+  "name": "Default export",
+  "properties": {
+    "tags": [
+      "extension"
+    ]
+  }
+}

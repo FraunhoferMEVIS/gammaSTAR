@@ -1,0 +1,212 @@
+{
+  "definitions": {
+    "TE_seg_act": {
+      "name": "TE_seg_act",
+      "script": "local raster_time = grad_set.raster_time\nreturn math.ceil(TE_first/reorder[\"center_pos\"] / (2*raster_time)) * (2*raster_time)",
+      "sources": {
+        "TE_first": "TE_first",
+        "grad_set": "gradient_settings",
+        "reorder": "echo.line.single_readout.encoding.readout.phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "TE_seg_min": {
+      "name": "TE_seg_min",
+      "script": "local TE_before = t_since_exc + se_t_before_center\nlocal TE_after = se_t_after_center + t_before_te\nlocal TE_before2 = t_after_te[\"no_spoil\"] + se_t_before_center\nreturn math.ceil(2 * math.max(TE_before, TE_after, TE_before2) / 1e-5) * 1e-5",
+      "sources": {
+        "se_t_after_center": "echo.line.single_readout.spinecho.t_after_center",
+        "se_t_before_center": "echo.line.single_readout.spinecho.t_before_center",
+        "t_after_te": "echo.line.single_readout.encoding.t_after_te",
+        "t_before_te": "echo.line.single_readout.encoding.t_before_te",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "calc_timings": {
+      "name": "calc_timings",
+      "script": "local t_te = {reorder[\"center_pos\"] * TE_seg_act}\nlocal t_first_te = {TE_seg_act}\nlocal tstart = {0.5 * t_first_te[1] - se_t_before_center}\nlocal t_last_te = {t_first_te[1] + (line_length - 1) * TE_seg_act}\nfor cTE = 2, number_TE do\n  table.insert(t_te, t_te[cTE-1] + line_length * TE_seg_act)\n  table.insert(t_first_te, t_first_te[cTE-1] + line_length * TE_seg_act)\n  table.insert(tstart, 0.5 * (t_last_te[cTE-1] + t_first_te[cTE]) - se_t_before_center)\n  table.insert(t_last_te, t_first_te[cTE] + (line_length - 1) * TE_seg_act)\nend\nreturn {t_te=t_te, t_first_te=t_first_te, tstart=tstart, t_last_te=t_last_te}",
+      "sources": {
+        "TE_seg_act": "TE_seg_act",
+        "line_length": "echo.line.length",
+        "number_TE": "number_TE",
+        "reorder": "echo.line.single_readout.encoding.readout.phase_info_comb_reorder",
+        "se_t_before_center": "echo.line.single_readout.spinecho.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "duration": {
+      "name": "duration",
+      "script": "return calc_timings[\"t_last_te\"][#TE] + t_after_te[\"no_spoil\"] - t_since_exc",
+      "sources": {
+        "TE": "TE",
+        "calc_timings": "calc_timings",
+        "t_after_te": "echo.line.single_readout.encoding.t_after_te",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "echo": {
+      "blueprint_id": "Loop",
+      "name": "echo",
+      "type": "sequence_element_definition"
+    },
+    "echo.length": {
+      "name": "echo.length",
+      "script": "return #TE",
+      "sources": {
+        "TE": "TE"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line": {
+      "blueprint_id": "Loop",
+      "name": "echo.line",
+      "type": "sequence_element_definition"
+    },
+    "echo.line.length": {
+      "name": "echo.line.length",
+      "script": "return ETL",
+      "sources": {
+        "ETL": "echo_train_length"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.phase_info_line_pos": {
+      "name": "echo.line.phase_info_line_pos",
+      "script": "return idx_segment*line_length + line_counter",
+      "sources": {
+        "idx_segment": "idx_segment",
+        "line_counter": "echo.line.counter",
+        "line_length": "echo.line.length"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.phase_info_reorder_scheme": {
+      "name": "echo.line.phase_info_reorder_scheme",
+      "script": "if seq_dim == 2 then\n  return {phase=reorder_scheme,slice='Top-Down'}\nend\nreturn {phase=reorder_scheme,slice='Center-Out'}",
+      "sources": {
+        "reorder_scheme": "reorder_scheme",
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.single_readout": {
+      "blueprint_id": "d53e0b9f-dff0-4db8-b314-6e3f772698b0",
+      "name": "echo.line.single_readout",
+      "type": "sequence_element_definition"
+    },
+    "echo.line.single_readout.encoding.phase_info_comb_reorder_scheme": {
+      "name": "echo.line.single_readout.encoding.phase_info_comb_reorder_scheme",
+      "script": "if seq_dim == 2 then\n  return 'Phase'\nend\nreturn 'Interleaved'",
+      "sources": {
+        "seq_dim": "info_seq_dim"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.single_readout.encoding.readout.adc.header.idx_contrast": {
+      "name": "echo.line.single_readout.encoding.readout.adc.header.idx_contrast",
+      "script": "return echo_counter",
+      "sources": {
+        "echo_counter": "echo.counter"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.single_readout.encoding.spoiling": {
+      "name": "echo.line.single_readout.encoding.spoiling",
+      "script": "return false",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.line.single_readout.readout_center_time": {
+      "name": "echo.line.single_readout.readout_center_time",
+      "script": "if line_counter == 0 then\n  return calc_timings[\"t_first_te\"][echo_counter+1] - calc_timings[\"tstart\"][echo_counter+1]\nend\nreturn se_t_before_center + 0.5 * TE_seg_act",
+      "sources": {
+        "TE_seg_act": "TE_seg_act",
+        "calc_timings": "calc_timings",
+        "echo_counter": "echo.counter",
+        "line_counter": "echo.line.counter",
+        "se_t_before_center": "echo.line.single_readout.spinecho.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.line.single_readout.tstart": {
+      "name": "echo.line.single_readout.tstart",
+      "script": "return 0",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "echo.line.tstart": {
+      "name": "echo.line.tstart",
+      "script": "if line_counter == 0 then\n  return 0\nend\nlocal t_abs = calc_timings[\"t_first_te\"][echo_counter+1] + (0.5 + (line_counter - 1)) * TE_seg_act - se_t_before_center\nreturn t_abs - calc_timings[\"tstart\"][echo_counter+1]",
+      "sources": {
+        "TE_seg_act": "TE_seg_act",
+        "calc_timings": "calc_timings",
+        "echo_counter": "echo.counter",
+        "line_counter": "echo.line.counter",
+        "se_t_before_center": "echo.line.single_readout.spinecho.t_before_center"
+      },
+      "type": "parameter_definition"
+    },
+    "echo.tstart": {
+      "name": "echo.tstart",
+      "script": "return calc_timings[\"tstart\"][echo_counter+1] - t_since_exc",
+      "sources": {
+        "calc_timings": "calc_timings",
+        "echo_counter": "echo.counter",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "is_right_TE": {
+      "name": "is_right_TE",
+      "script": "local is_right_te = ge(calc_timings[\"tstart\"][1] - t_since_exc, 0)\nfor cTE = 2, #TE do\n  if lt(calc_timings[\"tstart\"][cTE], calc_timings[\"t_last_te\"][cTE-1] + t_after_te[\"no_spoil\"]) then\n    return false\n  end\nend\nreturn is_right_te",
+      "sources": {
+        "TE": "TE",
+        "calc_timings": "calc_timings",
+        "t_after_te": "echo.line.single_readout.encoding.t_after_te",
+        "t_since_exc": "t_since_excitation"
+      },
+      "type": "parameter_definition"
+    },
+    "minimalTE": {
+      "name": "minimalTE",
+      "script": "return reorder[\"center_pos\"] * TE_seg_min",
+      "sources": {
+        "TE_seg_min": "TE_seg_min",
+        "reorder": "echo.line.single_readout.encoding.readout.phase_info_comb_reorder"
+      },
+      "type": "parameter_definition"
+    },
+    "number_TE": {
+      "name": "number_TE",
+      "script": "return 1",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "phase_info_line_pos_forwarding": {
+      "forward_as": "echo.line.phase_info_line_pos",
+      "name": "phase_info_line_pos_forwarding",
+      "source_to_forward": "echo.line.phase_info_line_pos",
+      "type": "forwarding_definition"
+    },
+    "phase_info_reorder_scheme_forwarding": {
+      "forward_as": "echo.line.phase_info_reorder_scheme",
+      "name": "phase_info_reorder_scheme_forwarding",
+      "source_to_forward": "echo.line.phase_info_reorder_scheme",
+      "type": "forwarding_definition"
+    },
+    "reorder_scheme": {
+      "name": "reorder_scheme",
+      "script": "return 'Top-Down'",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "b11eea90-2f67-46fe-9a14-16c6fe96e414",
+  "name": "RARE readout",
+  "properties": {
+    "tags": [
+      "readout"
+    ]
+  }
+}

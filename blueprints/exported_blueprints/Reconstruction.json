@@ -1,0 +1,25 @@
+{
+  "definitions": {
+    "gadgetron_config": {
+      "name": "gadgetron_config",
+      "script": "return \"Generic_Cartesian_Grappa_EPI\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "gadgetron_parameter_map": {
+      "name": "gadgetron_parameter_map",
+      "script": "return \"IsmrmrdParameterMap_Siemens\"",
+      "sources": {},
+      "type": "parameter_definition"
+    },
+    "gadgetron_style_sheet": {
+      "name": "gadgetron_style_sheet",
+      "script": "return \"IsmrmrdParameterMap_Siemens_EPI\"",
+      "sources": {},
+      "type": "parameter_definition"
+    }
+  },
+  "id": "Reconstruction",
+  "name": "Reconstruction",
+  "properties": {}
+}
