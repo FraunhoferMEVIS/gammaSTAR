@@ -8,6 +8,6 @@ Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
 If you find any issues, have feature requests or questions about the published code, please open an issue with the appropriate label.
 For general questions about the gammaSTAR framework contact us via gammastar@mevis.fraunhofer.de
 
-## Forks and Rull Requests
+## Forks and Pull Requests
 
 Forks of this repository are allowed. Feel free to create pull requests, which may then be merged into the main branch after review.
