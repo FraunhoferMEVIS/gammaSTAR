@@ -1,0 +1,31 @@
+NOTICE
+
+This software project is licensed under GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+Copyright (c) 2025 Fraunhofer MEVIS, Germany
+
+This software makes use of third-party components, each of which is provided under its own compatible open-source license. Full license texts for these components can be found in the directory:
+
+    third_party_licenses/
+
+This directory contains license files and, where applicable, additional notices from the respective copyright holders.
+
+Included third-party libraries:
+
+- MRI Nufft (BSD-3-Clause License)
+- Python ISMRMRD Server (MIT License)
+- pymapvbvd (MIT License)
+- pydicom (MIT-based License)
+- ismrmrd (ISMRMRD SOFTWARE LICENSE JULY 2013)
+- sigpy (BSD-2-Clause License)
+- xmltodict (MIT License)
+- numpy (NumPy License)
+- scikit-learn (MIT License)
+
+Please note: Use of this software and the included third-party components is subject to the terms and conditions of the respective licenses. By using this software, you agree to comply with those terms.
+
+---
+
+For more information on the main license of this project, please refer to the file:
+
+    LICENSE

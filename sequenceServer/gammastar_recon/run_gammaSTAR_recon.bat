@@ -1,0 +1,1 @@
+docker run -p9002:9002 --rm -it gstar_recon

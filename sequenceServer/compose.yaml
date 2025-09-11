@@ -1,0 +1,9 @@
+services:
+  sequenceServer:
+    image: gs-server
+    ports:
+      - "8800:8800"
+  gstar_recon:
+    image: gstar_recon
+    ports:
+      - "9002:9002"

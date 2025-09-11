@@ -1,0 +1,33 @@
+NOTICE
+
+This software project is licensed under GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+Copyright (c) 2025 Fraunhofer MEVIS, Germany
+
+This software makes use of third-party components, each of which is provided under its own compatible open-source license. Full license texts for these components can be found in the directory:
+
+    third_party_licenses/
+
+This directory contains license files and, where applicable, additional notices from the respective copyright holders.
+
+Included third-party libraries:
+
+- torch (PyTorch) – BSD License
+- numpy – BSD License
+- matplotlib – Matplotlib License (based on PSF)
+- MRzero - AGPL-3.0 license
+- serde (MIT or Apache-2.0)
+- serde_json (MIT or Apache-2.0)
+- thiserror (MIT or Apache-2.0)
+- ezpc (MIT)
+- interp (MIT or Apache-2.0)
+- serde_with (MIT or Apache-2.0)
+- pyo3 (MIT or Apache-2.0)
+
+Please note: Use of this software and the included third-party components is subject to the terms and conditions of the respective licenses. By using this software, you agree to comply with those terms.
+
+---
+
+For more information on the main license of this project, please refer to the file:
+
+    LICENSE
