@@ -113,7 +113,8 @@ async def lifespan(app: FastAPI):
 httpd = FastAPI(lifespan=lifespan)
 
 # URL for the webserver
-origins = ['http://localhost:4200', '*']
+origins = ['http://localhost:4200',
+           'https://gammastar.mevis.fraunhofer.de']
 
 # Add CORS middleware to allow cross-origin requests
 httpd.add_middleware(
