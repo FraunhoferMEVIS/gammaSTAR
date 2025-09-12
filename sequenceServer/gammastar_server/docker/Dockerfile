@@ -18,8 +18,9 @@ FROM python:3.12 AS server-base
 RUN pip install fastapi[standard]
 RUN pip install MRzeroCore==0.3.6
 COPY gammastar_server/generatePhantoms.py /src/
+RUN curl -L https://raw.githubusercontent.com/MRsources/MRzero-Core/v0.3.5/python/MRzeroCore/phantom/brainweb/brainweb_data.json -o /tmp/brainweb_data.json && \
+    awk 'NR==23{$0="    4"} {print}' /tmp/brainweb_data.json > /usr/local/lib/python3.12/site-packages/MRzeroCore/phantom/brainweb/brainweb_data.json
 RUN python /src/generatePhantoms.py
-#COPY gammastar_server/brainweb /src/brainweb
 
 FROM server-base AS server
 COPY --from=build /src/pygstar/target/wheels/pygstar-0.2.0-cp312-cp312-manylinux_2_34_x86_64.whl /
