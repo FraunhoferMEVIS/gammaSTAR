@@ -33,7 +33,7 @@ python3 docker/main_gstar_recon.py
 ## Using gammaSTAR reconstructions with Docker (recommended)
 The gammastar reconstruction docker image can be built using the following command from the gammastar_recon directory
 ```bash
-docker build . --target=gstar_recon -t registry.fme.lan/gammastar/gstar_recon -f docker/Dockerfile
+docker build . --target=gstar_recon -t gstar_recon -f docker/Dockerfile
 ```
 Alternatively, double-click the build_gammaSTAR_recon.bat file. <br>
 Running the reconstruction server is as easy as the following:
