@@ -1,4 +1,4 @@
-This GitHub repository collects software components to be used with the gammaSTAR web frontend at https://gammastar.mevis.fraunhofer.de/#/dashboard
+This GitHub repository collects software components to be used with the gammaSTAR web frontend at https://gammastar.mevis.fraunhofer.de
 
 Fraunhofer MEVIS does not ensure compliance to medical product regulations for the gammaSTAR sequences and tools. Hence, gammaSTAR sequences and tools are not certified as medical device and are not qualified for clinical use, but strictly for research purposes only.
 
@@ -13,3 +13,4 @@ For general questions about the gammaSTAR framework contact us via gammastar@mev
 ## Forks and Pull Requests
 
 Forks of this repository are allowed. Feel free to create pull requests, which may then be merged into the main branch after review.
+
