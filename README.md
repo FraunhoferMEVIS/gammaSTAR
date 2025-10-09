@@ -1,3 +1,5 @@
+This GitHub repository collects software components to be used with the gammaSTAR web frontend at https://gammastar.mevis.fraunhofer.de/#/dashboard
+
 Fraunhofer MEVIS does not ensure compliance to medical product regulations for the gammaSTAR sequences and tools. Hence, gammaSTAR sequences and tools are not certified as medical device and are not qualified for clinical use, but strictly for research purposes only.
 
 Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
