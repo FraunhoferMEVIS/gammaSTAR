@@ -29,7 +29,7 @@ from finalize_out_image_module import FinalizeOutImageModule
 def print_info():
 
     print("########################################################\n\n"
-          "gammaSTAR Reconstructions v1.0.1 Release\n")
+          "gammaSTAR Reconstructions v1.0.2 Release\n")
 
     print("The software is not qualified for use as a medical product or as part\n"
           "thereof. No bugs or restrictions are known. Delivered ‘as is’ without\n"

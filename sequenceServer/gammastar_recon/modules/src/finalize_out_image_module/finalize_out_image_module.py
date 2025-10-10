@@ -53,6 +53,14 @@ class FinalizeOutImageModule:
         @author Jörn Huber
         """
 
+        num_rot = 0
+        if connection_buffer.headers[0].acquisitionSystemInformation.systemVendor == 'Siemens':
+            num_rot = 3
+        elif connection_buffer.headers[0].acquisitionSystemInformation.systemVendor == 'gammaSTAR':
+            num_rot = 1
+        if connection_buffer.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D or connection_buffer.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
+            num_rot += 2
+
         recon_images = np.around(np.abs(connection_buffer.meas_data.data['NP_IS_IMAGING']) * book_keeper.last_scaling_factor).astype(np.uint16)
         for i_rep in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'REP')):
             for i_phase in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PHS')):
@@ -81,6 +89,8 @@ class FinalizeOutImageModule:
                                                                   i_phase,
                                                                   i_con,
                                                                   i_rep, 0, 0], [1, 0, 2])
+
+                            par_image = np.rot90(par_image, k=num_rot, axes=(0, 1))
 
                             ismrmrd_image = ismrmrd_tools.numpy_array_to_ismrmrd_image(par_image,
                                                                                        connection_buffer.meas_data.data['ACQ_IS_IMAGING'],

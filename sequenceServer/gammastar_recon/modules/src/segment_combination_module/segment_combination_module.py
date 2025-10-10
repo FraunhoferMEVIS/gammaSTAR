@@ -85,7 +85,8 @@ class SegmentCombinationModule:
             else:
 
                 phase_cor_acq_key = phase_cor_key.replace('NP', 'ACQ')
-                corr_line_ind = connection_buffer.meas_data.data[phase_cor_acq_key][0].idx.kspace_encode_step_1
+                corr_line_ind_ksp1 = connection_buffer.meas_data.data[phase_cor_acq_key][0].idx.kspace_encode_step_1
+                corr_line_ind_ksp2 = connection_buffer.meas_data.data[phase_cor_acq_key][0].idx.kspace_encode_step_2
 
                 phase_corr_lines = np.zeros((connection_buffer.meas_data(phase_cor_key, 'COL'), 3), dtype=complex)
 
@@ -100,26 +101,32 @@ class SegmentCombinationModule:
 
                                             phase_corr_lines[:, 0] = \
                                             connection_buffer.meas_data.data[phase_cor_reverse_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
 
                                             phase_corr_lines[:, 1] = connection_buffer.meas_data.data[phase_cor_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
 
                                             phase_corr_lines[:, 2] = \
                                             connection_buffer.meas_data.data[phase_cor_reverse_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 1, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 1, i_seg]
 
                                         elif connection_buffer.meas_data.data[phase_cor_key].shape[9] == 2:
 
                                             phase_corr_lines[:, 0] = connection_buffer.meas_data.data[phase_cor_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
 
                                             phase_corr_lines[:, 1] = \
                                             connection_buffer.meas_data.data[phase_cor_reverse_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 0, i_seg]
 
                                             phase_corr_lines[:, 2] = connection_buffer.meas_data.data[phase_cor_key][
-                                                :, i_cha, corr_line_ind, 0, i_slc, 0, i_phase, 0, i_rep, 1, i_seg]
+                                                :, i_cha, corr_line_ind_ksp1, corr_line_ind_ksp2, i_slc, 0, i_phase, 0, i_rep, 1, i_seg]
+
+                                        if np.min(np.abs(phase_corr_lines)) == 0 and np.max(np.abs(phase_corr_lines)) == 0:
+                                            logging.warning(
+                                                f"GSTAR Recon: Phase correction data contains only zeros. Skipping epi phase correction for current segment. "
+                                                f"Indices: REP={i_rep}, PHS={i_phase}, SET={i_set}, SLC={i_slc}, CHA={i_cha}, SEG={i_seg}")
+                                            continue
 
                                         phase_corr_drift = epi_tools.calc_linear_phase_correction(phase_corr_lines)
 
