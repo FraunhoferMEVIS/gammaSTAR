@@ -9,9 +9,8 @@
 
 import math
 import numpy as np
-import sigpy
 
-def calc_linear_phase_correction(three_lines_ksp_phasecor):
+def calc_linear_phase_correction(three_lines_ksp_phasecor: np.ndarray) -> np.ndarray:
     """!
     @brief Calculates the phase information which needs to be applied to every second readout to correct for the EPI
            phase drift.
@@ -61,13 +60,15 @@ def calc_linear_phase_correction(three_lines_ksp_phasecor):
     return corr_phase_cplx
 
 
-def correct_linear_phase_drift(ksp_data, phase_corr_drift_cplx):
+def correct_linear_phase_drift(
+    ksp_data: np.ndarray,
+    phase_corr_drift_cplx: np.ndarray
+) -> np.ndarray:
     """!
     @brief Applies phase correction to even/odd EPI lines based on three-lines reference scan.
 
     @param ksp_data: (np.ndarray) 2D (num_col, num_lin) measured k-space segment.
-    @param phase_corr_drift_cplx: (np.ndarray) 1D (num_col) Calculated phase correction drift from 3 lines reference data.
-    @param even: (bool) If True, apply phase correction to even lines, else to odd lines.
+    @param phase_corr_drift_cplx: (np.ndarray) 1D (num_col) Calculated phase correction drift from 3 lines reference data.    
 
     @return
         - (np.ndarray) Linear drift corrected kspace segment (num_col, num_lin)

@@ -9,7 +9,7 @@
 
 import numpy as np
 
-def fill_partial_fourier_pocs_2D(pf_data, max_num_iter):
+def fill_partial_fourier_pocs_2D(pf_data: np.ndarray, max_num_iter: int) -> np.ndarray:
     """!
     @brief Reconstruct missing lines in partial fourier acquisitions using the pocs approach.
     @details In contrast to the simple conjgate symmetry algorithm, pocs is able to estimate the phase of the object,
@@ -83,7 +83,12 @@ def fill_partial_fourier_pocs_2D(pf_data, max_num_iter):
     return s
 
 
-def fill_partial_fourier_pocs_3D(pf_data, max_num_iter, q_pe1, q_pe2):
+def fill_partial_fourier_pocs_3D(
+    pf_data: np.ndarray,
+    max_num_iter: int,
+    q_pe1: int,
+    q_pe2: int
+) -> np.ndarray:
     """!
     @brief Reconstruct missing lines in 3D partial fourier acquisitions using the pocs approach.
     @details In contrast to the simple conjgate symmetry algorithm, pocs is able to estimate the phase of the object,

@@ -66,7 +66,7 @@ class KspaceToImageModule:
                     for i_con in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'CON')):
                         for i_slc in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'SLC')):
                             for i_par in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PE2')):
-                                im = np.squeeze(connection_buffer.meas_data.data['NP_IS_IMAGING'][:, 0, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0])
+                                im = connection_buffer.meas_data.data['NP_IS_IMAGING'][:, 0, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0]
                                 connection_buffer.meas_data.data['NP_IS_IMAGING'][:, 0, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0] = im
 
         return connection_buffer

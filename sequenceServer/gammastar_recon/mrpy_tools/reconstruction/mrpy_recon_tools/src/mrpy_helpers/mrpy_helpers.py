@@ -7,20 +7,20 @@
          thereof. No bugs or restrictions are known.
 """
 
-import math
 import numpy as np
 import sigpy
-import mrpy_parallel_tools as parallel_tools
 
-def remove_readout_os(ksp_data, dim, os_factor):
+def remove_readout_os(ksp_data: np.ndarray, dim: int, os_factor: float) -> np.ndarray:
     """!
     @brief Removes the readout oversampling which is applied by default.
     @details Might not correctly preserve the phase information, additional investigation is needed.
 
     @param ksp_data: (np.ndarray) N-dimensional kspace data, with readout dimensions in the first index.
+    @param dim: (int) Dimension along which the readout oversampling should be removed.
+    @param os_factor: (float) Oversampling factor which was used during acquisition.
 
     @return
-        - (nd.array) 1D readout line of kspace with removed oversampling
+        - (np.ndarray) 1D readout line of kspace with removed oversampling
 
     @author Jörn Huber
     """
@@ -32,8 +32,7 @@ def remove_readout_os(ksp_data, dim, os_factor):
     ksp_data_os_removed = np.fft.fftshift(np.fft.fft(np.fft.fftshift(ksp_data_fft_os_removed, axes=dim), axis=dim), axes=dim)
     return ksp_data_os_removed
 
-
-def gauss_kern_val(pos_x, pos_y, pos_z, sigma):
+def gauss_kern_val(pos_x: float, pos_y: float, pos_z: float, sigma: float) -> float:
     """!
     @brief Calculates gaussian kernel value for sensitivities
 
@@ -52,7 +51,7 @@ def gauss_kern_val(pos_x, pos_y, pos_z, sigma):
     gauss_z = np.exp(-0.5 * np.square(pos_z) / np.square(sigma))
     return gauss_x*gauss_y*gauss_z
 
-def create_sensitivity_test_data_2D(num_col, num_lin):
+def create_sensitivity_test_data_2D(num_col: int, num_lin: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """!
     @brief Creates nine artifical shepp-logan channels for testing purposes
 
@@ -80,7 +79,7 @@ def create_sensitivity_test_data_2D(num_col, num_lin):
     sl_ksp_sens = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(sl_sens, axes=(0, 1)),axes=(0, 1)), axes=(0, 1))
     return sl_ksp_sens, sl, sens
 
-def create_partial_fourier_test_data_2D(num_col, num_lin, pf_fraction):
+def create_partial_fourier_test_data_2D(num_col: int, num_lin: int, pf_fraction: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """!
     @brief Creates nine artifical shepp-logan channels for testing purposes.
     @details k-space data is created which serves the purpose of testing partial fourier reconstruction algorithms.
@@ -137,7 +136,13 @@ def create_partial_fourier_test_data_2D(num_col, num_lin, pf_fraction):
 
     return ksp_sens_real_pf, ksp_sens_cplx_pf, ksp_sens_real, ksp_sens_cplx, sl
 
-def create_partial_fourier_test_data_3D(num_col, num_lin, num_par, pf_fraction_pe1, pf_fraction_pe2):
+def create_partial_fourier_test_data_3D(
+    num_col: int,
+    num_lin: int,
+    num_par: int,
+    pf_fraction_pe1: float,
+    pf_fraction_pe2: float
+) -> tuple[np.ndarray, np.ndarray]:
     """!
     @brief Creates nine artifical shepp-logan channels for testing purposes.
     @details k-space data is created which serves the purpose of testing partial fourier reconstruction algorithms.
@@ -146,18 +151,14 @@ def create_partial_fourier_test_data_3D(num_col, num_lin, num_par, pf_fraction_p
 
     @param num_col: (int) number of columns
     @param num_lin: (int) number of lines
-    @param pf_fraction: (float) Fraction of partial fourier lines. Should be >= 0.5.
+    @param num_par: (int) number of partitions
+    @param pf_fraction_pe1: (float) Fraction of partial fourier lines in phase encoding direction 1. Should be >= 0.5.
+    @param pf_fraction_pe2: (float) Fraction of partial fourier lines in phase encoding direction 2. Should be >= 0.5.
 
     @return
         - (np.ndarray) Multichannel fractional sampled kspaces of size (num_col, num_lin, 9) based on
                        real valued channel data.
-        - (np.ndarray) Multichannel fractional sampled kspaces of size (num_col, num_lin, 9) based on
-                       cplx valued channel data.
-        - (np.ndarray) Multichannel fully sampled kspaces of size (num_col, num_lin, num_cha) based on
-                       real valued channel data.
-        - (np.ndarray) Multichannel fully sampled kspaces of size (num_col, num_lin, num_cha) based on
-                       cplx valued channel data.
-        - (np.ndarray) Original shepp-logan phantom of size (num_col, num_lin)
+        - (np.ndarray) Image with phase modulation (num_col, num_lin, 9).
 
     @author Jörn Huber
     """

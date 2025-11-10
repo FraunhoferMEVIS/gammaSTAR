@@ -7,10 +7,9 @@
          thereof. No bugs or restrictions are known.
 """
 
-import json
 import numpy as np
 
-def reorder_twix_with_raw_reps(raw_adc_representations, twix_np_phasecor, twix_np_rtfeedback, twix_np_paracalib, twix_np_imaging):
+def reorder_twix_with_raw_reps(raw_adc_representations: list, twix_np_phasecor: np.ndarray, twix_np_rtfeedback: np.ndarray, twix_np_paracalib: np.ndarray, twix_np_imaging: np.ndarray) -> np.ndarray:
     """!
     @brief This function combines measured data which was loaded from a twix dataset into a single numpy array where
            individual readouts are sorted based on their occurence in the raw representations with respective header

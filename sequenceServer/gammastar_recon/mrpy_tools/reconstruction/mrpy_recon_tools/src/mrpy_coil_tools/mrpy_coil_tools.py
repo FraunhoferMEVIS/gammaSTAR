@@ -8,9 +8,9 @@
 """
 
 import numpy as np
+from typing import Tuple
 
-
-def sum_of_squares_combination(im):
+def sum_of_squares_combination(im: np.ndarray) -> np.ndarray:
     """!
     @brief Combines multi-coil MRI data using the sum of squares (SOS) method.
 
@@ -25,7 +25,7 @@ def sum_of_squares_combination(im):
 
     return np.sqrt(np.sum(np.abs(im) ** 2, axis=-1))
 
-def estimate_sens(ksp, interpol_fact = 1):
+def estimate_sens(ksp: np.ndarray, interpol_fact: int = 1) -> np.ndarray:
     """!
     @brief Calculates the coil sensitivity maps from data using an eigenvalue approach as described by Walsh et. al
 
@@ -77,7 +77,7 @@ def estimate_sens(ksp, interpol_fact = 1):
 
     return sens_map
 
-def combine_channels(ksp, sens):
+def combine_channels(ksp: np.ndarray, sens: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """!
     @brief Combines k-space data from multiple channels using provided sensitivity maps.
     @details Performs optimal channel combination in image space using the sensitivity maps, then transforms back to k-space.

@@ -2,7 +2,7 @@
   <img src="img/logo.png" alt="logo" width="300"/>
 </div>
 
-# gammaSTAR Reconstructions v1.0.2 Release
+# gammaSTAR Reconstructions v1.0.3 Release
 A fully functional reconstruction server which is compatible with all gammaSTAR imaging sequences. 2D/3D Cartesian sequences are supported as well as 2D/3D non-Cartesian sequences. Examplary demonstration of usage in combination with tabletop systems, MR simulators and full body systems is demonstrated in
 > Huber J, Hussain S, Kuhlen V, Neisser A, Schenk L, Konstandin S, Günther M, Klimenko M, Hoinkiss D. Introducing gammaSTAR Reconstructions: Demonstration of Vendor Neutral MR Data Acquisition and Reconstruction on Tabletop Systems, MR Simulators and 3T Systems. Proceedings of the 41st Annual Meeting of the ESMRMB.
 

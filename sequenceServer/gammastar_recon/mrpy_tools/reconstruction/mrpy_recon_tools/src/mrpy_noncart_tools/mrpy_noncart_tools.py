@@ -9,8 +9,9 @@
 
 import math
 import numpy as np
+from typing import Tuple, List
 
-def prep_kaiser_bessel_kernel(n_samples, beta):
+def prep_kaiser_bessel_kernel(n_samples: int, beta: float) -> np.ndarray:
     """!
     @brief Function which prepares kaiser-bessel values as used during gridding routine. Note: A beta value of 18.557 is
            recommended for an oversampling factor of 2 and a window width of 4.
@@ -30,7 +31,7 @@ def prep_kaiser_bessel_kernel(n_samples, beta):
     return np.kaiser(n_samples, beta)[int(n_samples/2):-1]
 
 
-def calc_equidistant_radial_trajectory_2D(radial_data_dims, radial_acq_angle):
+def calc_equidistant_radial_trajectory_2D(radial_data_dims: np.ndarray, radial_acq_angle: float) -> np.ndarray:
     """!
     @brief Calculates the trajectory of radial samples. Assumes equidistant spacing in sampled k-space data.
 
@@ -68,7 +69,13 @@ def calc_equidistant_radial_trajectory_2D(radial_data_dims, radial_acq_angle):
     return traj
 
 
-def grid_data_to_matrix_2D(data, traj, os_factor, window_width, kernel):
+def grid_data_to_matrix_2D(
+    data: np.ndarray,
+    traj: np.ndarray,
+    os_factor: float,
+    window_width: float,
+    kernel: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray]:
     """!
     @brief Applies gridding routine to acquired blade data.
 
@@ -76,7 +83,7 @@ def grid_data_to_matrix_2D(data, traj, os_factor, window_width, kernel):
     @param traj: (np.ndarray) 4D numpy array of size (num_col, num_lin, 2, num_acq) containing real valued
                  trajectory data
     @param os_factor: (float) Oversampling factor of target grid, 2.0 is recommended
-    @param window_width: (int) Width of gridding window (4 recommended for best quality)
+    @param window_width: (float) Width of gridding window (4 recommended for best quality)
     @param kernel: (np.ndarray) Precalculated kernel values
 
     @return
@@ -140,7 +147,12 @@ def grid_data_to_matrix_2D(data, traj, os_factor, window_width, kernel):
     return gridded_cplx_dens, gridded_cplx
 
 
-def get_deconvolution_matrix_2D(matrix_size, os_factor, window_width, kernel):
+def get_deconvolution_matrix_2D(
+    matrix_size: int,
+    os_factor: float,
+    window_width: int,
+    kernel: np.ndarray
+) -> np.ndarray:
     """!
     @brief Calculates the deconvolution matrix by gridding a delta pulse and calculating the FFT.
 
@@ -166,13 +178,17 @@ def get_deconvolution_matrix_2D(matrix_size, os_factor, window_width, kernel):
     return decon_mat
 
 
-def apply_deconvolution_2D(data_grid, decon_mat, os_factor):
+def apply_deconvolution_2D(
+    data_grid: np.ndarray,
+    decon_mat: np.ndarray,
+    os_factor: float
+) -> np.ndarray:
     """!
     @brief Applies deconvolution to gridded data using a precalculated deconvolution matrix.
 
     @param data_grid: (np.ndarray) gridded complex k-space data (num_col, num_lin)
     @param decon_mat: (np.ndarray) real_valued deconvolution matrix
-    @param os_factor: (np.ndarray) Applied oversampling factor during gridding
+    @param os_factor: (float) Applied oversampling factor during gridding
 
     @return
         - (np.ndarray) image space (num_col/os_factor, num_lin/os_factor) with applied deconvolution
@@ -192,7 +208,7 @@ def apply_deconvolution_2D(data_grid, decon_mat, os_factor):
     return im_origfov
 
 
-def prop_cut_kspace_edges_2D(data):
+def prop_cut_kspace_edges_2D(data: np.ndarray) -> None:
     """!
     @brief Cuts outer edges of k-space. Needed for e.g. rotation correction.
 
@@ -213,7 +229,11 @@ def prop_cut_kspace_edges_2D(data):
                 data[i_col, i_lin, :] = np.zeros(num_acq)
 
 
-def prop_phase_correction_2D(data, filter_type="rhomb", fov=[1, 1]):
+def prop_phase_correction_2D(
+    data: np.ndarray,
+    filter_type: str = "rhomb",
+    fov: List[float] = [1, 1]
+) -> np.ndarray:
     """!
     @brief Removes low order phase shifts from blade image data, which is the result from eddy currents etc.
     @details Phase correction is needed as blades need to share a common k-space center before gridding. Therefore,
@@ -257,7 +277,10 @@ def prop_phase_correction_2D(data, filter_type="rhomb", fov=[1, 1]):
 
     return data_corr
 
-def prop_calc_ksp_coverage(traj, num_grid_points_per_axis):
+def prop_calc_ksp_coverage(
+    traj: np.ndarray,
+    num_grid_points_per_axis: int
+) -> float:
     """!
     @brief Calculates k-space coverage of PROPELLER trajectory.
     @details Calculates fraction of k-space covered by all PROPELLER blades compared to a full k-space coverage, i.e. infinite number of blades
@@ -328,7 +351,10 @@ def prop_calc_ksp_coverage(traj, num_grid_points_per_axis):
     cover = 100 * np.count_nonzero(dummy_part) / np.count_nonzero(dummy_full)
     return cover
 
-def calc_propeller_blade_increment_from_trajs(trajectory_line_blade_1, trajectory_line_blade_2):
+def calc_propeller_blade_increment_from_trajs(
+    trajectory_line_blade_1: np.ndarray,
+    trajectory_line_blade_2: np.ndarray
+) -> float:
     """!
     @brief Calculates the PROPELLER blade angle from two trajectory lines between two PROPELLER blades based on the
            scalar product of two direction vectors which are extracted from the trtajectory.
@@ -341,7 +367,7 @@ def calc_propeller_blade_increment_from_trajs(trajectory_line_blade_1, trajector
     @return
         - (float) Angle between the two blades in degrees.
 
-    @author Jörn Huber, Github Copilot (GPT 4.1)
+    @author Jörn Huber
     """
 
     vec_1 = trajectory_line_blade_1[0, :]

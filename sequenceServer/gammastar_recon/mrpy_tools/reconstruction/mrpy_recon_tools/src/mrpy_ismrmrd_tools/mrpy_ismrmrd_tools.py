@@ -7,7 +7,6 @@
          thereof. No bugs or restrictions are known.
 """
 
-import statistics
 import math
 import struct
 import socket
@@ -21,17 +20,16 @@ import random
 from datetime import datetime
 import mrinufft
 from mrinufft.density import voronoi
-import mrpy_coil_tools as coil_tools
 import mrpy_helpers as helpers
 from scipy.interpolate import interp1d
-
+from typing import Any, List, Optional, Dict, Tuple, Union
 
 class MeasIDX:
     """!
     @brief Class which capsules idx counters.
     """
 
-    def __init__(self, repetition, contrast, phase, set, slice):
+    def __init__(self, repetition: int, contrast: int, phase: int, set: int, slice: int) -> None:
         self.repetition = repetition
         self.contrast = contrast
         self.phase = phase
@@ -129,10 +127,10 @@ class MeasData:
     @brief Class which measurement data and information
     """
 
-    def __call__(self, data_key, dim_str):
+    def __call__(self, data_key: str, dim_str: str) -> Any:
         return self.data[data_key].shape[IsmrmrdConstants.IDX_MAP[dim_str]]
 
-    def __init__(self):
+    def __init__(self) -> None:
 
         ## Dictionary, which contains different sub dictionaries which store the received data
         self.data = dict()
@@ -194,7 +192,7 @@ class ConnectionBuffer:
     @brief Class which capsules all message related handling for the server and client side.
     """
 
-    def __init__(self, socket):
+    def __init__(self, socket: socket.socket) -> None:
         """!
         @brief Initilization method.
 
@@ -265,7 +263,7 @@ class ConnectionBuffer:
             IsmrmrdConstants.ID_MESSAGE_IMAGE:       self.read_image
         }
 
-    def convert_acquisitions(self):
+    def convert_acquisitions(self) -> None:
         """!
         @brief Converts list of ismrmrd acquisition objects to numpy arrays.
         @details Buffered data is handled depending on the type of readout. If non-cartesian trajectories were applied,
@@ -312,14 +310,10 @@ class ConnectionBuffer:
                 if "IS_IMAGING" in np_key:
                     self.meas_data.data[np_key] = ismrmrd_acqs_to_numpy_array(self.meas_data.data[acq_key],
                                                                               self.meas_data.encoded_space,
-                                                                              self.meas_data.recon_space,
-                                                                              self.meas_data.W,
                                                                               os_factor)
                 else:
                     self.meas_data.data[np_key] = ismrmrd_acqs_to_numpy_array(self.meas_data.data[acq_key],
                                                                               None,
-                                                                              None,
-                                                                              self.meas_data.W,
                                                                               os_factor)
 
             if 'NP_IS_PARALLEL_CALIBRATION' in self.meas_data.data:
@@ -335,7 +329,7 @@ class ConnectionBuffer:
                     max(self.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'],
                         key=lambda acq: acq.idx.kspace_encode_step_2).idx.kspace_encode_step_2 + 1)
 
-    def receive_messages(self):
+    def receive_messages(self) -> None:
         """!
         @brief Using an established tcp connection, this function receives all incoming messages and handles appropriate
                deserialization.
@@ -375,7 +369,7 @@ class ConnectionBuffer:
                 break
 
     # --> Based on python-ismrmrd-server (see third_party_licenses.txt)
-    def read(self, nbytes):
+    def read(self, nbytes: int) -> bytes:
         """!
         @brief Reads a defined amount of bytes from the stream.
 
@@ -385,7 +379,7 @@ class ConnectionBuffer:
         """
         return self.socket.recv(nbytes, socket.MSG_WAITALL)
 
-    def shutdown_close(self):
+    def shutdown_close(self) -> None:
         """!
         @brief Close the socket connection.
 
@@ -398,7 +392,7 @@ class ConnectionBuffer:
         self.socket.close()
         logging.info("Socket closed")
 
-    def read_mrd_message_identifier(self):
+    def read_mrd_message_identifier(self) -> Optional[int]:
         """!
         @brief Reads the 22 bytes message identifier from the streamthe stream.
 
@@ -422,7 +416,7 @@ class ConnectionBuffer:
         self.messages_received.append(ident)
         return ident
 
-    def send_config_file(self, filename):
+    def send_config_file(self, filename: str) -> None:
         """!
         @brief Send a config file name text message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_CONFIG_FILE (1) ----------------------------------------
@@ -441,7 +435,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_CONFIG_FILE))
             self.socket.send(struct.Struct('<1024s').pack(filename.encode()))
 
-    def read_config_file(self):
+    def read_config_file(self) -> None:
         """!
         @brief Reads an incoming configuration file name from stream.
         @details ----- MRD_MESSAGE_CONFIG_FILE (1) ----------------------------------------
@@ -459,7 +453,7 @@ class ConnectionBuffer:
         self.config_files.append(config_file)
         logging.info("<--  " + str(config_file))
 
-    def send_config_text(self, contents):
+    def send_config_text(self, contents: str) -> None:
         """!
         @brief Sends a configuration text file to the stream.
         @details ----- MRD_MESSAGE_CONFIG_TEXT (2) --------------------------------------
@@ -481,7 +475,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
 
-    def read_config_text(self):
+    def read_config_text(self) -> None:
         """!
         @brief Reads an incoming configuration text file from stream.
         @details ----- MRD_MESSAGE_CONFIG_TEXT (2) --------------------------------------
@@ -501,7 +495,7 @@ class ConnectionBuffer:
         config_text = config_text.split(b'\x00',1)[0].decode('utf-8')  # Strip off null teminator
         self.config_texts.append(config_text)
 
-    def send_metadata(self, contents):
+    def send_metadata(self, contents: str) -> None:
         """!
         @brief Send a header text message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_METADATA_XML_TEXT (3) -----------------------------------
@@ -524,7 +518,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
 
-    def read_metadata(self):
+    def read_metadata(self) -> None:
         """!
         @brief Reads metadata header information from the stream.
         @details ----- MRD_MESSAGE_METADATA_XML_TEXT (3) -----------------------------------
@@ -548,7 +542,7 @@ class ConnectionBuffer:
         except:
             logging.warning("Could not deserialize header, maybe the encoding is not valid:\n" + metadata)
 
-    def send_close(self):
+    def send_close(self) -> None:
         """!
         @brief Send a close message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_CLOSE (4) ----------------------------------------------
@@ -560,7 +554,7 @@ class ConnectionBuffer:
             logging.info("--> Sending MRD_MESSAGE_CLOSE (4)")
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_CLOSE))
 
-    def read_close(self):
+    def read_close(self) -> None:
         """!
         @brief Reads a close message from the stream. Additionally identifies if data was sent using a specific protocol.
         @details ----- MRD_MESSAGE_CLOSE (4) ----------------------------------------------
@@ -604,7 +598,7 @@ class ConnectionBuffer:
 
         self.is_exhausted = True
 
-    def send_text(self, contents):
+    def send_text(self, contents: str) -> None:
         """!
         @brief Send a text message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_TEXT (5) -----------------------------------
@@ -625,7 +619,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
 
-    def read_text(self):
+    def read_text(self) -> None:
         """!
        @brief Reads a text message encoded using the ismrmrd protocol from the stream.
        @details ----- MRD_MESSAGE_TEXT (5) -----------------------------------
@@ -644,7 +638,7 @@ class ConnectionBuffer:
         config_text = config_text.split(b'\x00',1)[0].decode('utf-8')  # Strip off null teminator
         self.texts.append(config_text)
 
-    def send_acquisition(self, acquisition):
+    def send_acquisition(self, acquisition: Any) -> None:
         """!
         @brief Send an acquisition message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_ACQUISITION (1008) -----------------------------
@@ -667,7 +661,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_ACQUISITION))
             acquisition.serialize_into(self.socket.send)
 
-    def read_acquisition(self):
+    def read_acquisition(self) -> None:
         """!
         @brief Reads an acquisition message encoded using the ismrmrd protocol from the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_ACQUISITION (1008) -----------------------------
@@ -727,7 +721,7 @@ class ConnectionBuffer:
                 self.meas_data.data[key_string] = []
             self.meas_data.data[key_string].append(acq)
 
-    def send_image(self, images):
+    def send_image(self, images: Any) -> None:
         """!
         @brief Send an image message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_IMAGE (1022) -----------------------------------
@@ -757,7 +751,7 @@ class ConnectionBuffer:
                 self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_IMAGE))
                 image.serialize_into(self.socket.send)
 
-    def read_image(self):
+    def read_image(self) -> None:
         """!
         @brief Reads an image message encoded using the ismrmrd protocol from the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_IMAGE (1022) -----------------------------------
@@ -775,7 +769,7 @@ class ConnectionBuffer:
         logging.info("<-- Received MRD_MESSAGE_ISMRMRD_IMAGE (1022)")
         self.images.append(ismrmrd.Image.deserialize_from(self.read))
 
-    def send_waveform(self, waveform):
+    def send_waveform(self, waveform: Any) -> None:
         """!
         @brief Sends a waveform message encoded using the ismrmrd protocol to the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_WAVEFORM (1026) -----------------------------
@@ -796,7 +790,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_WAVEFORM))
             waveform.serialize_into(self.socket.send)
 
-    def read_waveform(self):
+    def read_waveform(self) -> None:
         """!
         @brief Reads a waveform message encoded using the ismrmrd protocol from the stream.
         @details ----- MRD_MESSAGE_ISMRMRD_WAVEFORM (1026) -----------------------------
@@ -818,7 +812,14 @@ class ConnectionBuffer:
 
     # <-- Based on python-ismrmrd-server (see third_party_licenses.txt)
 
-def gstar_to_ismrmrd_hdr(prot, info, expo, sys, root, opt_meas_info = None):
+def gstar_to_ismrmrd_hdr(
+    prot: Dict[str, Any],
+    info: Dict[str, Any],
+    expo: Dict[str, Any],
+    sys: Dict[str, Any],
+    root: Dict[str, Any],
+    opt_meas_info: Optional[Dict[str, Any]] = None
+) -> str:
     """!
     @brief This function transfers header entries from gammastar to the corresponding ismrmrd header.
 
@@ -1084,7 +1085,7 @@ def gstar_to_ismrmrd_hdr(prot, info, expo, sys, root, opt_meas_info = None):
     return xml_str
 
 
-def twix_hdr_to_ismrmrd_hdr(twix_hdr):
+def twix_hdr_to_ismrmrd_hdr(twix_hdr: Dict[str, Any]) -> str:
     """!
     @brief This function transfers header entries from a twix_hdr object to the corresponding ismrmrd header object
 
@@ -1250,7 +1251,7 @@ def twix_hdr_to_ismrmrd_hdr(twix_hdr):
     return xml_str
 
 
-def noise_scan_to_acq(numpy_noise_array):
+def noise_scan_to_acq(numpy_noise_array: np.ndarray) -> ismrmrd.Acquisition:
     """!
     @brief A method, which creates an acquisition object from a numpy array, containing noise correlation scans
            from multiple channels.
@@ -1272,7 +1273,12 @@ def noise_scan_to_acq(numpy_noise_array):
     return acq
 
 
-def numpy_and_raw_rep_to_acq(numpy_array, raw_adc_representations, traj_info = None, reverse_lineflip = False):
+def numpy_and_raw_rep_to_acq(
+    numpy_array: np.ndarray,
+    raw_adc_representations: List[Dict[str, Any]],
+    traj_info: Optional[Dict[str, Any]] = None,
+    reverse_lineflip: bool = False
+) -> List[Any]:
     """!
     @brief A method, which creates a list of ISMRMRD acquisition objects from a three-dimensional numpy array based
            on the gammastar raw representations and trajectory information which are provided as a list.
@@ -1371,7 +1377,7 @@ def numpy_and_raw_rep_to_acq(numpy_array, raw_adc_representations, traj_info = N
     return acq_list
 
 
-def create_dummy_ismrmrd_header():
+def create_dummy_ismrmrd_header() -> str:
     """!
     @brief A method, which first creates a dummy ismrmrd header in xml format, which is encoded into a string and
            returned.
@@ -1379,7 +1385,7 @@ def create_dummy_ismrmrd_header():
     @return
         - (string) ISMRMRD header in xml format but serialized into string
 
-    @author Jörn Huber, GitHub Copilot (GPT 4.1)
+    @author Jörn Huber
     """
 
     root = xml_elem_tree.Element("ismrmrdHeader", xmlns="http://www.ismrm.org/ISMRMRD")
@@ -1471,16 +1477,23 @@ def create_dummy_ismrmrd_header():
     return xml_str
 
 
-def gstar_recon_emitter(host_address, port, list_of_acqs, ismrmrd_header, protocol = None, config_message = None):
+def gstar_recon_emitter(
+    host_address: str,
+    port: int,
+    list_of_acqs: List[ismrmrd.Acquisition],
+    ismrmrd_header: str,
+    protocol: Optional[float] = None,
+    config_message: Optional[str] = None
+) -> Union[ConnectionBuffer, bool]:
     """!
     @brief ISMRMRD client which sends ismrmrd.Acquisition objects together with respective text messages to the stream.
 
+    @param host_address: (string) Address of host
+    @param port: (int) Port at host
     @param list_of_acqs: (list[ismrmrd.Acquisition]) A list of acquisition objects which shall be serialized to the
                          stream
-    @param protocol: (double) Can be 1.0 or 1.1 and describes the desired series of messages which shall be used for
+    @param protocol: (float) Can be 1.0 or 1.1 and describes the desired series of messages which shall be used for
                               sending.
-    @param host_address: (string) Host address of server
-    @param port: (int) Port number of server
     @param config_message: (string) Algorithm configuration message.
     @param ismrmrd_header: (string) XML encoded string which contains the ismrmrd header information. If no header is
                            provided, a dummy header is used.
@@ -1542,7 +1555,7 @@ def gstar_recon_emitter(host_address, port, list_of_acqs, ismrmrd_header, protoc
     return con
 
 
-def gstar_recon_injector(con):
+def gstar_recon_injector(con: ConnectionBuffer) -> None:
     """!
     @brief ISMRMRD client which uses a connected client socket to wait for reconstructed images on the server side.
 
@@ -1554,7 +1567,7 @@ def gstar_recon_injector(con):
     con.receive_messages()
 
 
-def gstar_recon_server(host, port):
+def gstar_recon_server(host: str, port: int) -> Tuple[ConnectionBuffer, socket.socket]:
     """!
     @brief gammaSTAR server implementation. Use this to catch data streams from a client.
 
@@ -1584,7 +1597,7 @@ def gstar_recon_server(host, port):
     return con, server_socket
 
 
-def ismrmrd_flags_to_bitmask(list_of_flags):
+def ismrmrd_flags_to_bitmask(list_of_flags: List[str]) -> int:
     """!
     @brief Reverse functionality of bitmask_to_flags. Creates the bitmask value to be set as a property of the
            ismrmrd.Acquistion objects from the list of ismrmrd flags.
@@ -1594,7 +1607,7 @@ def ismrmrd_flags_to_bitmask(list_of_flags):
     @return
         - (int) The bitmask value as a 64 bit integer, which is the bitmask of the acquisition flags.
 
-    @author Jörn Huber, GitHub Copilot (GPT-4.1)
+    @author Jörn Huber
     """
     bitmask = 0
     inv_flag_dict = dict(zip(IsmrmrdConstants.ISMRMRD_ACQ_FLAGS.values(), IsmrmrdConstants.ISMRMRD_ACQ_FLAGS.keys()))
@@ -1606,7 +1619,7 @@ def ismrmrd_flags_to_bitmask(list_of_flags):
     return bitmask
 
 
-def bitmask_to_flags(flag_value):
+def bitmask_to_flags(flag_value: int) -> List[str]:
     """!
     @brief Function which transforms the acqusition bitmask into corresponding ismrmrd flags such as IS_ACQ_REVERSE etc.
 
@@ -1615,7 +1628,7 @@ def bitmask_to_flags(flag_value):
     @return
         - (list) A list of active flags as strings, e.g. ["ACQ_IS_REVERSE", "ACQ_IS_PHASECORR_DATA"]
 
-    @author Jörn Huber, GitHub Copilot (GPT-4.1)
+    @author Jörn Huber
     """
     active_flags = [name for bit, name in IsmrmrdConstants.ISMRMRD_ACQ_FLAGS.items() if
                     (flag_value & (1 << (bit - 1))) != 0]
@@ -1623,7 +1636,7 @@ def bitmask_to_flags(flag_value):
     return active_flags
 
 
-def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays, list_of_ksp_array_flags, read_dir, phase_dir, slice_dir, position, list_of_trajectories = None):
+def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray], list_of_ksp_array_flags: list[list[str]], read_dir: np.ndarray, phase_dir: np.ndarray, slice_dir: np.ndarray, position: np.ndarray, list_of_trajectories: list[np.ndarray] = None) -> list[ismrmrd.Acquisition]:
     """!
     @brief Transforms k-space data which is given in form of numpy arrays into acquisiton objects, which can be sent
            to a server using client_to_stream.
@@ -1844,21 +1857,18 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays, list_of_ksp_array_flags, 
     return list_of_acqs
 
 
-def identify_readout_type_from_acqs(list_of_acqs):
+def identify_readout_type_from_acqs(list_of_acqs: List[ismrmrd.Acquisition]) -> Tuple[int, bool, bool, int]:
     """!
     @brief Identifies the type of readout trajectory based on the received list of acquisitions. 
 
     @param list_of_acqs: (list) List of ismrmrd.Acquisition objects.
-    @param encoded_space: (ISMRMRD encoded space object) Encoded space dimensions
-    @param encoded_space: (ISMRMRD recon space object) Encoded space dimensions
-    @param W: Noise de-correlation matrix of size (num_cha, num_cha).
-
+    
     @return
-        - (int) Integer, indicating the type of readout with
-                READOUT_TYPE_CARTESIAN = 1
-                READOUT_TYPE_CARTESIAN_RAMP = 2
-                READOUT_TYPE_NONCARTESIAN_2D = 3
-                READOUT_TYPE_NONCARTESIAN_3D = 4
+        - (int) Integer, indicating the type of readout with READOUT_TYPE_CARTESIAN = 1, READOUT_TYPE_CARTESIAN_RAMP = 2
+                READOUT_TYPE_NONCARTESIAN_2D = 3, READOUT_TYPE_NONCARTESIAN_3D = 4
+        - (bool) Boolean, which indicates ramp sampling
+        - (bool) Boolean, indicating whether PROPELLER trajectory or not
+        - (int) Dimension which was detected to contain PROPELLER blades
     """
 
     readout_type = -1
@@ -1873,8 +1883,6 @@ def identify_readout_type_from_acqs(list_of_acqs):
         is_ramp_samp = False
 
     elif len(list_of_acqs) == 1:
-
-        round_traj = np.round(list_of_acqs[0].traj * 100.0) / 100.0
 
         traj_grad_x = np.round(np.gradient(list_of_acqs[0].traj[:, 0]) * 100.0) / 100.0
         traj_grad_y = np.round(np.gradient(list_of_acqs[0].traj[:, 1]) * 100.0) / 100.0
@@ -1961,7 +1969,7 @@ def identify_readout_type_from_acqs(list_of_acqs):
     return readout_type, is_ramp_samp, is_propeller, blade_dim
 
 
-def ismrmrd_acqs_to_numpy_array(list_of_acqs, encoded_space = None, recon_space = None, W = None, os_factor = 1):
+def ismrmrd_acqs_to_numpy_array(list_of_acqs: list[ismrmrd.Acquisition], encoded_space = None, os_factor: float = 1) -> np.ndarray:
     """!
     @brief Sort k-space data from acquisitions into numpy array structures for further processing.
     @details The function first analyzes the maximum idx indices which are available in the list of provided
@@ -1972,15 +1980,14 @@ def ismrmrd_acqs_to_numpy_array(list_of_acqs, encoded_space = None, recon_space 
 
     @param list_of_acqs: (list) List of ismrmrd.Acquisition objects.
     @param encoded_space: (ISMRMRD encoded space object) Encoded space dimensions
-    @param encoded_space: (ISMRMRD recon space object) Encoded space dimensions
-    @param W: Noise de-correlation matrix of size (num_cha, num_cha).
+    @param os_factor: (float) Oversampling factor used during acquisition.
 
     @return
         - (np.ndarray) 11-D Numpy array of size (number_of_samples, max_kspace_encoding_pe1, max_kspace_encoding_pe2,
                        num_active_channels, max_slice, max_set, max_phase, max_contrast, max_repetition, max_average,
                        max_segment) with sorted acquisition.
 
-    @author Jörn Huber, GitHub Copilot (GPT-4.1)
+    @author Jörn Huber
     """
 
     readout_type, is_ramp_sample, _, _ = identify_readout_type_from_acqs(list_of_acqs)
@@ -2219,7 +2226,7 @@ def ismrmrd_acqs_to_numpy_array(list_of_acqs, encoded_space = None, recon_space 
     return acq_data_np
 
 
-def numpy_array_to_ismrmrd_image(nd_image, list_of_acqs, xml_header, image_series_index, meas_idx, add_series_string = '', recon_history = '', scaling_factor = 1.0):
+def numpy_array_to_ismrmrd_image(nd_image: np.ndarray, list_of_acqs: list[ismrmrd.Acquisition], xml_header, image_series_index: int, meas_idx: MeasIDX, add_series_string: str = '', recon_history: str = '', scaling_factor: float = 1.0) -> ismrmrd.Image:
     """!
     @brief Sort k-space data from acquisitions into numpy array structures for further processing.
     @details The function first analyzes the maximum idx indices which are available in the list of provided
@@ -2232,6 +2239,8 @@ def numpy_array_to_ismrmrd_image(nd_image, list_of_acqs, xml_header, image_serie
     @param image_series_index: (int) Image series index, which is written into image information
     @param meas_idx: (mrpy_ismrmrd_tools.MeasIDX) Measurement idx object, indicating respective counters.
     @param add_series_string: (string) Additional series string.
+    @param recon_history: (string) Reconstruction history string.
+    @param scaling_factor: (float) Scaling factor applied to the image data.
 
     @return
         - (ismrmrd.Image) ISMRMRD image object.
@@ -2252,10 +2261,13 @@ def numpy_array_to_ismrmrd_image(nd_image, list_of_acqs, xml_header, image_serie
     image.image_series_index = image_series_index
 
     try:
+
         image.field_of_view[0] = xml_header.encoding[0].reconSpace.fieldOfView_mm.z #pylint: disable=maybe-no-member
         image.field_of_view[1] = xml_header.encoding[0].reconSpace.fieldOfView_mm.y #pylint: disable=maybe-no-member
         image.field_of_view[2] = xml_header.encoding[0].reconSpace.fieldOfView_mm.x #pylint: disable=maybe-no-member
+
     except:
+
         image.field_of_view[0] = 0 #pylint: disable=maybe-no-member
         image.field_of_view[1] = 0 #pylint: disable=maybe-no-member
         image.field_of_view[2] = 0 #pylint: disable=maybe-no-member

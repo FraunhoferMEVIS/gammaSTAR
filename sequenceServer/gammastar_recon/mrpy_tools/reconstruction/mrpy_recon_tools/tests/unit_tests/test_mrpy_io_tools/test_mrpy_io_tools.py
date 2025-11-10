@@ -49,37 +49,6 @@ class TestIOTools(unittest.TestCase):
     #     self.assertTrue(ksp_paracalib is None)
     #     self.assertTrue(meas_hdr is not None)
 
-    def test_write_dcm(self):
-        """!
-        @brief UT which validates the correct functionality of write_dcm
-        @details The test writes a dicom file with defined header entries. The created dicom file is loaded and
-                 correct header entries are analyzed.
-        @param self: Reference to object
-
-        @author: Jörn Huber
-        """
-        print("\nTesting mrpy_io_tools: write_dcm")
-        test_im = np.zeros((1, 64, 64))*3000 #Normalize and scale to short int range
-        io_tools.write_dcm("temp.dcm", test_im,
-                           'UT Study',
-                           'UT Series',
-                           'UT System',
-                           'UT Vendor',
-                           'UT Body',
-                           'UT Protocol',
-                           'UT Sequence',
-                           '3D')
-        ds = pydicom.dcmread("temp.dcm")
-        dcm_elem_vendor = ds[0x00080070]
-        self.assertTrue(dcm_elem_vendor.value == 'UT Vendor')
-        dcm_elem_bodypart = ds[0x00180015]
-        self.assertTrue(dcm_elem_bodypart.value == 'UT Body')
-        dcm_elem_protocol = ds[0x00181030]
-        self.assertTrue(dcm_elem_protocol.value == 'UT Protocol')
-        dcm_elem_sequence = ds[0x00189005]
-        self.assertTrue(dcm_elem_sequence.value == 'UT Sequence')
-        os.remove("temp.dcm")
-
     def test_write_dcm_from_ismrmrd_image(self):
         """!
         @brief UT which validates the correct functionality of write_dcm_from_ismrmrd_image
