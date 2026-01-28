@@ -1,0 +1,9 @@
+services:
+  ilumrServer:
+    image: gstar_ilumr
+    ports:
+      - "8900:8900"
+  reconServer:
+    image: gstar_recon
+    ports:
+      - "9002:9002"

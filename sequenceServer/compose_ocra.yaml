@@ -1,0 +1,9 @@
+services:
+  ocraServer:
+    image: gstar_ocra
+    ports:
+      - "9000:9000"
+  reconServer:
+    image: gstar_recon
+    ports:
+      - "9002:9002"

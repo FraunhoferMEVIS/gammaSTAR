@@ -1,0 +1,40 @@
+NOTICE
+
+This software project is licensed under GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+Copyright (c) 2025 Fraunhofer MEVIS, Germany
+
+This software makes use of third-party components, each of which is provided under its own compatible open-source license. Full license texts for these components can be found in the directories:
+
+    third_party_licenses/
+	ilumr_system_code/third_party_licenses/
+
+These directories contain license files and, where applicable, additional notices from the respective copyright holders.
+
+Included third-party libraries (sequenceServer):
+
+- numpy - BSD License
+- matplotlib - Matplotlib License (BSD-style)
+- ismrmrd - ISMRMRD SOFTWARE LICENSE JULY 2013
+- h5py - BSD License
+- pydicom - MIT License
+- fastapi - MIT License
+
+Included third-party libraries (ilumr_system_code):
+
+- luajit - MIT License
+- lyaml - MIT License
+- inspect - MIT License
+- rapid_json - MIT License (with third‑party notices; JSON_checker under JSON License, msinttypes under BSD)
+- logging - MIT License
+- lzmq - MIT License
+- cjson - MIT License
+- luasocket - MIT License 
+
+Please note: Use of this software and the included third-party components is subject to the terms and conditions of the respective licenses. By using this software, you agree to comply with those terms.
+
+---
+
+For more information on the main license of this project, please refer to the file:
+
+    LICENSE

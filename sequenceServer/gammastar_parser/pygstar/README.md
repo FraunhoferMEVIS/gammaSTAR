@@ -2,6 +2,8 @@
 ### Compatible with the [MRZeroCORE](https://github.com/MRsources/MRzero-Core) version 0.3.6
 Serves as a gammaStar interpreter to simulate arbitrary GammaStar Sequences on MRZero simulation framework.
 
+This code is inspired by https://github.com/pulseq-frame/pydisseqt.
+
 ## Building from source
 
 This assumes windows as host operating system. For building the python wheel, you need:

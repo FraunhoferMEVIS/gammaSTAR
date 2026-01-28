@@ -1,0 +1,33 @@
+NOTICE
+
+This software project is licensed under GNU AFFERO GENERAL PUBLIC LICENSE Version 3
+
+Copyright (c) 2025 Fraunhofer MEVIS, Germany
+
+This software makes use of third-party components, each of which is provided under its own compatible open-source license. Full license texts for these components can be found in the directory:
+
+    third_party_licenses/
+
+This directory contains license files and, where applicable, additional notices from the respective copyright holders.
+
+Included third-party libraries:
+
+- numpy - BSD License
+- matplotlib - Matplotlib License (BSD-style)
+- ismrmrd - ISMRMRD SOFTWARE LICENSE JULY 2013
+- h5py - BSD License
+- pydicom - MIT License
+- fastapi - MIT License
+- flocra_pulseq - MIT License
+- MaRCoS_MRI - GPL3 License
+- MRI4all_Console - GPL3 License
+- msgpack - MIT License
+- scipy - BSD License
+
+Please note: Use of this software and the included third-party components is subject to the terms and conditions of the respective licenses. By using this software, you agree to comply with those terms.
+
+---
+
+For more information on the main license of this project, please refer to the file:
+
+    LICENSE

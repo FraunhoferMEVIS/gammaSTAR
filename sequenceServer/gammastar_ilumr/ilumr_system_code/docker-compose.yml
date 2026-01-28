@@ -1,0 +1,137 @@
+version: "3.9"
+services:
+  nginx:
+    image: camerondykstra/matipo-nginx:latest
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - network
+    labels:
+      com.centurylinklabs.watchtower.depends-on: jupyter
+      com.centurylinklabs.watchtower.enable: true
+  driver:
+    container_name: matipo-driver
+    image: camerondykstra/ilumr-gammastar:dev
+    ports:
+      - "5556:5556"
+      - "5557:5557"
+      - "5558:5558"
+      - "5559:5559"
+    networks:
+      - network
+    command: /usr/local/bin/python -m matipo.system_daemon
+    restart: unless-stopped
+    volumes:
+      - /sys/class/fpga_manager:/sys/class/fpga_manager:rw
+      - /lib/firmware:/lib/firmware:rw
+      - /etc/matipo/:/etc/matipo/:rw
+      - /home/xilinx/user/.cache/:/root/.cache/:rw
+      - /home/xilinx/user/.local/:/root/.local/:rw
+      # - /home/xilinx/dev/matipo-python/matipo/:/usr/local/lib/python3.10/site-packages/matipo/:rw
+    environment:
+      - ZMQ_BIND_ADDR=tcp://*
+      - WATCHTOWER_HTTP_API_TOKEN=matipoupdatetoken
+      - WATCHTOWER_ADDRESS=http://watchtower:8080
+      - POWEROFF_ADDRESS=http://host.docker.internal:8100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    privileged: true
+    logging:
+      driver: local
+      options:
+        max-size: 100M
+  jupyter:
+    container_name: jupyter
+    image: camerondykstra/ilumr-gammastar:dev
+    expose:
+      - 8080
+    ports:
+      - "8080:8080"
+    networks:
+      network:
+        aliases:
+          - server
+    command: /usr/local/bin/jupyter lab --port=8080 --ip=0.0.0.0 --no-browser --allow-root
+    restart: unless-stopped
+    volumes:
+      - /etc/matipo/:/etc/matipo/:r
+      - /home/xilinx/user/:/home/:rw
+      - /home/xilinx/user/.cache/:/root/.cache/:rw
+      - /home/xilinx/user/.jupyter/:/root/.jupyter/:rw
+      - /home/xilinx/user/.local/:/root/.local/:rw
+      - /home/xilinx/.ssh/:/root/.ssh/:rw
+      # - /home/xilinx/dev/matipo-python/matipo/:/usr/local/lib/python3.10/site-packages/matipo/:rw
+    environment:
+      - ZMQ_CONNECT_ADDR=tcp://driver
+      - WATCHTOWER_HTTP_API_TOKEN=matipoupdatetoken
+      - WATCHTOWER_ADDRESS=http://watchtower:8080
+      - POWEROFF_ADDRESS=http://host.docker.internal:8100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    privileged: true
+    logging:
+      driver: local
+      options:
+        max-size: 100M
+  lua:
+    container_name: lua
+    image: camerondykstra/ilumr-lua:dev
+    expose:
+      - 8765
+    ports:
+      - "8765:8765"
+    networks:
+      network:
+        aliases:
+          - server
+    command: tail -F anything
+    restart: unless-stopped
+    volumes:
+      - /etc/matipo/:/etc/matipo/:r
+      - /home/xilinx/user/:/home/:rw
+      - /home/xilinx/user/.cache/:/root/.cache/:rw
+      - /home/xilinx/user/.local/:/root/.local/:rw
+      - /home/xilinx/.ssh/:/root/.ssh/:rw
+    environment:
+      - ZMQ_CONNECT_ADDR=tcp://driver
+      - WATCHTOWER_HTTP_API_TOKEN=matipoupdatetoken
+      - WATCHTOWER_ADDRESS=http://watchtower:8080
+      - POWEROFF_ADDRESS=http://host.docker.internal:8100
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    labels:
+      com.centurylinklabs.watchtower.enable: true
+    privileged: true
+    logging:
+      driver: local
+      options:
+        max-size: 100M
+  watchtower:
+    container_name: watchtower
+    image: containrrr/watchtower
+    ports:
+      - "8081:8080"
+    expose:
+      - 8080
+    networks:
+      - network
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    environment:
+      - WATCHTOWER_CLEANUP=true
+      - WATCHTOWER_LABEL_ENABLE=true
+      - WATCHTOWER_TIMEOUT=60s
+      - WATCHTOWER_HTTP_API_UPDATE=true
+      - WATCHTOWER_HTTP_API_TOKEN=matipoupdatetoken
+    logging:
+      driver: local
+      options:
+        max-size: 10M
+networks:
+  network:
+    # default

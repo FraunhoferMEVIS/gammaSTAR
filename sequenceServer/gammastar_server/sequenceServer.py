@@ -36,10 +36,11 @@ from fastapi.responses import JSONResponse
 from fastapi.staticfiles import StaticFiles
 from typing import Any
 import mrpy_ismrmrd_tools as ismrmrd_tools
+import mrpy_io_tools as io_tools
 
 def print_info_server():
     print("########################################################\n\n"
-          "gammaSTAR Server v1.0 Release\n")
+          "gammaSTAR Server v1.0.1 Release\n")
 
     print("The software is not qualified for use as a medical product or as part\n"
           "thereof. No bugs or restrictions are known. Delivered ‘as is’ without\n"
@@ -64,7 +65,7 @@ def print_info_server():
 def print_info_parser():
 
     print("########################################################\n\n"
-          "gammaSTAR Parser v1.0 Release\n")
+          "gammaSTAR Parser v1.0.1 Release\n")
 
     print("The software is not qualified for use as a medical product or as part\n"
           "thereof. No bugs or restrictions are known. Delivered ‘as is’ without\n"
@@ -113,8 +114,7 @@ async def lifespan(app: FastAPI):
 httpd = FastAPI(lifespan=lifespan)
 
 # URL for the webserver
-origins = ['http://localhost:4200',
-           'https://gammastar.mevis.fraunhofer.de']
+origins = ['http://localhost', 'https://gammastar.mevis.fraunhofer.de']
 
 # Add CORS middleware to allow cross-origin requests
 httpd.add_middleware(
@@ -148,7 +148,7 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
             raw_adc_representations.append(rawRepr)
 
 # gammaSTAR recon
-    np_arr = np.array(signal)
+    np_arr = np.asarray(signal)
     sequenceData['protocol']['read_oversampling'] = (sequenceData['protocol']['read_oversampling'] + 1)
     sequenceData['protocol']['slice_oversampling'] = sequenceData['protocol']['slice_oversampling'] + 1
     sequenceData['protocol']['phase_oversampling'] = sequenceData['protocol']['phase_oversampling'] + 1
@@ -175,72 +175,56 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
        print(sequenceData['name'] + meas_id + '_raw.h5 written')
 
     if 'skipReconstruction' not in sequenceData or sequenceData['skipReconstruction'] != True:
-        con = ismrmrd_tools.gstar_recon_emitter("gstar_recon", 9002, list_of_acqs, xml_header, 1.0, "")
+        con = ismrmrd_tools.gstar_recon_emitter("reconServer", 9002, list_of_acqs, xml_header, 1.0, "")
         if con != False:
             ismrmrd_tools.gstar_recon_injector(con)
             con.shutdown_close()
             recon_images = []
 
-            for img_idx in range(len(con.images)):
-                image_data = con.images[img_idx].data[0, :, :, :]
-                for slice_index in range(len(image_data)):
-                    image_slice = image_data[slice_index]
-                    
-                    # Normalize image
-                    image_slice = (image_slice - np.min(image_slice)) / (np.max(image_slice) - np.min(image_slice))
+            if len(con.images) > 0:
 
-                    # save to h5
-                    recon_images.append(image_slice.astype(np.float32)) 
+                for img_idx in range(len(con.images)):
+                    image_data = con.images[img_idx].data[0, :, :, :]
+                    for slice_index in range(len(image_data)):
+                        image_slice = image_data[slice_index]
 
-                    # Encode as PNG
-                    imgBufferRecon = BytesIO()
-                    plt.figure(figsize=(20, 20))
-                    plt.imshow(image_slice, cmap='gray')
-                    plt.axis('off')
-                    plt.gca().set_axis_off()
-                    plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
-                    plt.savefig(imgBufferRecon, format='png', bbox_inches='tight', pad_inches=0, transparent=True)
-                    imgBufferRecon.seek(0)
-                    plt.close()
-                    b64Recon = base64.b64encode(imgBufferRecon.getvalue())
-                    response['recon'].append(b64Recon.decode())
+                        # Normalize image
+                        image_slice = (image_slice - np.min(image_slice)) / (np.max(image_slice) - np.min(image_slice))
 
-            if recon_images:
-                # Save reconstructed images as 12-bit DICOM files
-                recon_images_np = np.stack(recon_images, axis=0)
+                        # save to h5
+                        recon_images.append(image_slice.astype(np.float32))
+
+                        # Encode as PNG
+                        imgBufferRecon = BytesIO()
+                        plt.figure(figsize=(20, 20))
+                        plt.imshow(image_slice, cmap='gray')
+                        plt.axis('off')
+                        plt.gca().set_axis_off()
+                        plt.subplots_adjust(left=0, right=1, top=1, bottom=0)
+                        plt.savefig(imgBufferRecon, format='png', bbox_inches='tight', pad_inches=0, transparent=True)
+                        imgBufferRecon.seek(0)
+                        plt.close()
+                        b64Recon = base64.b64encode(imgBufferRecon.getvalue())
+                        response['recon'].append(b64Recon.decode())
+
+                response['recon_history'] = con.images[0].meta['ImageHistory'][2]
+
+                logger.info(f"Sent reconstruction history: {con.images[0].meta['ImageHistory'][2]}")
+
                 dicom_dir = '/data_export/dicom_' + sequenceData['name'].replace(' ', '_') + '_' + meas_id
-                os.makedirs(dicom_dir, exist_ok=True,)
-
+                os.makedirs(dicom_dir, exist_ok=True, )
                 zip_filename = os.path.join(dicom_dir, f"{sequenceData['name'].replace(' ', '_')}_{meas_id}_dicom.zip")
-                with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
-                    for idx, img in enumerate(recon_images_np):
-                        img_12bit = np.clip((img * 4095), 0, 4095).astype(np.uint16)
+                for recv_image in con.images:
+                    io_tools.write_dcm_from_ismrmrd_image(recv_image, dicom_dir)
 
-                        # Create a minimal DICOM dataset
-                        file_meta = pydicom.Dataset()
-                        ds = FileDataset(
-                            "", {}, file_meta=file_meta, preamble=b"\0" * 128
-                        )
-                        ds.Modality = "MR"
-                        ds.ContentDate = datetime.datetime.now().strftime('%Y%m%d')
-                        ds.ContentTime = datetime.datetime.now().strftime('%H%M%S')
-                        ds.PatientName = "Simulated^Patient"
-                        ds.PatientID = "123456"
-                        ds.Rows, ds.Columns = img_12bit.shape
-                        ds.SamplesPerPixel = 1
-                        ds.PhotometricInterpretation = "MONOCHROME2"
-                        ds.BitsAllocated = 16
-                        ds.BitsStored = 12
-                        ds.HighBit = 11
-                        ds.PixelRepresentation = 0
-                        ds.PixelData = img_12bit.tobytes()
-                        dicom_filename = os.path.join(dicom_dir, f"recon_{idx:03d}.dcm")
-                        ds.save_as(dicom_filename)
-                        zipf.write(dicom_filename, arcname=f"recon_{idx:03d}.dcm")
+                dicom_files = os.listdir(dicom_dir)
+
+                with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+                    for dicom in dicom_files:
+                        dicom_filename = os.path.join(dicom_dir, dicom)
+                        zipf.write(dicom_filename, arcname=dicom)
 
                 response['dicom'] = zip_filename
-
-                logger.info(f"Reconstructed images saved as 12-bit DICOM in {dicom_dir}")
 
     if imgBufferTrajectory:
         b64Trajectory = base64.b64encode(imgBufferTrajectory.getvalue())
