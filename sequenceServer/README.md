@@ -15,11 +15,11 @@ This software is distributed under the GNU Affero General Public License v3 (AGP
 Use elevated command prompt
 For running the simulation and reconstruction server:
 1. Execute "build_gammastar_server.bat"
-2  "docker compose up -f compose_server.yaml" inside this main directory
+2. "docker compose up -f compose_server.yaml" inside this main directory
 
 For running the OCRA and reconstruction server
 1. Execute "build_gammastar_ocra.bat"
-2  "docker compose up -f compose_ocra.yaml" inside this main directory
+2. "docker compose up -f compose_ocra.yaml" inside this main directory
 
 For running the ilumr and reconstruction server
 1. Execute "build_gammastar_ilumr.bat"
