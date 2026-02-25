@@ -36,6 +36,9 @@ from typing import Any
 import mrpy_ismrmrd_tools as ismrmrd_tools
 import mrpy_io_tools as io_tools
 
+RECON_SERVER_ADDRESS = "localhost"
+RECON_SERVER_PORT = 9002
+
 def print_info_ilumr():
     print("########################################################\n\n"
           "gammaSTAR ilumr v1.0 Release\n")
@@ -180,7 +183,7 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
        print(sequenceData['name'] + meas_id + '_raw.h5 written')
 
     if 'skipReconstruction' not in sequenceData or sequenceData['skipReconstruction'] != True:
-        con = ismrmrd_tools.gstar_recon_emitter("reconServer", 9002, list_of_acqs, xml_header, 1.0, "")
+        con = ismrmrd_tools.gstar_recon_emitter(RECON_SERVER_ADDRESS, RECON_SERVER_PORT, list_of_acqs, xml_header, 1.0, "")
         if con != False:
             ismrmrd_tools.gstar_recon_injector(con)
             con.shutdown_close()

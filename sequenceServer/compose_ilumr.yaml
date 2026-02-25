@@ -3,7 +3,9 @@ services:
     image: gstar_ilumr
     ports:
       - "8900:8900"
+    network_mode: host # needed to access ilumr on LAN
   reconServer:
     image: gstar_recon
     ports:
       - "9002:9002"
+    network_mode: host
