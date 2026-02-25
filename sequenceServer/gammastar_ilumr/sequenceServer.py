@@ -216,20 +216,22 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
 
                 logger.info(f"Sent reconstruction history: {con.images[0].meta['ImageHistory'][2]}")
 
-                dicom_dir = '/data_export/dicom_' + sequenceData['name'].replace(' ', '_') + '_' + meas_id
-                os.makedirs(dicom_dir, exist_ok=True, )
-                zip_filename = os.path.join(dicom_dir, f"{sequenceData['name'].replace(' ', '_')}_{meas_id}_dicom.zip")
-                for recv_image in con.images:
-                    io_tools.write_dcm_from_ismrmrd_image(recv_image, dicom_dir)
+                # TODO: fix DICOM export, io_tools.write_dcm_from_ismrmrd_image only takes one argument!
 
-                dicom_files = os.listdir(dicom_dir)
+                # dicom_dir = '/data_export/dicom_' + sequenceData['name'].replace(' ', '_') + '_' + meas_id
+                # os.makedirs(dicom_dir, exist_ok=True, )
+                # zip_filename = os.path.join(dicom_dir, f"{sequenceData['name'].replace(' ', '_')}_{meas_id}_dicom.zip")
+                # for recv_image in con.images:
+                #     io_tools.write_dcm_from_ismrmrd_image(recv_image, dicom_dir)
 
-                with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
-                    for dicom in dicom_files:
-                        dicom_filename = os.path.join(dicom_dir, dicom)
-                        zipf.write(dicom_filename, arcname=dicom)
+                # dicom_files = os.listdir(dicom_dir)
 
-                response['dicom'] = zip_filename
+                # with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+                #     for dicom in dicom_files:
+                #         dicom_filename = os.path.join(dicom_dir, dicom)
+                #         zipf.write(dicom_filename, arcname=dicom)
+
+                # response['dicom'] = zip_filename
 
     if imgBufferTrajectory:
         b64Trajectory = base64.b64encode(imgBufferTrajectory.getvalue())
