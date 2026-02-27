@@ -508,8 +508,17 @@ def deserialize_array(serialized_arr: List[Any]) -> np.ndarray:
 # run sequence for ilumr (TCP version)
 def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Main function to run NMR sequence using TCP communication"""
+
+    # defaults
     host = "192.168.137.2"
     port = 8765
+
+    # override using environment vars if set
+    if 'ILUMR_HOST' in os.environ:
+        host = os.environ['ILUMR_HOST']
+
+    if 'ILUMR_GSTAR_PORT' in os.environ:
+        port = int(os.environ['ILUMR_GSTAR_PORT'])
     
     sock = None
     try:        
@@ -517,6 +526,8 @@ def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+        logger.info("Connecting to %s:%d", host, port)
         
         # Connect to server
         sock.connect((host, port))
