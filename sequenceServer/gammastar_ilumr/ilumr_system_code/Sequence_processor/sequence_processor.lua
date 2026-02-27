@@ -376,7 +376,7 @@ function M.get_sequence_params(sequence_data)
     local params = {
         f = frequency,
         rf_cal = rf_cal,
-        g_cal = {0.2, 0.2, 0.15},
+        g_cal = {0.2, 0.2, 0.17},
         amp_enable = 1,
         rx_gain = 7,
         -- Shim parameters from file
