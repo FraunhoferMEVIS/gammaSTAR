@@ -56,6 +56,18 @@ It may also be useful to monitor the status of the ilumr driver container using 
 
 	docker compose -f /etc/matipo/docker-compose.yml logs driver -f
 
+## Connecting to gammaSTAR frontend
+
+1. In your browser, navigate to https://gammastar.mevis.fraunhofer.de
+2. Select *Device Manager* in the left sidebar, 7th down
+3. Click Add new
+4. Edit the fields to apply these settings:
+	
+- Label: ilumr
+- Address: http://localhost:8900
+- type: ilumr
+- endpoint: run_ilumr
+
 ## Recommended gammaSTAR pulse sequence settings for ilumr
 
 Any existing gammastar pulse sequence may be run on ilumr, however the specifications of ilumr are quite different to that of a clinical scanner. The primary difference is the relatively short T2* on the order of milliseconds. Good images are still possible with a short T2* by exploiting ilumr's rapid gradient ramp times, strong gradients, and high B1 field (RF) amplitude. Spin-echo based sequences will generally perform better on ilumr than gradient echo sequences. Below are some parameters that should be changed in a gammaSTAR sequence to optimise it for execution on ilumr.
