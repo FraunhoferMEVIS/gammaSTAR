@@ -56,6 +56,38 @@ It may also be useful to monitor the status of the ilumr driver container using 
 
 	docker compose -f /etc/matipo/docker-compose.yml logs driver -f
 
+## Recommended gammaSTAR pulse sequence settings for ilumr
+
+Any existing gammastar pulse sequence may be run on ilumr, however the specifications of ilumr are quite different to that of a clinical scanner. The primary difference is the relatively short T2* on the order of milliseconds. Good images are still possible with a short T2* by exploiting ilumr's rapid gradient ramp times, strong gradients, and high B1 field (RF) amplitude. Spin-echo based sequences will generally perform better on ilumr than gradient echo sequences. Below are some parameters that should be changed in a gammaSTAR sequence to optimise it for execution on ilumr.
+
+Enter the code into the "Lua Code" box after clicking on the parameter, then click save.
+
+sys.max_grad_amp:
+
+	return 0.15
+
+sys.max_grad_slew:
+
+	return 1000
+
+sys.max_rf_amp:
+
+	return 0.0003
+
+exc.rf_duration/ssel.sinc.rf_duration/spinecho.rf_duration_se:
+
+	return math.max(200e-6, 1e-6/thickness)
+
+By default the root node has gradient settings that limit the gradient amplitude and slew rate for safety on clinical scanners. These need to be removed on ilumr for good performance.
+
+root.gradient_settings:
+
+	return {max_grad_slew=max_grad_slew, max_grad_amp=max_grad_amp, raster_time=raster_time}
+
+root.gradient_settings_reduced_performance:
+
+	return {max_grad_slew=0.8*max_grad_slew, max_grad_amp=0.8*max_grad_amp, raster_time=raster_time}
+
 ## Contributors
 This project is maintained by [Daniel Christopher Hoinkiss](https://www.mevis.fraunhofer.de/en/employees/daniel-hoinkiss.html)
 
