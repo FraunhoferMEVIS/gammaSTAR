@@ -18,7 +18,9 @@ class IFFTModule:
     """
 
     @staticmethod
-    def __call__(dim_str, connection_buffer):
+    def __call__(dim_str: str,
+                 connection_buffer: ismrmrd_tools.ConnectionBuffer,
+                 book_keeper: "BookKeeper"):
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
@@ -32,20 +34,24 @@ class IFFTModule:
 
         @author Jörn Huber
         """
-        return IFFTModule.apply(connection_buffer, dim_str)
+        return IFFTModule.apply(connection_buffer, book_keeper, dim_str)
 
     @staticmethod
-    def apply(connection_buffer, dim_str):
+    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+              book_keeper: "BookKeeper",
+              dim_str: str):
         """!
         @brief Applies FFT along a specified image dimension
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
         @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
@@ -54,10 +60,12 @@ class IFFTModule:
 
             if connection_buffer.meas_data('NP_IS_IMAGING', dim_str) > 1:
 
-                logging.info("GSTAR Recon: " + dim_str + " IFFT")
+                logging.info("gs-recon: " + dim_str + " IFFT")
                 dim_ind = ismrmrd_tools.IsmrmrdConstants.IDX_MAP[dim_str]
 
-                connection_buffer.meas_data.data['NP_IS_IMAGING'] = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(connection_buffer.meas_data.data['NP_IS_IMAGING'], axes=dim_ind), axis=dim_ind), axes=dim_ind)
+                connection_buffer.meas_data.data['NP_IS_IMAGING'] = np.fft.fftshift(
+                    np.fft.ifft(np.fft.fftshift(connection_buffer.meas_data.data['NP_IS_IMAGING'], axes=dim_ind),
+                                axis=dim_ind), axes=dim_ind)
 
                 if dim_str == 'COL':
                     connection_buffer.is_ro_ft = True
@@ -65,5 +73,6 @@ class IFFTModule:
                     connection_buffer.is_pe_ft = True
                 if dim_str == 'PE2':
                     connection_buffer.is_par_ft = True
+                    book_keeper.recon_history += "_FFTPAR"
 
-        return connection_buffer
+        return connection_buffer, book_keeper

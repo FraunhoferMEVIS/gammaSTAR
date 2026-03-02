@@ -1,3 +1,9 @@
+v1.1.0
+- Introduced generalized client software, which is capable of handling twix as well as hdf5 data
+- Added support for exported gammaSTAR sequences in DICOM tags
+- Removed non-Cartesian functionality from ismrmrd_tools and added extra module
+- Added correct support for orientation based on gammaSTAR orientation information
+
 v1.0.3
 - Added type hinting and improved documentation of functions
 - Removed redundant imports

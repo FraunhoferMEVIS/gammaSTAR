@@ -8,6 +8,7 @@
 """
 
 import logging
+import mrpy_ismrmrd_tools as ismrmrd_tools
 
 
 class ParallelImagingModule:
@@ -18,23 +19,27 @@ class ParallelImagingModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer):
+    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
-        return ParallelImagingModule.apply(connection_buffer)
+        return ParallelImagingModule.apply(connection_buffer, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer):
+    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Reconstructs missing data lines in the "NP_IS_IMAGING" data for 2D/3D Cartesian acquisitions
                using appropriate Grappa/Caipirinha functionality and reference lines from the "NP_IS_PARALLEL_CALIBRATION"
@@ -42,10 +47,12 @@ class ParallelImagingModule:
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
@@ -53,10 +60,9 @@ class ParallelImagingModule:
         if connection_buffer.meas_data.accel_pe1 > 1 or connection_buffer.meas_data.accel_pe2 > 1:
 
             if connection_buffer.meas_data('NP_IS_IMAGING', 'CHA') == 1:
-                logging.warning("GSTAR Recon: Cannot perform parallel imaging tasks in single channel experiments!")
-                return connection_buffer
+                logging.warning("gs-recon: Cannot perform parallel imaging tasks in single channel experiments!")
             else:
-                logging.warning("GSTAR Recon: Parallel imaging functionality currently not implemented, contact the developers for personalized solutions!")
-                return connection_buffer
+                logging.warning("gs-recon: Parallel imaging functionality currently not implemented, "
+                                "contact the developers for personalized solutions!")
 
-        return connection_buffer
+        return connection_buffer, book_keeper

@@ -1,1 +1,0 @@
-docker build --tag gstar_recon -f docker/Dockerfile .

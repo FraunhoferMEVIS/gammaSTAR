@@ -12,6 +12,7 @@ import mapvbvd
 import pydicom
 from pydicom.dataset import Dataset, FileMetaDataset, FileDataset
 from pydicom.sequence import Sequence
+from pydicom.uid import ExplicitVRLittleEndian
 import numpy as np
 from datetime import datetime
 from typing import Any, Tuple
@@ -71,12 +72,10 @@ def save_to_bart_cfl(filename: str, array: np.ndarray) -> None:
         array.astype(np.complex64).ravel().tofile(f)
 
 
-def read_siemens_twix(
-    file_name: str,
-    unsorted: bool = False,
-    remove_os: bool = True,
-    ramp_samp_regrid: bool = True
-) -> Tuple[np.ndarray, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
+def read_siemens_twix(file_name: str,
+                      unsorted: bool = False,
+                      remove_os: bool = True,
+                      ramp_samp_regrid: bool = True) -> Tuple[np.ndarray, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
     """!
     @brief Reads twix rawdata as exported from the MR system into numpy files
 
@@ -215,7 +214,28 @@ def read_siemens_twix(
 
     return noise, noise_hdr, ksp, ksp_phasecor, ksp_rtfeedback, ksp_paracalib, meas_hdr
 
-def write_dcm_from_ismrmrd_image(ismrmrd_image: Any) -> None:
+def get_folder_name(target_folder: str) -> str:
+    """!
+    @brief Gets the output folder name based on the protocol name stored in the ismrmrd header.
+    @details The function checks whether a folder with the protocol name already exists. If so, it appends an
+             increasing number to the folder name until a non-existing folder name is available.
+
+    @param target_folder: (str) Protocol name stored in the ismrmrd header.
+
+    @author Jörn Huber
+    """
+
+    os.makedirs(target_folder, exist_ok=True)
+    sub_folders = [int(name) for name in os.listdir(target_folder) if os.path.isdir(os.path.join(target_folder, name)) and name.isdigit()]
+
+    if len(sub_folders) == 0:
+        out_folder = target_folder + "/0"
+    else:
+        out_folder = target_folder + "/" + str(max(sub_folders)+1)
+
+    return out_folder
+
+def write_dcm_from_ismrmrd_image(ismrmrd_image: Any, folder_name = None) -> None:
     """!
     @brief Writes an ismrmrd image to dicom format on the harddisk
 
@@ -262,6 +282,8 @@ def write_dcm_from_ismrmrd_image(ismrmrd_image: Any) -> None:
     ds = FileDataset("volume.dcm", {}, file_meta=file_meta, preamble=b"\0" * 128)
     ds.SOPClassUID = file_meta.MediaStorageSOPClassUID
     ds.SOPInstanceUID = file_meta.MediaStorageSOPInstanceUID
+    ds.is_implicit_VR = False
+    ds.file_meta.TransferSyntaxUID = ExplicitVRLittleEndian
     ds.Modality = "MR"
     ds.StudyInstanceUID = pydicom.uid.generate_uid()
     ds.SeriesInstanceUID = pydicom.uid.generate_uid()
@@ -320,6 +342,9 @@ def write_dcm_from_ismrmrd_image(ismrmrd_image: Any) -> None:
 
     # Private tag for scaling factor
     ds.add_new((0x0019, 0x0010), 'LO', 'AppliedScaling ' + str(ismrmrd_image.meta['scalingFactor']))
+    ds.add_new((0x0019, 0x0011), 'LO', 'ReconHistory' + str(ismrmrd_image.meta['ImageHistory'][2]))
+    ds.add_new((0x0019, 0x0012), 'UC', ismrmrd_image.meta.get('seq', 'N/A'))
+    ds.add_new((0x0019, 0x0013), 'UC', ismrmrd_image.meta.get('prot', 'N/A'))
 
     # Shared Functional Groups
     shared_fg = Dataset()
@@ -350,10 +375,22 @@ def write_dcm_from_ismrmrd_image(ismrmrd_image: Any) -> None:
 
     ds.PixelData = img_array.tobytes()
 
-    if 'protocolName' in ismrmrd_image.meta:
-        prefix = ismrmrd_image.meta['protocolName'] + "/"
-        if not os.path.exists(ismrmrd_image.meta['protocolName']):
-            os.makedirs(ismrmrd_image.meta['protocolName'])
+    if folder_name:
+        prefix = folder_name + "/"
+        if not os.path.exists(prefix):
+            os.makedirs(prefix)
+    elif 'protocolName' in ismrmrd_image.meta:
+        prefix = ismrmrd_image.meta['protocolName']
+
+        count = 1
+        temp_prefix = prefix
+        while os.path.exists(temp_prefix):
+            temp_prefix = f"{prefix}_{count}"
+            count += 1
+        prefix = temp_prefix + "/"
+
+        if not os.path.exists(prefix):
+            os.makedirs(prefix)
     else:
         prefix = ''
 

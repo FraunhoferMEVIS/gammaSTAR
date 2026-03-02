@@ -83,12 +83,10 @@ def fill_partial_fourier_pocs_2D(pf_data: np.ndarray, max_num_iter: int) -> np.n
     return s
 
 
-def fill_partial_fourier_pocs_3D(
-    pf_data: np.ndarray,
-    max_num_iter: int,
-    q_pe1: int,
-    q_pe2: int
-) -> np.ndarray:
+def fill_partial_fourier_pocs_3D(pf_data: np.ndarray,
+                                 max_num_iter: int,
+                                 q_pe1: int,
+                                 q_pe2: int) -> np.ndarray:
     """!
     @brief Reconstruct missing lines in 3D partial fourier acquisitions using the pocs approach.
     @details In contrast to the simple conjgate symmetry algorithm, pocs is able to estimate the phase of the object,
@@ -117,22 +115,22 @@ def fill_partial_fourier_pocs_3D(
     num_ro, num_pe1, num_pe2 = pf_data.shape
 
     # We estimate the area around the central k-space line which can be used for phase operations (m-points)
-    _, center_pe1, center_pe2 = np.unravel_index(np.abs(pf_data).argmax(), pf_data.shape)
-    m_center_offset_pe1 = 0
-    for i_pe1 in range(center_pe1 + 1, num_pe1):
+    _, k0_pe1, k0_pe2 = np.unravel_index(np.abs(pf_data).argmax(), pf_data.shape)
+    m_offset_pe1 = 0
+    for i_pe1 in range(k0_pe1 + 1, num_pe1):
         if np.abs(pf_data[:, i_pe1, :]).any() != 0.0:
-            m_center_offset_pe1 = m_center_offset_pe1 + 1
+            m_offset_pe1 = m_offset_pe1 + 1
 
-    m_center_offset_pe2 = 0
-    for i_pe2 in range(center_pe2 + 1, num_pe2):
+    m_offset_pe2 = 0
+    for i_pe2 in range(k0_pe2 + 1, num_pe2):
         if np.abs(pf_data[:, :, i_pe2]).any() != 0.0:
-            m_center_offset_pe2 = m_center_offset_pe2 + 1
+            m_offset_pe2 = m_offset_pe2 + 1
 
     b_is_pf_pe1 = False
     b_is_pf_pe2 = False
-    if m_center_offset_pe1 + center_pe1 + 1 < num_pe1:
+    if m_offset_pe1 + k0_pe1 + 1 < num_pe1:
         b_is_pf_pe1 = True
-    if m_center_offset_pe2 + center_pe2 + 1 < num_pe2:
+    if m_offset_pe2 + k0_pe2 + 1 < num_pe2:
         b_is_pf_pe2 = True
 
     # Early return: Nothing to do
@@ -144,13 +142,13 @@ def fill_partial_fourier_pocs_3D(
 
     # PE1
     if b_is_pf_pe1:
-        p_1_central[:, 0:center_pe1 - m_center_offset_pe1, :] = 0
-        p_1_central[:, center_pe1 + m_center_offset_pe1 - q_pe1:num_pe1, :] = 0
+        p_1_central[:, 0:k0_pe1 - m_offset_pe1, :] = 0
+        p_1_central[:, k0_pe1 + m_offset_pe1 - q_pe1:num_pe1, :] = 0
 
     # PE2
     if b_is_pf_pe2:
-        p_1_central[:, :, 0:center_pe2 - (m_center_offset_pe2 - q_pe2)] = 0
-        p_1_central[:, :, center_pe2 + m_center_offset_pe2 - q_pe2:num_pe2] = 0
+        p_1_central[:, :, 0:k0_pe2 - (m_offset_pe2 - q_pe2)] = 0
+        p_1_central[:, :, k0_pe2 + m_offset_pe2 - q_pe2:num_pe2] = 0
 
     rho = np.angle(np.fft.fftshift(np.fft.ifftn(np.fft.fftshift(p_1_central))))
 
@@ -160,9 +158,9 @@ def fill_partial_fourier_pocs_3D(
 
     # We remove the transition band from s
     if b_is_pf_pe1:
-        s[:, center_pe1 + m_center_offset_pe1 - q_pe1 + 1:, :] = 0
+        s[:, k0_pe1 + m_offset_pe1 - q_pe1 + 1:, :] = 0
     if b_is_pf_pe2:
-        s[:, :, center_pe2 + m_center_offset_pe2 - q_pe2 + 1:] = 0
+        s[:, :, k0_pe2 + m_offset_pe2 - q_pe2 + 1:] = 0
 
     for i_iter in range(max_num_iter):
 
@@ -175,13 +173,13 @@ def fill_partial_fourier_pocs_3D(
 
         sj_snake[:] = s
         if b_is_pf_pe1:
-            sj_snake[:, center_pe1 + m_center_offset_pe1 - q_pe1 + 1:num_pe1, :] = sj[:,
-                                                                                      center_pe1 + m_center_offset_pe1 - q_pe1 + 1:num_pe1,
-                                                                                      :]
+            sj_snake[:, k0_pe1 + m_offset_pe1 - q_pe1 + 1:num_pe1, :] = sj[:,
+                                                                           k0_pe1 + m_offset_pe1 - q_pe1 + 1:num_pe1,
+                                                                           :]
         if b_is_pf_pe2:
-            sj_snake[:, :, center_pe2 + m_center_offset_pe2 - q_pe2 + 1:num_pe2] = sj[:,
-                                                                                      :,
-                                                                                      center_pe2 + m_center_offset_pe2 - q_pe2 + 1:num_pe2]
+            sj_snake[:, :, k0_pe2 + m_offset_pe2 - q_pe2 + 1:num_pe2] = sj[:,
+                                                                           :,
+                                                                           k0_pe2 + m_offset_pe2 - q_pe2 + 1:num_pe2]
 
         s = sj_snake.copy()
 
@@ -191,14 +189,14 @@ def fill_partial_fourier_pocs_3D(
     # Measured data before transition zone
     s_final = np.copy(pf_data)
     if b_is_pf_pe1:
-        s_final[:, center_pe1 + m_center_offset_pe1 - q_pe1 + 1:, :] = 0
+        s_final[:, k0_pe1 + m_offset_pe1 - q_pe1 + 1:, :] = 0
     if b_is_pf_pe2:
-        s_final[:, :, center_pe2 + m_center_offset_pe2 - q_pe2 + 1:] = 0
+        s_final[:, :, k0_pe2 + m_offset_pe2 - q_pe2 + 1:] = 0
 
     # Transition zone
     if b_is_pf_pe1:
-        trans_start_pe1 = center_pe1 + m_center_offset_pe1 - (q_pe1 - 1)
-        trans_end_pe1 = center_pe1 + m_center_offset_pe1
+        trans_start_pe1 = k0_pe1 + m_offset_pe1 - (q_pe1 - 1)
+        trans_end_pe1 = k0_pe1 + m_offset_pe1
         filter_left = np.cos(np.pi * np.arange(q_pe1) / (2 * (q_pe1 - 1)))
         filter_right = 1 - filter_left
         for i_pe1 in range(trans_start_pe1, trans_end_pe1 + 1):
@@ -206,8 +204,8 @@ def fill_partial_fourier_pocs_3D(
             s_final[:, i_pe1, :] = filter_left[i_filt] * pf_data[:, i_pe1, :] + filter_right[i_filt] * s[:, i_pe1, :]
 
     if b_is_pf_pe2:
-        trans_start_pe2 = center_pe2 + m_center_offset_pe2 - (q_pe2 - 1)
-        trans_end_pe2 = center_pe2 + m_center_offset_pe2
+        trans_start_pe2 = k0_pe2 + m_offset_pe2 - (q_pe2 - 1)
+        trans_end_pe2 = k0_pe2 + m_offset_pe2
         filter_left = np.cos(np.pi * np.arange(q_pe2) / (2 * (q_pe2 - 1)))
         filter_right = 1 - filter_left
         for i_pe2 in range(trans_start_pe2, trans_end_pe2 + 1):
@@ -216,8 +214,8 @@ def fill_partial_fourier_pocs_3D(
 
     # Estimated data after transition zone
     if b_is_pf_pe1:
-        s_final[:, center_pe1 + m_center_offset_pe1 + 1:num_pe1, :] = s[:, center_pe1 + m_center_offset_pe1 + 1:num_pe1, :]
+        s_final[:, k0_pe1 + m_offset_pe1 + 1:num_pe1, :] = s[:, k0_pe1 + m_offset_pe1 + 1:num_pe1, :]
     if b_is_pf_pe2:
-        s_final[:, :, center_pe2 + m_center_offset_pe2 + 1:num_pe2] = s[:, :, center_pe2 + m_center_offset_pe2 + 1:num_pe2]
+        s_final[:, :, k0_pe2 + m_offset_pe2 + 1:num_pe2] = s[:, :, k0_pe2 + m_offset_pe2 + 1:num_pe2]
 
     return s_final

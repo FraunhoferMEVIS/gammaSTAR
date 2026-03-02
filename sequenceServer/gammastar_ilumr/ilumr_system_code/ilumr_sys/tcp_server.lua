@@ -276,6 +276,7 @@ local function handle_tcp_connection(client, config)
             log:error(error_message)
             local send_success, send_err = send_tcp_message(client, {
                 status = "error",
+                success = false,
                 error = error_message,
                 timestamp = os.time()
             })
@@ -292,6 +293,7 @@ local function handle_tcp_connection(client, config)
         -- Send acknowledgment
         local ack_success, ack_err = send_tcp_message(client, {
             status = "received",
+            success = true,
             message = "Sequence received, starting processing...",
             sequence_name = sequence_name,
             timestamp = os.time()
@@ -330,6 +332,7 @@ local function handle_tcp_connection(client, config)
             -- Send processing status
             local status_success, status_err = send_tcp_message(client, {
                 status = "processing",
+                success = true,
                 sequence_number = sequence_counter,
                 message = "Sequence executed, preparing data...",
                 timestamp = os.time()
@@ -342,9 +345,10 @@ local function handle_tcp_connection(client, config)
             
             -- Serialize and send data
             -- log:info("Serializing and sending result data...")
-            local serialized_data = serialize_array(result)
+            local serialized_data = serialize_array(result.data)
             local chunk_success = send_in_chunks(client, {
                 status = "complete",
+                success = true,
                 sequence_number = sequence_counter,
                 data = serialized_data,
                 timestamp = os.time()
@@ -363,6 +367,7 @@ local function handle_tcp_connection(client, config)
             log:error("Error executing sequence: %s", tostring(result))
             local send_success, send_err = send_tcp_message(client, {
                 status = "error",
+                success = false,
                 error = tostring(result),
                 sequence_number = sequence_counter,
                 timestamp = os.time()

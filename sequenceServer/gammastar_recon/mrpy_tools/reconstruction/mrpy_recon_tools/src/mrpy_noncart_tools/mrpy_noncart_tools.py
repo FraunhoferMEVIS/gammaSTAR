@@ -69,15 +69,13 @@ def calc_equidistant_radial_trajectory_2D(radial_data_dims: np.ndarray, radial_a
     return traj
 
 
-def grid_data_to_matrix_2D(
-    data: np.ndarray,
-    traj: np.ndarray,
-    os_factor: float,
-    window_width: float,
-    kernel: np.ndarray
-) -> Tuple[np.ndarray, np.ndarray]:
+def grid_data_to_matrix_2D(data: np.ndarray,
+                           traj: np.ndarray,
+                           os_factor: float,
+                           window_width: float,
+                           kernel: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
     """!
-    @brief Applies gridding routine to acquired blade data.
+    @brief Applies gridding routine to acquired data.
 
     @param data: (np.ndarray) containing complex k-space data of size (num_col, num_lin, num_acq)
     @param traj: (np.ndarray) 4D numpy array of size (num_col, num_lin, 2, num_acq) containing real valued
@@ -147,12 +145,10 @@ def grid_data_to_matrix_2D(
     return gridded_cplx_dens, gridded_cplx
 
 
-def get_deconvolution_matrix_2D(
-    matrix_size: int,
-    os_factor: float,
-    window_width: int,
-    kernel: np.ndarray
-) -> np.ndarray:
+def get_deconvolution_matrix_2D(matrix_size: int,
+                                os_factor: float,
+                                window_width: int,
+                                kernel: np.ndarray) -> np.ndarray:
     """!
     @brief Calculates the deconvolution matrix by gridding a delta pulse and calculating the FFT.
 
@@ -162,7 +158,7 @@ def get_deconvolution_matrix_2D(
     @param kernel: (np.ndarray) Precalculated kernel values
 
     @return
-        - (np.ndarray) real-valued deconvolution matrix of size (num_col*os_factor, num_col*os_factor)
+        - (np.ndarray) Real-valued deconvolution matrix of size (num_col*os_factor, num_col*os_factor)
 
     @author Jörn Huber
     """
@@ -178,11 +174,9 @@ def get_deconvolution_matrix_2D(
     return decon_mat
 
 
-def apply_deconvolution_2D(
-    data_grid: np.ndarray,
-    decon_mat: np.ndarray,
-    os_factor: float
-) -> np.ndarray:
+def apply_deconvolution_2D(data_grid: np.ndarray,
+                           decon_mat: np.ndarray,
+                           os_factor: float) -> np.ndarray:
     """!
     @brief Applies deconvolution to gridded data using a precalculated deconvolution matrix.
 
@@ -229,11 +223,9 @@ def prop_cut_kspace_edges_2D(data: np.ndarray) -> None:
                 data[i_col, i_lin, :] = np.zeros(num_acq)
 
 
-def prop_phase_correction_2D(
-    data: np.ndarray,
-    filter_type: str = "rhomb",
-    fov: List[float] = [1, 1]
-) -> np.ndarray:
+def prop_phase_correction_2D(data: np.ndarray,
+                             filter_type: str = "rhomb",
+                             fov: List[float] = [1, 1]) -> np.ndarray:
     """!
     @brief Removes low order phase shifts from blade image data, which is the result from eddy currents etc.
     @details Phase correction is needed as blades need to share a common k-space center before gridding. Therefore,
@@ -261,8 +253,10 @@ def prop_phase_correction_2D(
                 triang_filter[i_col, i_lin] = ((num_col / 2 - np.abs(i_col - num_col / 2))
                                             * (num_lin / 2 - np.abs(i_lin - num_lin / 2)))
             elif filter_type == "square":
-                triang_filter[i_col, i_lin] = ((max(num_col/fov[0], num_lin/fov[1])/(num_col/fov[0]))*num_col / 2 - np.abs(i_col - num_col / 2)) \
-                                            * ((max(num_col/fov[0], num_lin/fov[1])/(num_lin/fov[1]))*num_lin / 2 - np.abs(i_lin - num_lin / 2))
+                triang_filter[i_col, i_lin] = ((max(num_col/fov[0], num_lin/fov[1])/(num_col/fov[0]))*num_col / 2
+                                               - np.abs(i_col - num_col / 2)) \
+                                            * ((max(num_col/fov[0], num_lin/fov[1])/(num_lin/fov[1]))*num_lin / 2
+                                               - np.abs(i_lin - num_lin / 2))
             else:
                 raise ValueError("Unknown filter type. Only rhomb and square are supported.")
     
@@ -277,14 +271,12 @@ def prop_phase_correction_2D(
 
     return data_corr
 
-def prop_calc_ksp_coverage(
-    traj: np.ndarray,
-    num_grid_points_per_axis: int
-) -> float:
+def prop_calc_ksp_coverage(traj: np.ndarray,
+                           num_grid_points_per_axis: int) -> float:
     """!
     @brief Calculates k-space coverage of PROPELLER trajectory.
-    @details Calculates fraction of k-space covered by all PROPELLER blades compared to a full k-space coverage, i.e. infinite number of blades
-    with arbitraly small blade angle increment.
+    @details Calculates fraction of k-space covered by all PROPELLER blades compared to a full k-space coverage, i.e.
+             infinite number of blades with arbitrary small blade angle increment.
 
     @param traj: (np.ndarray) 4D numpy array of size (num_col, num_lin, 2, num_acq) containing real valued
                  trajectory data centered around 0.
@@ -327,8 +319,6 @@ def prop_calc_ksp_coverage(
                     min_idx_x = tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].min())[0])
                     max_idx_x = tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].max())[-1])
                     min_idx_y = tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].min())[0])
-                    #max_idx_y = tuple(np.argwhere(traj[bin_idx, 0, :, :, blade_idx] == traj[bin_idx, 0, :, :, blade_idx].max())[-1])
-                
 
                 x_min_x = traj[:,:, 0, blade_idx][min_idx_x]
                 x_min_y = traj[:,:, 1, blade_idx][min_idx_x]
@@ -336,25 +326,22 @@ def prop_calc_ksp_coverage(
                 x_max_y = traj[:,:, 1, blade_idx][max_idx_x]
                 y_min_x = traj[:,:, 0, blade_idx][min_idx_y]
                 y_min_y = traj[:,:, 1, blade_idx][min_idx_y]
-                #y_max_x = traj[bin_idx, 0, :, :, blade_idx][max_idx_y]
-                #y_max_y = traj[bin_idx, 1, :, :, blade_idx][max_idx_y]
 
                 a = np.array([y_min_x, y_min_y])
                 b = np.array([x_min_x, x_min_y])
-                #c = np.array([y_max_x, y_max_y])
                 d = np.array([x_max_x, x_max_y])
 
-            
-                if (0 < np.dot(coor_cur - a, b - a) < np.dot(b - a, b - a)) and (0 < np.dot(coor_cur - a, d - a) < np.dot(d - a, d - a)):
+                val_1 = 0 < np.dot(coor_cur - a, b - a) < np.dot(b - a, b - a)
+                val_2 = 0 < np.dot(coor_cur - a, d - a) < np.dot(d - a, d - a)
+
+                if val_1 and val_2:
                     dummy_part[count_x, count_y] = 1
     
     cover = 100 * np.count_nonzero(dummy_part) / np.count_nonzero(dummy_full)
     return cover
 
-def calc_propeller_blade_increment_from_trajs(
-    trajectory_line_blade_1: np.ndarray,
-    trajectory_line_blade_2: np.ndarray
-) -> float:
+def calc_propeller_blade_increment_from_trajs(trajectory_line_blade_1: np.ndarray,
+                                              trajectory_line_blade_2: np.ndarray) -> float:
     """!
     @brief Calculates the PROPELLER blade angle from two trajectory lines between two PROPELLER blades based on the
            scalar product of two direction vectors which are extracted from the trtajectory.

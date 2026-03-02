@@ -11,6 +11,7 @@ import unittest
 import os
 import numpy as np
 import pydicom
+import shutil
 import ismrmrd
 import mrpy_io_tools as io_tools
 import mrpy_ismrmrd_tools as ismrmrd_tools
@@ -49,6 +50,19 @@ class TestIOTools(unittest.TestCase):
     #     self.assertTrue(ksp_paracalib is None)
     #     self.assertTrue(meas_hdr is not None)
 
+    def test_get_folder_name(self):
+        """!
+        @brief UT which validates the correct functionality of get_folder_name
+        @details The test writes a dicom file with defined header entries. The created dicom file is loaded and
+                 correct header entries are analyzed.
+        @param self: Reference to object
+
+        @author: Jörn Huber
+        """
+        print("\nTesting mrpy_io_tools: get_folder_name")
+        folder_name = io_tools.get_folder_name("test_protocol_123")
+        self.assertEqual(folder_name, "test_protocol_123/0")
+
     def test_write_dcm_from_ismrmrd_image(self):
         """!
         @brief UT which validates the correct functionality of write_dcm_from_ismrmrd_image
@@ -60,6 +74,9 @@ class TestIOTools(unittest.TestCase):
         @author: Jörn Huber
         """
         print("\nTesting mrpy_io_tools: write_dcm_from_ismrmrd_image")
+
+        if os.path.exists("DummyProtocol") and os.path.isdir("DummyProtocol"):
+            shutil.rmtree("DummyProtocol")
 
         # We first create an ismrmrd image
         test_np_acq = np.ones((64, 16))

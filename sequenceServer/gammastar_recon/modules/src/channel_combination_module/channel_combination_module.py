@@ -6,10 +6,11 @@
          The software is not qualified for use as a medical product or as part
          thereof. No bugs or restrictions are known.
 """
+import logging
 from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-import logging
 import mrpy_coil_tools as coil_tools
+import mrpy_ismrmrd_tools as ismrmrd_tools
 
 class ChannelCombinationModule:
     """!
@@ -18,23 +19,28 @@ class ChannelCombinationModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer):
+    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
-        return ChannelCombinationModule.apply(connection_buffer)
+        return ChannelCombinationModule.apply(connection_buffer, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer):
+    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Applies either sum-of-squares or adaptive coil combination to the data with "NP_IS_IMAGING" key,
                based on the config string as stored in the connection buffer object. Note that the default is
@@ -42,10 +48,13 @@ class ChannelCombinationModule:
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
@@ -99,7 +108,12 @@ class ChannelCombinationModule:
                 connection_buffer.meas_data.is_ro_ft = True
                 connection_buffer.meas_data.is_pe_ft = True
 
-            connection_buffer.meas_data.data['NP_IS_IMAGING'] = connection_buffer.meas_data.data['NP_IS_IMAGING'][:, 0, :, :, :, :, :, :, :, :, :]
-            connection_buffer.meas_data.data['NP_IS_IMAGING'] = np.expand_dims(connection_buffer.meas_data.data['NP_IS_IMAGING'], 1)
+            connection_buffer.meas_data.data['NP_IS_IMAGING'] = (
+                connection_buffer.meas_data.data)['NP_IS_IMAGING'][:, 0, :, :, :, :, :, :, :, :, :]
 
-        return connection_buffer
+            connection_buffer.meas_data.data['NP_IS_IMAGING'] = (
+                np.expand_dims(connection_buffer.meas_data.data['NP_IS_IMAGING'], 1))
+
+            book_keeper.recon_history += "_ChannelsCombined"
+
+        return connection_buffer, book_keeper

@@ -19,6 +19,6 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     install_requires=['mri-nufft[finufft]'],
-    version='1.0.1',
+    version='1.1.0',
     description='Modules of gammaSTAR reconstruction',
 )

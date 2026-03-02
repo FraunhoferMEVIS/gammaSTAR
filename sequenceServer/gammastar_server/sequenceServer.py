@@ -114,7 +114,9 @@ async def lifespan(app: FastAPI):
 httpd = FastAPI(lifespan=lifespan)
 
 # URL for the webserver
-origins = ['http://localhost', 'https://gammastar.mevis.fraunhofer.de']
+origins = ['http://localhost:4200',
+           'http://localhost',
+           'https://gammastar.mevis.fraunhofer.de']
 
 # Add CORS middleware to allow cross-origin requests
 httpd.add_middleware(
@@ -142,9 +144,9 @@ def default():
 def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBufferTrajectory: BytesIO):
     output = []
     raw_adc_representations = []
-    for rawRepr in sequenceData['sequence']:
+    for rawRepr in sequenceData['raw_reps']:
         output.append(json.dumps(rawRepr))
-        if rawRepr['has_adc'] == True:
+        if rawRepr['has_adc']:
             raw_adc_representations.append(rawRepr)
 
 # gammaSTAR recon
@@ -158,9 +160,14 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
 
     adc_points = sequenceData['trajectory']['adc_points']
     list_of_acqs = ismrmrd_tools.numpy_and_raw_rep_to_acq(np_reshape, raw_adc_representations, adc_points)
-    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'])
+    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'], opt_seq_json=sequenceData['sequence'])
 
-    response = {'dicom': "", 'trajectory': [], 'kspace': [], 'recon': [], 'raw': ""}
+    response = {"dicom": "", 
+    			"trajectory": [], 
+    			"kspace": [], 
+    			"recon": [], 
+    			"raw": "", 
+    			"recon_history": ""}
 
     os.makedirs('/data_export', exist_ok=True)
     meas_id = str(random.randint(10000, 99999))
@@ -235,7 +242,7 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
 def simulate_mr0(sequenceData):
     output = []
     raw_adc_representations = []
-    for rawRepr in sequenceData['sequence']:
+    for rawRepr in sequenceData['raw_reps']:
         output.append(json.dumps(rawRepr))
         if rawRepr['has_adc'] == True:
             raw_adc_representations.append(rawRepr)

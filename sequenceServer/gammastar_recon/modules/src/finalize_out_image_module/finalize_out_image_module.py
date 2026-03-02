@@ -18,7 +18,8 @@ class FinalizeOutImageModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer, book_keeper):
+    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
@@ -36,30 +37,23 @@ class FinalizeOutImageModule:
         return FinalizeOutImageModule.apply(connection_buffer, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer, book_keeper):
+    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Finalizes (convert to short + scaling) the reconstructed series of images and appends it to the
                output buffer.
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
-        @param book_keeper: (dict) Dictionary which is used to store image processing results.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
-            -  (dict) Dictionary which is used to store image processing results.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
-
-        num_rot = 0
-        if connection_buffer.headers[0].acquisitionSystemInformation.systemVendor == 'Siemens':
-            num_rot = 3
-        elif connection_buffer.headers[0].acquisitionSystemInformation.systemVendor == 'gammaSTAR':
-            num_rot = 1
-        if connection_buffer.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D or connection_buffer.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
-            num_rot += 2
 
         recon_images = np.around(np.abs(connection_buffer.meas_data.data['NP_IS_IMAGING']) * book_keeper.last_scaling_factor).astype(np.uint16)
         for i_rep in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'REP')):
@@ -83,14 +77,12 @@ class FinalizeOutImageModule:
 
                             meas_idx = ismrmrd_tools.MeasIDX(i_rep, i_con, i_phase, i_set, i_slc)
 
-                            par_image = np.transpose(recon_images[:, 0, :, :,
-                                                                  i_slc,
-                                                                  i_set,
-                                                                  i_phase,
-                                                                  i_con,
-                                                                  i_rep, 0, 0], [1, 0, 2])
-
-                            par_image = np.rot90(par_image, k=num_rot, axes=(0, 1))
+                            par_image = recon_images[:, 0, :, :,
+                                                     i_slc,
+                                                     i_set,
+                                                     i_phase,
+                                                     i_con,
+                                                     i_rep, 0, 0]
 
                             ismrmrd_image = ismrmrd_tools.numpy_array_to_ismrmrd_image(par_image,
                                                                                        connection_buffer.meas_data.data['ACQ_IS_IMAGING'],
@@ -98,7 +90,7 @@ class FinalizeOutImageModule:
                                                                                        book_keeper.image_series_index,
                                                                                        meas_idx,
                                                                                        series_comment,
-                                                                                       'gammaSTAR Recon v1.0.1',
+                                                                                       book_keeper.recon_history,
                                                                                        book_keeper.last_scaling_factor)
                             book_keeper.outgoing_image_buffer.append(ismrmrd_image)
                             book_keeper.image_series_index = book_keeper.image_series_index + 1

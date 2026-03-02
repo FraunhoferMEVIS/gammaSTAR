@@ -103,7 +103,7 @@ def default():
 def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBufferTrajectory: BytesIO, frequency_hz=None):
     output = []
     raw_adc_representations = []
-    for rawRepr in sequenceData['sequence']:
+    for rawRepr in sequenceData['raw_reps']:
         output.append(json.dumps(rawRepr))
         if rawRepr['has_adc'] == True:
             raw_adc_representations.append(rawRepr)
@@ -163,9 +163,14 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
     meas_info = hardcoded_resonint_ilumr_meas_info(frequency_hz)
 
     # xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'], meas_info)
-    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'])
+    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'], opt_seq_json=sequenceData['sequence'])
 
-    response = {'dicom': "", 'trajectory': [], 'kspace': [], 'recon': [], 'raw': ""}
+    response = {"dicom": "", 
+                "trajectory": [], 
+    			"kspace": [], 
+    			"recon": [], 
+    			"raw": "", 
+    			"recon_history": ""}
 
     os.makedirs('/data_export', exist_ok=True)
     meas_id = str(random.randint(10000, 99999))
@@ -536,7 +541,7 @@ def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         # Prepare sequence data for transmission
         sequence_data = {
             "sequence": sequence.get("name", "unknown_sequence"),
-            "data": sequence.get("sequence", {})
+            "data": sequence.get("raw_reps", {})
         }
         
         k_space_data_list = send_sequence_data(sock, sequence_data)

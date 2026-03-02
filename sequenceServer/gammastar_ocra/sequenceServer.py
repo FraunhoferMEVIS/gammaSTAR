@@ -117,7 +117,7 @@ def reconstruct_image(
 ):
     output = []
     raw_adc_representations = []
-    for rawRepr in sequenceData["sequence"]:
+    for rawRepr in sequenceData["raw_reps"]:
         output.append(json.dumps(rawRepr))
         if rawRepr["has_adc"] == True:
             raw_adc_representations.append(rawRepr)
@@ -153,9 +153,15 @@ def reconstruct_image(
         sequenceData["expo"],
         sequenceData["sys"],
         sequenceData["root"],
+        opt_seq_json = sequenceData['sequence']
     )
 
-    response = {"dicom": "", "trajectory": [], "kspace": [], "recon": [], "raw": ""}
+    response = {"dicom": "", 
+    			"trajectory": [], 
+    			"kspace": [], 
+    			"recon": [], 
+    			"raw": "", 
+    			"recon_history": ""}
 
     os.makedirs("/data_export", exist_ok=True)
     meas_id = str(random.randint(10000, 99999))
@@ -268,7 +274,7 @@ async def main_ocra(sequence):
     response = None
 
     # create data that is send to system
-    sequence_data = {"name": sequence["name"], "sequence": sequence["sequence"]}
+    sequence_data = {"name": sequence["name"], "sequence": sequence["raw_reps"]}
 
     if sequence_data:
         k_space_data = send_receive_sequence(sequence_data)

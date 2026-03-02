@@ -10,6 +10,7 @@
 import logging
 from concurrent.futures import ThreadPoolExecutor
 import mrpy_noncart_tools as noncart_tools
+import mrpy_ismrmrd_tools as ismrmrd_tools
 
 
 class PhaseCorModule:
@@ -19,23 +20,27 @@ class PhaseCorModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer):
+    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
-        return PhaseCorModule.apply(connection_buffer)
+        return PhaseCorModule.apply(connection_buffer, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer):
+    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
+              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Applies either sum-of-squares or adaptive coil combination to the data with "NP_IS_IMAGING" key,
                based on the config string as stored in the connection buffer object. Note that the default is
@@ -43,17 +48,19 @@ class PhaseCorModule:
 
         @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                                      structures.
+        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
+            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
                                   structures.
+            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
 
         @author Jörn Huber
         """
 
         if connection_buffer.meas_data.is_propeller:
 
-            logging.info("GSTAR Recon: Applying PROPELLER phase correction")
+            logging.info("gs-recon: Applying PROPELLER phase correction")
 
             def process_phase_correction(args):
                 (i_rep, i_phase, i_set, i_con, i_slc, i_par, i_cha, connection_buffer) = args
@@ -61,7 +68,6 @@ class PhaseCorModule:
                 data[:, i_cha, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0] = (
                     noncart_tools.prop_phase_correction_2D(
                         data[:, i_cha, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0]))
-                return None
 
             indices = [
                 (i_rep, i_phase, i_set, i_con, i_slc, i_par, i_cha, connection_buffer)
@@ -77,4 +83,6 @@ class PhaseCorModule:
             with ThreadPoolExecutor() as executor:
                 list(executor.map(process_phase_correction, indices))
 
-        return connection_buffer
+            book_keeper.recon_history += "_PROPELLERPhaseCorrection"
+
+        return connection_buffer, book_keeper

@@ -14,6 +14,7 @@ import mrpy_ismrmrd_tools as ismrmrd_tools
 from book_keeper import BookKeeper
 
 # Reconstruction Modules
+from acquisition_conversion_module import AcquisitionConversionModule
 from average_combination_module import AverageCombinationModule
 from segment_combination_module import SegmentCombinationModule
 from parallel_imaging_module import ParallelImagingModule
@@ -28,13 +29,19 @@ from finalize_out_image_module import FinalizeOutImageModule
 
 def print_info():
 
+    build_date_time = "N/A"
+    if os.path.exists('build_date_time.txt'):
+        with open('build_date_time.txt', 'r') as f:
+            build_date_time = f.read().strip()
+
     print("########################################################\n\n"
-          "gammaSTAR Reconstructions v1.0.3 Release\n")
+          "gammaSTAR Reconstructions v1.1.0 Release")
+    print("Build Time: " + build_date_time + "\n")
 
     print("The software is not qualified for use as a medical product or as part\n"
           "thereof. No bugs or restrictions are known. Delivered ‘as is’ without\n"
           "specific verification or validation.\n"
-          "(C) Fraunhofer MEVIS 2025\n"
+          "(C) Fraunhofer MEVIS 2026\n"
           "Contact: Joern Huber (joern.huber@mevis.fraunhofer.de)\n")
 
     print("List of included third-party software\n"
@@ -61,6 +68,7 @@ if __name__ == "__main__":
     book_keeper = BookKeeper()
 
     # Reconstruction Modules
+    acquisition_conversion_module = AcquisitionConversionModule()
     average_combination_module = AverageCombinationModule()
     segment_combination_module = SegmentCombinationModule()
     parallel_imaging_module = ParallelImagingModule()
@@ -76,23 +84,23 @@ if __name__ == "__main__":
     while True:
 
         try:
+
             con_buffer, server_socket = ismrmrd_tools.gstar_recon_server(host='0.0.0.0', port=9002)
             book_keeper.register_patient(con_buffer)
 
             ########################
             # Image Reconstruction #
             ########################
-
-            con_buffer = (
-                ksp_to_image_module(
-                    prop_module(
-                        channel_combination_module(
-                            phase_correction_module(
-                                ifft_module('PE2',
-                                            partial_fourier_module(
-                                                parallel_imaging_module(
-                                                    segment_combination_module(
-                                                        average_combination_module(con_buffer))))))))))
+            con_buffer, book_keeper = acquisition_conversion_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = average_combination_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = segment_combination_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = parallel_imaging_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = partial_fourier_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = ifft_module('PE2', con_buffer, book_keeper)
+            con_buffer, book_keeper = phase_correction_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = channel_combination_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = prop_module(con_buffer, book_keeper)
+            con_buffer, book_keeper = ksp_to_image_module(con_buffer, book_keeper)
 
             ##################################################
             #     Scaling and Appending to Output Buffer     #

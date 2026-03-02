@@ -20,6 +20,6 @@ setup(
     packages=find_packages('src'),
     package_dir={'': 'src'},
     install_requires=['numpy', 'pymapvbvd', 'matplotlib', 'pydicom', 'sigpy', 'xmltodict', 'ismrmrd', 'mri-nufft[finufft]', 'scikit-learn'],
-    version='1.3',
+    version='1.1.0',
     description='Python tools collecting basic MRI reconstruction algorithms',
 )

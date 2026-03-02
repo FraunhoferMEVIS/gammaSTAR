@@ -7,7 +7,6 @@
          thereof. No bugs or restrictions are known.
 """
 
-import math
 import struct
 import socket
 import ismrmrd
@@ -16,12 +15,9 @@ import time
 import xml.etree.ElementTree as xml_elem_tree
 import threading
 import logging
+import json
 import random
 from datetime import datetime
-import mrinufft
-from mrinufft.density import voronoi
-import mrpy_helpers as helpers
-from scipy.interpolate import interp1d
 from typing import Any, List, Optional, Dict, Tuple, Union
 
 class MeasIDX:
@@ -263,72 +259,6 @@ class ConnectionBuffer:
             IsmrmrdConstants.ID_MESSAGE_IMAGE:       self.read_image
         }
 
-    def convert_acquisitions(self) -> None:
-        """!
-        @brief Converts list of ismrmrd acquisition objects to numpy arrays.
-        @details Buffered data is handled depending on the type of readout. If non-cartesian trajectories were applied,
-                 the data is gridded to a Cartesian matrix first. If ramp sampling was applied, indiviudal readouts
-                 are regridded first.
-
-        @author Jörn Huber
-        """
-        b_is_process = any('ACQ' in acq_key for acq_key in self.meas_data.data.keys()) and len(self.headers) > 0
-
-        if b_is_process:
-            logging.info("GSTAR Recon: Processing acquisitions")
-
-            self.meas_data.imaging_readout_type, _, self.meas_data.is_propeller, self.meas_data.blade_dim = identify_readout_type_from_acqs(self.meas_data.data['ACQ_IS_IMAGING'])
-
-            if self.meas_data.imaging_readout_type == IsmrmrdConstants.READOUT_TYPE_CARTESIAN and not self.meas_data.is_propeller:
-
-                self.meas_data.encoded_space = self.headers[0].encoding[0].encodedSpace
-                self.meas_data.recon_space = self.headers[0].encoding[0].reconSpace
-                self.meas_data.pf_factor_pe1 = self.meas_data.encoded_space.matrixSize.y / self.meas_data.recon_space.matrixSize.y
-                self.meas_data.pf_factor_pe2 = self.meas_data.encoded_space.matrixSize.z / self.meas_data.recon_space.matrixSize.z
-                self.meas_data.accel_pe1 = self.headers[0].encoding[0].parallelImaging.accelerationFactor.kspace_encoding_step_1
-                self.meas_data.accel_pe2 = self.headers[0].encoding[0].parallelImaging.accelerationFactor.kspace_encoding_step_2
-
-            else:
-
-                self.meas_data.encoded_space = self.headers[0].encoding[0].encodedSpace
-                self.meas_data.recon_space = self.headers[0].encoding[0].reconSpace
-                self.meas_data.pf_factor_pe1 = 1.0 # No Partial Fourier for non-Cartesian or PROPELLER data
-                self.meas_data.pf_factor_pe2 = 1.0 # No Partial Fourier for non-Cartesian or PROPELLER data
-                self.meas_data.accel_pe1 = self.headers[0].encoding[0].parallelImaging.accelerationFactor.kspace_encoding_step_1
-                self.meas_data.accel_pe2 = self.headers[0].encoding[0].parallelImaging.accelerationFactor.kspace_encoding_step_2
-
-            os_factor = self.meas_data.encoded_space.fieldOfView_mm.x / self.meas_data.recon_space.fieldOfView_mm.x #== 2 and encoded_space.matrixSize.x / recon_space.matrixSize.x == 2
-
-            self.meas_data.meas_header = self.headers[0]
-            logging.info("GSTAR Recon:  Partial Fourier PE1xPE2: " + str(self.meas_data.pf_factor_pe1) + "x" + str(self.meas_data.pf_factor_pe2))
-            logging.info("GSTAR Recon:  Parallel Imaging PE1xPE2 " + str(self.meas_data.accel_pe1) + "x" + str(self.meas_data.accel_pe2))
-
-            acq_keys = list(self.meas_data.data.keys())
-            for acq_key in acq_keys:
-                np_key = acq_key.replace('ACQ', 'NP')
-                logging.info('GSTAR Recon:  Checking readout type of ' + acq_key + " data")
-                if "IS_IMAGING" in np_key:
-                    self.meas_data.data[np_key] = ismrmrd_acqs_to_numpy_array(self.meas_data.data[acq_key],
-                                                                              self.meas_data.encoded_space,
-                                                                              os_factor)
-                else:
-                    self.meas_data.data[np_key] = ismrmrd_acqs_to_numpy_array(self.meas_data.data[acq_key],
-                                                                              None,
-                                                                              os_factor)
-
-            if 'NP_IS_PARALLEL_CALIBRATION' in self.meas_data.data:
-                self.meas_data.calib_reg_pe1 = (
-                    min(self.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'],
-                        key=lambda acq: acq.idx.kspace_encode_step_1).idx.kspace_encode_step_1,
-                    max(self.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'],
-                        key=lambda acq: acq.idx.kspace_encode_step_1).idx.kspace_encode_step_1 + 1)
-
-                self.meas_data.calib_reg_pe2 = (
-                    min(self.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'],
-                        key=lambda acq: acq.idx.kspace_encode_step_2).idx.kspace_encode_step_2,
-                    max(self.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'],
-                        key=lambda acq: acq.idx.kspace_encode_step_2).idx.kspace_encode_step_2 + 1)
-
     def receive_messages(self) -> None:
         """!
         @brief Using an established tcp connection, this function receives all incoming messages and handles appropriate
@@ -365,7 +295,6 @@ class ConnectionBuffer:
 
             elif message_id == IsmrmrdConstants.ID_MESSAGE_CLOSE:
                 self.read_close()
-                self.convert_acquisitions()
                 break
 
     # --> Based on python-ismrmrd-server (see third_party_licenses.txt)
@@ -812,14 +741,13 @@ class ConnectionBuffer:
 
     # <-- Based on python-ismrmrd-server (see third_party_licenses.txt)
 
-def gstar_to_ismrmrd_hdr(
-    prot: Dict[str, Any],
-    info: Dict[str, Any],
-    expo: Dict[str, Any],
-    sys: Dict[str, Any],
-    root: Dict[str, Any],
-    opt_meas_info: Optional[Dict[str, Any]] = None
-) -> str:
+def gstar_to_ismrmrd_hdr(prot: dict,
+                         info: dict,
+                         expo: dict,
+                         sys: dict,
+                         root: dict,
+                         opt_meas_info: dict | None = None,
+                         opt_seq_json: str | None = None) -> str:
     """!
     @brief This function transfers header entries from gammastar to the corresponding ismrmrd header.
 
@@ -829,6 +757,7 @@ def gstar_to_ismrmrd_hdr(
     @param sys: (dict) Contains system information such as the resonance frequency
     @param root: (dict) Contains information such as the acquisition matrix size
     @param opt_meas_info: (dict) Contains information such as the acquisition matrix size
+    @param opt_seq_json: (string) JSON string which contains exported sequence
 
     @return
         - (string) ISMRMRD header in xml format but serialized into string
@@ -1074,12 +1003,21 @@ def gstar_to_ismrmrd_hdr(
 
     # userParameters
     user_parameters = xml_elem_tree.SubElement(xml_root, "userParameters")
-    if 'bValues' in prot:
-        user_parameters_double = xml_elem_tree.SubElement(user_parameters, "userParameterDouble")
-        b_values_name = xml_elem_tree.SubElement(user_parameters_double, "name")
-        b_values_name.text = "b_values"
-        b_values_value = xml_elem_tree.SubElement(user_parameters_double, "value")
-        b_values_value.text = str(prot['bValues'])
+
+    # We add the protocol as a user parameter string
+    user_parameters_string = xml_elem_tree.SubElement(user_parameters, "userParameterString")
+    dir_name = xml_elem_tree.SubElement(user_parameters_string, "name")
+    dir_name.text = "prot"
+    dir_value = xml_elem_tree.SubElement(user_parameters_string, "value")
+    dir_value.text = json.dumps(prot)
+
+    # If available, we add the sequence json as a user parameter string
+    if opt_seq_json is not None:
+        user_parameters_string = xml_elem_tree.SubElement(user_parameters, "userParameterString")
+        dir_name = xml_elem_tree.SubElement(user_parameters_string, "name")
+        dir_name.text = "seq"
+        dir_value = xml_elem_tree.SubElement(user_parameters_string, "value")
+        dir_value.text = json.dumps(opt_seq_json)
 
     xml_str = xml_elem_tree.tostring(xml_root, encoding="utf-8", method="xml").decode()
     return xml_str
@@ -1273,12 +1211,10 @@ def noise_scan_to_acq(numpy_noise_array: np.ndarray) -> ismrmrd.Acquisition:
     return acq
 
 
-def numpy_and_raw_rep_to_acq(
-    numpy_array: np.ndarray,
-    raw_adc_representations: List[Dict[str, Any]],
-    traj_info: Optional[Dict[str, Any]] = None,
-    reverse_lineflip: bool = False
-) -> List[Any]:
+def numpy_and_raw_rep_to_acq(numpy_array: np.ndarray,
+                             raw_adc_representations: List[Dict[str, Any]],
+                             traj_info: Optional[Dict[str, Any]] = None,
+                             reverse_lineflip: bool = False) -> List[Any]:
     """!
     @brief A method, which creates a list of ISMRMRD acquisition objects from a three-dimensional numpy array based
            on the gammastar raw representations and trajectory information which are provided as a list.
@@ -1477,14 +1413,12 @@ def create_dummy_ismrmrd_header() -> str:
     return xml_str
 
 
-def gstar_recon_emitter(
-    host_address: str,
-    port: int,
-    list_of_acqs: List[ismrmrd.Acquisition],
-    ismrmrd_header: str,
-    protocol: Optional[float] = None,
-    config_message: Optional[str] = None
-) -> Union[ConnectionBuffer, bool]:
+def gstar_recon_emitter(host_address: str,
+                        port: int,
+                        list_of_acqs: List[ismrmrd.Acquisition],
+                        ismrmrd_header: str,
+                        protocol: float = 1.0,
+                        config_message: str = "") -> Union[ConnectionBuffer, bool]:
     """!
     @brief ISMRMRD client which sends ismrmrd.Acquisition objects together with respective text messages to the stream.
 
@@ -1505,6 +1439,7 @@ def gstar_recon_emitter(
     """
     logging.basicConfig()
     logging.root.setLevel(logging.NOTSET)
+
     if protocol != 1.0 and protocol != 1.1:
         raise ValueError("Invalid protocol. Allowed are 1.0 or 1.1")
 
@@ -1586,7 +1521,7 @@ def gstar_recon_server(host: str, port: int) -> Tuple[ConnectionBuffer, socket.s
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     server_socket.bind((host, port))
     server_socket.listen(5)
-    logging.info("GSTAR reconstruction server waiting for connection on " + str(host) + ":" + str(port))
+    logging.info("gs-recon server waiting for connection on " + str(host) + ":" + str(port))
 
     connection, addr = server_socket.accept()
     logging.info("Incoming connection from " + str(addr) + ", let's go!")
@@ -1636,7 +1571,13 @@ def bitmask_to_flags(flag_value: int) -> List[str]:
     return active_flags
 
 
-def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray], list_of_ksp_array_flags: list[list[str]], read_dir: np.ndarray, phase_dir: np.ndarray, slice_dir: np.ndarray, position: np.ndarray, list_of_trajectories: list[np.ndarray] = None) -> list[ismrmrd.Acquisition]:
+def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
+                                list_of_ksp_array_flags: list[list[str]],
+                                read_dir: np.ndarray,
+                                phase_dir: np.ndarray,
+                                slice_dir: np.ndarray,
+                                position: np.ndarray,
+                                list_of_trajectories: list[np.ndarray] = None) -> list[ismrmrd.Acquisition]:
     """!
     @brief Transforms k-space data which is given in form of numpy arrays into acquisiton objects, which can be sent
            to a server using client_to_stream.
@@ -1878,7 +1819,7 @@ def identify_readout_type_from_acqs(list_of_acqs: List[ismrmrd.Acquisition]) -> 
 
     if list_of_acqs[0].traj.shape[1] == 0:
 
-        logging.info("GSTAR Recon:   Trajectory information was not provided, assuming Cartesian")
+        logging.info("gs-recon:   Trajectory information was not provided, assuming Cartesian")
         readout_type = IsmrmrdConstants.READOUT_TYPE_CARTESIAN
         is_ramp_samp = False
 
@@ -1968,265 +1909,14 @@ def identify_readout_type_from_acqs(list_of_acqs: List[ismrmrd.Acquisition]) -> 
 
     return readout_type, is_ramp_samp, is_propeller, blade_dim
 
-
-def ismrmrd_acqs_to_numpy_array(list_of_acqs: list[ismrmrd.Acquisition], encoded_space = None, os_factor: float = 1) -> np.ndarray:
-    """!
-    @brief Sort k-space data from acquisitions into numpy array structures for further processing.
-    @details The function first analyzes the maximum idx indices which are available in the list of provided
-             acquisitions. Maximum indices are used to create the numpy structure and to sort the data into that
-             structure. If acquisitions provide non-Cartesian data, the data is first regridded to the Cartesian grid
-             as defined by the encoded space. If data was sampled using ramp sampling, regridding of individual readouts
-             is first applied.
-
-    @param list_of_acqs: (list) List of ismrmrd.Acquisition objects.
-    @param encoded_space: (ISMRMRD encoded space object) Encoded space dimensions
-    @param os_factor: (float) Oversampling factor used during acquisition.
-
-    @return
-        - (np.ndarray) 11-D Numpy array of size (number_of_samples, max_kspace_encoding_pe1, max_kspace_encoding_pe2,
-                       num_active_channels, max_slice, max_set, max_phase, max_contrast, max_repetition, max_average,
-                       max_segment) with sorted acquisition.
-
-    @author Jörn Huber
-    """
-
-    readout_type, is_ramp_sample, _, _ = identify_readout_type_from_acqs(list_of_acqs)
-    ramp_sampe_string = ''
-    if is_ramp_sample:
-        ramp_sampe_string = " with 1D resampling"
-    if readout_type == IsmrmrdConstants.READOUT_TYPE_CARTESIAN:
-        logging.info('GSTAR Recon:   Cartesian readout' + ramp_sampe_string)
-    elif readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D:
-        logging.info('GSTAR Recon:   Non-Cartesian 2D readout')
-    elif readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
-        logging.info('GSTAR Recon:   Non-Cartesian 3D readout')
-
-    num_active_channels = list_of_acqs[0].active_channels
-
-    number_of_samples = list_of_acqs[0].number_of_samples  # encoded_space.matrixSize.x
-    if encoded_space is not None:
-        max_kspace_encoding_pe1 = encoded_space.matrixSize.y
-        max_kspace_encoding_pe2 = encoded_space.matrixSize.z
-    else:
-        max_kspace_encoding_pe1 = max(list_of_acqs, key=lambda acq: acq.idx.kspace_encode_step_1).idx.kspace_encode_step_1 + 1
-        max_kspace_encoding_pe2 = max(list_of_acqs, key=lambda acq: acq.idx.kspace_encode_step_2).idx.kspace_encode_step_2 + 1
-
-    max_slice = max(list_of_acqs, key=lambda acq: acq.idx.slice).idx.slice + 1
-    max_segment = max(list_of_acqs, key=lambda acq: acq.idx.segment).idx.segment + 1
-    max_set = max(list_of_acqs, key=lambda acq: acq.idx.set).idx.set + 1
-    max_phase = max(list_of_acqs, key=lambda acq: acq.idx.phase).idx.phase + 1
-    max_contrast = max(list_of_acqs, key=lambda acq: acq.idx.contrast).idx.contrast + 1
-    max_average = max(list_of_acqs, key=lambda acq: acq.idx.average).idx.average + 1
-    max_repetition = max(list_of_acqs, key=lambda acq: acq.idx.repetition).idx.repetition + 1
-
-    acq_data_np = np.zeros((number_of_samples,
-                            num_active_channels,
-                            max_kspace_encoding_pe1,
-                            max_kspace_encoding_pe2,
-                            max_slice,
-                            max_set,
-                            max_phase,
-                            max_contrast,
-                            max_repetition,
-                            max_average,
-                            max_segment), dtype=complex)
-
-    for acq in list_of_acqs:
-        acq_flags = bitmask_to_flags(acq.getHead().flags)
-        data = np.transpose(acq.data, (1, 0))
-
-        if any('ACQ_IS_REVERSE' in s for s in acq_flags):
-            data = np.flipud(data)
-
-        acq_data_np[:,
-                    :,
-                    acq.idx.kspace_encode_step_1,
-                    acq.idx.kspace_encode_step_2,
-                    acq.idx.slice,
-                    acq.idx.set,
-                    acq.idx.phase,
-                    acq.idx.contrast,
-                    acq.idx.repetition,
-                    acq.idx.average,
-                    acq.idx.segment] = data
-
-    if readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D:
-
-        acq_data_np_grid = np.zeros((encoded_space.matrixSize.x,
-                                    num_active_channels,
-                                    encoded_space.matrixSize.x,
-                                    max_kspace_encoding_pe2,
-                                    max_slice,
-                                    max_set,
-                                    max_phase,
-                                    max_contrast,
-                                    max_repetition,
-                                    max_average,
-                                    max_segment), dtype=complex)
-
-        # --> Based on mri-nufft (see third_party_licenses.txt)
-
-        # Prepare sampling trajectory
-        samples_loc = mrinufft.initialize_2D_radial(Nc=max_kspace_encoding_pe1, Ns=list_of_acqs[0].number_of_samples)
-        traj_dict = dict()
-        for i_acq in range(len(list_of_acqs)):
-            if list_of_acqs[i_acq].idx.kspace_encode_step_1 not in traj_dict:
-                traj_dict[list_of_acqs[i_acq].idx.kspace_encode_step_1] = list_of_acqs[i_acq].traj[:, 0:-1]
-                samples_loc[i_acq, :, :] = list_of_acqs[i_acq].traj[:, 0:-1]
-
-        samples_loc = samples_loc / np.max(samples_loc) * math.pi
-
-        # Prepare NUFFT Operator
-        density = voronoi(samples_loc.reshape(-1, 2))
-        NufftOperator = mrinufft.get_operator("finufft")
-        nufft = NufftOperator(
-            samples_loc.reshape(-1, 2), shape=(encoded_space.matrixSize.x, encoded_space.matrixSize.x), density=density,
-            n_coils=1
-        )
-
-        # <-- Based on mri-nufft (see third_party_licenses.txt)
-
-        for i_rep in range(0, max_repetition):
-            for i_ave in range(0, max_average):
-                for i_con in range(0, max_contrast):
-                    for i_phs in range(0, max_phase):
-                        for i_set in range(0, max_set):
-                            for i_seg in range(0, max_segment):
-                                for i_slc in range(0, max_slice):
-                                    for i_par in range(0, max_kspace_encoding_pe2):
-                                        for i_cha in range(0, max_slice):
-                                            grid_data = acq_data_np[:, i_cha, :,
-                                                                    i_par, i_slc, i_set, i_phs, i_con, i_rep,
-                                                                    i_ave, i_seg]
-
-                                            # --> Based on mri-nufft (see third_party_licenses.txt)
-                                            cart_data = nufft.adj_op(np.transpose(grid_data, [1, 0]).flatten())
-                                            # <-- Based on mri-nufft (see third_party_licenses.txt)
-
-                                            cart_data = np.fft.fftshift(
-                                                np.fft.ifft(np.fft.fftshift(cart_data, axes=0), axis=0), axes=0)
-                                            cart_data = np.fft.fftshift(
-                                                np.fft.ifft(np.fft.fftshift(cart_data, axes=1), axis=1), axes=1)
-
-                                            acq_data_np_grid[:, i_cha, :,
-                                                             i_par, i_slc, i_set, i_phs, i_con, i_rep,
-                                                             i_ave, i_seg] = cart_data
-
-        acq_data_np = acq_data_np_grid
-
-    elif readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
-
-        acq_data_np_grid = np.zeros((encoded_space.matrixSize.x,
-                                    num_active_channels,
-                                    encoded_space.matrixSize.x,
-                                    encoded_space.matrixSize.x,
-                                    max_slice,
-                                    max_set,
-                                    max_phase,
-                                    max_contrast,
-                                    max_repetition,
-                                    max_average,
-                                    max_segment), dtype=complex)
-
-        # --> Based on mri-nufft (see third_party_licenses.txt)
-
-        # Prepare sampling trajectory
-        samples_loc = mrinufft.initialize_3D_golden_means_radial(Nc=max_kspace_encoding_pe1, Ns=list_of_acqs[0].number_of_samples)
-        traj_dict = dict()
-        for i_acq in range(len(list_of_acqs)):
-            if list_of_acqs[i_acq].idx.kspace_encode_step_1 not in traj_dict:
-                traj_dict[list_of_acqs[i_acq].idx.kspace_encode_step_1] = list_of_acqs[i_acq].traj
-                samples_loc[i_acq, :, :] = list_of_acqs[i_acq].traj
-
-        samples_loc = samples_loc / np.max(samples_loc) * math.pi
-
-        # Prepare NUFFT Operator
-        density = voronoi(samples_loc.reshape(-1, 3))
-        NufftOperator = mrinufft.get_operator("finufft")
-        nufft = NufftOperator(
-            samples_loc.reshape(-1, 3), shape=(encoded_space.matrixSize.x, encoded_space.matrixSize.x, encoded_space.matrixSize.x), density=density,
-            n_coils=1
-        )
-
-        # <-- Based on mri-nufft (see third_party_licenses.txt)
-
-        for i_rep in range(0, max_repetition):
-            for i_ave in range(0, max_average):
-                for i_con in range(0, max_contrast):
-                    for i_phs in range(0, max_phase):
-                        for i_set in range(0, max_set):
-                            for i_seg in range(0, max_segment):
-                                for i_slc in range(0, max_slice):
-                                    for i_cha in range(0, max_slice):
-                                        grid_data = acq_data_np[:, i_cha, :,
-                                                                0, i_slc, i_set, i_phs, i_con, i_rep,
-                                                                i_ave, i_seg]
-
-                                        # --> Based on mri-nufft (see third_party_licenses.txt)
-                                        cart_data = nufft.adj_op(np.transpose(grid_data, [1, 0]).flatten())
-                                        # <-- Based on mri-nufft (see third_party_licenses.txt)
-
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=0), axis=0), axes=0)
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=1), axis=1), axes=1)
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=2), axis=2), axes=2)
-
-                                        acq_data_np_grid[:, i_cha, :,
-                                                         :, i_slc, i_set, i_phs, i_con, i_rep,
-                                                         i_ave, i_seg] = cart_data
-
-        acq_data_np = acq_data_np_grid
-
-    elif is_ramp_sample and (readout_type == IsmrmrdConstants.READOUT_TYPE_CARTESIAN):
-
-        regrid_traj = list_of_acqs[0].traj[:, 0]
-
-        regrid_traj = regrid_traj - np.min(regrid_traj)
-        regrid_traj = regrid_traj / np.max(regrid_traj)
-        regrid_traj = regrid_traj * list_of_acqs[0].number_of_samples
-
-        if regrid_traj[0] > regrid_traj[-1]:
-            integer_grid = np.arange(list_of_acqs[0].number_of_samples, 0, -1)
-        else:
-            integer_grid = np.arange(0, list_of_acqs[0].number_of_samples)
-
-        for i_rep in range(0, max_repetition):
-            for i_ave in range(0, max_average):
-                for i_con in range(0, max_contrast):
-                    for i_phs in range(0, max_phase):
-                        for i_set in range(0, max_set):
-                            for i_seg in range(0, max_segment):
-                                for i_slc in range(0, max_slice):
-                                    for i_par in range(0, max_kspace_encoding_pe2):
-                                        for i_cha in range(0, max_slice):
-                                            for i_pe in range(0, max_kspace_encoding_pe1):
-
-                                                data = acq_data_np[:, i_cha, i_pe, i_par, i_slc, i_set, i_phs,
-                                                                   i_con, i_rep, i_ave, i_seg]
-
-                                                regrid_interpolator = interp1d(regrid_traj, np.squeeze(data), kind='cubic', fill_value='extrapolate')
-                                                resampled_data = regrid_interpolator(integer_grid)
-
-                                                acq_data_np[:, i_cha, i_pe, i_par, i_slc, i_set, i_phs, i_con, i_rep, i_ave, i_seg] = resampled_data
-
-    # Last step: We want to remove the readout oversampling
-    if os_factor > 1:
-
-        acq_data_np = helpers.remove_readout_os(acq_data_np, 0, os_factor)
-
-        if readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D: # We gridded, so we need to remove it along ro and pe1
-            acq_data_np = helpers.remove_readout_os(acq_data_np, 2, os_factor)
-
-        if readout_type == IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D: # We gridded, so we need to remove it along ro and pe1 and pe2
-            acq_data_np = helpers.remove_readout_os(acq_data_np, 2, os_factor)
-            acq_data_np = helpers.remove_readout_os(acq_data_np, 3, os_factor)
-
-    return acq_data_np
-
-
-def numpy_array_to_ismrmrd_image(nd_image: np.ndarray, list_of_acqs: list[ismrmrd.Acquisition], xml_header, image_series_index: int, meas_idx: MeasIDX, add_series_string: str = '', recon_history: str = '', scaling_factor: float = 1.0) -> ismrmrd.Image:
+def numpy_array_to_ismrmrd_image(nd_image: np.ndarray,
+                                 list_of_acqs: list[ismrmrd.Acquisition],
+                                 xml_header,
+                                 image_series_index: int,
+                                 meas_idx: MeasIDX,
+                                 add_series_string: str = '',
+                                 recon_history: str = '',
+                                 scaling_factor: float = 1.0) -> ismrmrd.Image:
     """!
     @brief Sort k-space data from acquisitions into numpy array structures for further processing.
     @details The function first analyzes the maximum idx indices which are available in the list of provided
@@ -2252,7 +1942,11 @@ def numpy_array_to_ismrmrd_image(nd_image: np.ndarray, list_of_acqs: list[ismrmr
     # This will set a first set of entries, e.g. orientation and position information.
     target_acq = -1
     for acq in list_of_acqs:
-        if acq.idx.contrast == meas_idx.contrast and acq.idx.phase == meas_idx.phase and acq.idx.repetition == meas_idx.repetition and acq.idx.set == meas_idx.set and acq.idx.slice == meas_idx.slice:
+        if(acq.idx.contrast == meas_idx.contrast and
+           acq.idx.phase == meas_idx.phase and
+           acq.idx.repetition == meas_idx.repetition and
+           acq.idx.set == meas_idx.set and
+           acq.idx.slice == meas_idx.slice):
             target_acq = acq
             break
 
@@ -2280,84 +1974,137 @@ def numpy_array_to_ismrmrd_image(nd_image: np.ndarray, list_of_acqs: list[ismrmr
                          'WindowCenter': str((np.max(nd_image.flatten()) + 1) / 2),
                          'WindowWidth': str((np.max(nd_image.flatten()) + 1))})
 
-    meta['seriesDescription'] = 'ISMRMRD Series' + add_series_string  # Will be overwritten if additional information is available
+    meta['seriesDescription'] = 'ISMRMRD Series' + add_series_string  # Will be overwritten if additional information
+                                                                      # is available.
     meta['studyDescription'] = 'ISMRMRD Study'  # Will be overwritten if additional information is available
     meta['scalingFactor'] = str(scaling_factor)
 
     # Write acqusition info to meta object
-    if hasattr(xml_header.acquisitionSystemInformation, 'deviceID') and xml_header.acquisitionSystemInformation.deviceID is not None:
+    if (hasattr(xml_header.acquisitionSystemInformation, 'deviceID')
+            and xml_header.acquisitionSystemInformation.deviceID is not None):
         meta['deviceID'] = xml_header.acquisitionSystemInformation.deviceID
-    if hasattr(xml_header.acquisitionSystemInformation, 'institutionName') and xml_header.acquisitionSystemInformation.institutionName is not None:
+
+    if (hasattr(xml_header.acquisitionSystemInformation, 'institutionName')
+            and xml_header.acquisitionSystemInformation.institutionName is not None):
         meta['institutionName'] = xml_header.acquisitionSystemInformation.institutionName
-    if hasattr(xml_header.acquisitionSystemInformation, 'systemFieldStrength_T') and xml_header.acquisitionSystemInformation.systemFieldStrength_T is not None:
+
+    if (hasattr(xml_header.acquisitionSystemInformation, 'systemFieldStrength_T')
+            and xml_header.acquisitionSystemInformation.systemFieldStrength_T is not None):
         meta['systemFieldStrength_T'] = str(xml_header.acquisitionSystemInformation.systemFieldStrength_T)
-    if hasattr(xml_header.acquisitionSystemInformation, 'systemModel') and xml_header.acquisitionSystemInformation.systemModel is not None:
+
+    if (hasattr(xml_header.acquisitionSystemInformation, 'systemModel')
+            and xml_header.acquisitionSystemInformation.systemModel is not None):
         meta['systemModel'] = str(xml_header.acquisitionSystemInformation.systemModel)
-    if hasattr(xml_header.acquisitionSystemInformation, 'systemVendor') and xml_header.acquisitionSystemInformation.systemVendor is not None:
+
+    if (hasattr(xml_header.acquisitionSystemInformation, 'systemVendor')
+            and xml_header.acquisitionSystemInformation.systemVendor is not None):
         meta['systemVendor'] = str(xml_header.acquisitionSystemInformation.systemVendor)
 
     # Write experimental info to meta object
-    if hasattr(xml_header.experimentalConditions, 'H1resonanceFrequency_Hz') and xml_header.experimentalConditions.H1resonanceFrequency_Hz is not None:
+    if (hasattr(xml_header.experimentalConditions, 'H1resonanceFrequency_Hz')
+            and xml_header.experimentalConditions.H1resonanceFrequency_Hz is not None):
         meta['H1resonanceFrequency_Hz'] = xml_header.experimentalConditions.H1resonanceFrequency_Hz
 
     # Write measurement info to meta object
-    if hasattr(xml_header.measurementInformation, 'frameOfReferenceUID') and xml_header.measurementInformation.frameOfReferenceUID is not None:
+    if (hasattr(xml_header.measurementInformation, 'frameOfReferenceUID')
+            and xml_header.measurementInformation.frameOfReferenceUID is not None):
         meta['FrameOfReference'] = xml_header.measurementInformation.frameOfReferenceUID
-    if hasattr(xml_header.measurementInformation, 'measurementID') and xml_header.measurementInformation.measurementID is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'measurementID')
+            and xml_header.measurementInformation.measurementID is not None):
         meta['measurementID'] = xml_header.measurementInformation.measurementID
-    if hasattr(xml_header.measurementInformation, 'patientPosition') and xml_header.measurementInformation.patientPosition is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'patientPosition')
+            and xml_header.measurementInformation.patientPosition is not None):
         meta['patientPosition'] = xml_header.measurementInformation.patientPosition.value
-    if hasattr(xml_header.measurementInformation, 'protocolName') and xml_header.measurementInformation.protocolName is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'protocolName')
+            and xml_header.measurementInformation.protocolName is not None):
         meta['protocolName'] = xml_header.measurementInformation.protocolName
-    if hasattr(xml_header.measurementInformation, 'relativeTablePosition') and xml_header.measurementInformation.relativeTablePosition is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'relativeTablePosition')
+            and xml_header.measurementInformation.relativeTablePosition is not None):
         meta['relativeTablePosition'] = str(xml_header.measurementInformation.relativeTablePosition.z)
-    if hasattr(xml_header.measurementInformation, 'seriesDescription') and xml_header.measurementInformation.seriesDescription is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'seriesDescription')
+            and xml_header.measurementInformation.seriesDescription is not None):
         meta['seriesDescription'] = str(xml_header.measurementInformation.seriesDescription) + add_series_string
-    if hasattr(xml_header.measurementInformation, 'seriesInstanceUIDRoot') and xml_header.measurementInformation.seriesInstanceUIDRoot is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'seriesInstanceUIDRoot')
+            and xml_header.measurementInformation.seriesInstanceUIDRoot is not None):
         meta['seriesInstanceUIDRoot'] = str(xml_header.measurementInformation.seriesInstanceUIDRoot)
-    if hasattr(xml_header.measurementInformation, 'sequenceName') and xml_header.measurementInformation.sequenceName is not None:
+
+    if (hasattr(xml_header.measurementInformation, 'sequenceName')
+            and xml_header.measurementInformation.sequenceName is not None):
         meta['SequenceName'] = xml_header.measurementInformation.sequenceName
 
     # Write sequence parameters to meta object
-    if hasattr(xml_header.sequenceParameters, 'TE') and xml_header.sequenceParameters.TE is not None:
+    if (hasattr(xml_header.sequenceParameters, 'TE')
+            and xml_header.sequenceParameters.TE is not None):
         meta['EchoTime'] = str(xml_header.sequenceParameters.TE[0] / 1000.0)
-    if hasattr(xml_header.sequenceParameters, 'TR') and xml_header.sequenceParameters.TR is not None:
+
+    if (hasattr(xml_header.sequenceParameters, 'TR')
+            and xml_header.sequenceParameters.TR is not None):
         meta['RepetitionTime'] = str(xml_header.sequenceParameters.TR[0] / 1000.0)
-    if hasattr(xml_header.sequenceParameters, 'echo_spacing') and xml_header.sequenceParameters.echo_spacing is not None:
+
+    if (hasattr(xml_header.sequenceParameters, 'echo_spacing')
+            and xml_header.sequenceParameters.echo_spacing is not None):
         try:
             meta['echo_spacing'] = str(xml_header.sequenceParameters.echo_spacing[0])
         except:
             meta['echo_spacing'] = str(xml_header.sequenceParameters.echo_spacing)
-    if hasattr(xml_header.sequenceParameters, 'flipAngle_deg') and xml_header.sequenceParameters.flipAngle_deg is not None:
+
+    if (hasattr(xml_header.sequenceParameters, 'flipAngle_deg')
+            and xml_header.sequenceParameters.flipAngle_deg is not None):
         try:
             meta['flipAngle_deg'] = str(xml_header.sequenceParameters.flipAngle_deg[0])
         except:
             meta['flipAngle_deg'] = str(xml_header.sequenceParameters.flipAngle_deg)
 
     # Write study parameters to meta object
-    if hasattr(xml_header.studyInformation, 'bodyPartExamined') and xml_header.studyInformation.bodyPartExamined is not None:
+    if (hasattr(xml_header.studyInformation, 'bodyPartExamined')
+            and xml_header.studyInformation.bodyPartExamined is not None):
         meta['bodyPartExamined'] = str(xml_header.studyInformation.bodyPartExamined)
-    if hasattr(xml_header.studyInformation, 'referringPhysicianName') and xml_header.studyInformation.referringPhysicianName is not None:
+
+    if (hasattr(xml_header.studyInformation, 'referringPhysicianName')
+            and xml_header.studyInformation.referringPhysicianName is not None):
         meta['referringPhysicianName'] = str(xml_header.studyInformation.referringPhysicianName)
-    if hasattr(xml_header.studyInformation, 'studyDescription') and xml_header.studyInformation.studyDescription is not None:
+
+    if (hasattr(xml_header.studyInformation, 'studyDescription')
+            and xml_header.studyInformation.studyDescription is not None):
         meta['studyDescription'] = str(xml_header.studyInformation.studyDescription)
-    if hasattr(xml_header.studyInformation, 'studyID') and xml_header.studyInformation.studyID is not None:
+
+    if (hasattr(xml_header.studyInformation, 'studyID')
+            and xml_header.studyInformation.studyID is not None):
         meta['studyID'] = str(xml_header.studyInformation.studyID)
-    if hasattr(xml_header.studyInformation, 'studyInstanceUID') and xml_header.studyInformation.studyInstanceUID is not None:
+
+    if (hasattr(xml_header.studyInformation, 'studyInstanceUID')
+            and xml_header.studyInformation.studyInstanceUID is not None):
         meta['studyInstanceUID'] = str(xml_header.studyInformation.studyInstanceUID)
 
     # Write subject information to meta object
-    if hasattr(xml_header.subjectInformation, 'patientBirthdate') and xml_header.subjectInformation.patientBirthdate is not None:
+    if (hasattr(xml_header.subjectInformation, 'patientBirthdate')
+            and xml_header.subjectInformation.patientBirthdate is not None):
         meta['patientBirthdate'] = str(xml_header.subjectInformation.patientBirthdate)
-    if hasattr(xml_header.subjectInformation, 'patientGender') and xml_header.subjectInformation.patientGender is not None:
+
+    if (hasattr(xml_header.subjectInformation, 'patientGender')
+            and xml_header.subjectInformation.patientGender is not None):
         meta['patientGender'] = str(xml_header.subjectInformation.patientGender)
-    if hasattr(xml_header.subjectInformation, 'patientHeight_m') and xml_header.subjectInformation.patientHeight_m is not None:
+
+    if (hasattr(xml_header.subjectInformation, 'patientHeight_m')
+            and xml_header.subjectInformation.patientHeight_m is not None):
         meta['patientHeight_m'] = str(xml_header.subjectInformation.patientHeight_m)
-    if hasattr(xml_header.subjectInformation, 'patientID') and xml_header.subjectInformation.patientID is not None:
+
+    if (hasattr(xml_header.subjectInformation, 'patientID')
+            and xml_header.subjectInformation.patientID is not None):
         meta['patientID'] = str(xml_header.subjectInformation.patientID)
-    if hasattr(xml_header.subjectInformation, 'patientName') and xml_header.subjectInformation.patientName is not None:
+
+    if (hasattr(xml_header.subjectInformation, 'patientName')
+            and xml_header.subjectInformation.patientName is not None):
         meta['patientName'] = str(xml_header.subjectInformation.patientName)
-    if hasattr(xml_header.subjectInformation, 'patientWeight_kg') and xml_header.subjectInformation.patientWeight_kg is not None:
+
+    if (hasattr(xml_header.subjectInformation, 'patientWeight_kg')
+            and xml_header.subjectInformation.patientWeight_kg is not None):
         meta['patientWeight_kg'] = str(xml_header.subjectInformation.patientWeight_kg)
 
     # Write encoding information to meta object
@@ -2415,6 +2162,25 @@ def numpy_array_to_ismrmrd_image(nd_image: np.ndarray, list_of_acqs: list[ismrmr
         meta['SlicePosLightMarker'].append("{:.18f}".format(image.getHead().position[0] + pos_slice_addition[0]))
         meta['SlicePosLightMarker'].append("{:.18f}".format(image.getHead().position[1] + pos_slice_addition[1]))
         meta['SlicePosLightMarker'].append("{:.18f}".format(image.getHead().position[2] + pos_slice_addition[2]))
+
+    # Extract the procotol string from the xml header
+    try:
+        if xml_header.userParameters is not None:
+            for param in xml_header.userParameters.userParameterString:
+                if param.name == 'prot':
+                    meta['prot'] = param.value
+                    break
+    except:
+        pass
+
+    # Extract the sequence json from the xml header
+    try:
+        for param in xml_header.userParameters.userParameterString:
+            if param.name == 'seq':
+                meta['seq'] = param.value
+                break
+    except:
+        pass
 
     meta_xml = meta.serialize()
     image.attribute_string = meta_xml

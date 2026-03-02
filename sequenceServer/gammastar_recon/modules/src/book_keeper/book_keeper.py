@@ -9,7 +9,6 @@
 
 import logging
 
-
 class BookKeeper:
     """!
     @brief This module implements a class which is used to keep track of everything which is not directly related to
@@ -39,9 +38,19 @@ class BookKeeper:
         self.image_series_index = 0
 
         # A dictionary structure which allows to keep arbitrary data from previous measurements such as T1, T2 maps...
-        self.data = dict()
+        self.data = {}
+
+        # A dictionary which contains information about the reconstruction history
+        self.recon_history = ""
 
     def register_patient(self, connection_buffer):
+        """!
+        @brief Registers a patient and updates experimental conditions based on the provided connection buffer.
+
+        @param connection_buffer: The buffer containing headers with patient and experiment information.
+
+        @author Jörn Huber
+        """
 
         cur_subject_id = ''
         try:
@@ -51,9 +60,10 @@ class BookKeeper:
             cur_subject_id = 'Unknown'
 
         if cur_subject_id != self.subject_id:
-            self.__init__()
+            BookKeeper()
             self.subject_id = cur_subject_id
-            logging.info("GSTAR Recon: Registered new patient ID: " + self.subject_id)
+            logging.info("gs-recon: Registered new patient ID: %s", self.subject_id)
 
         self.image_series_index = 0
         self.outgoing_image_buffer = []
+        self.recon_history = ""
