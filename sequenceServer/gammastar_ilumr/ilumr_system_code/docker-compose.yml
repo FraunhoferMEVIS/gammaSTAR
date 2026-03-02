@@ -78,8 +78,8 @@ services:
       driver: local
       options:
         max-size: 100M
-  lua:
-    container_name: lua
+  gammastar:
+    container_name: gammastar
     image: camerondykstra/ilumr-lua:dev
     expose:
       - 8765
@@ -89,7 +89,8 @@ services:
       network:
         aliases:
           - server
-    command: tail -F anything
+    working_dir: /home/gammaSTAR/sequenceServer/gammastar_ilumr/ilumr_system_code/Sequence_processor/
+    command: /usr/local/bin/luajit /home/gammaSTAR/sequenceServer/gammastar_ilumr/ilumr_system_code/Sequence_processor/main.lua
     restart: unless-stopped
     volumes:
       - /etc/matipo/:/etc/matipo/:r

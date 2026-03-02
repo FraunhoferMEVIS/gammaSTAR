@@ -3,7 +3,12 @@ services:
     image: gs-ilumr
     ports:
       - "8900:8900"
+    network_mode: host # needed to access ilumr on LAN
+    environment:
+      ILUMR_HOST: "192.168.137.2"
+      ILUMR_GSTAR_PORT: 8765
   reconServer:
     image: gs-recon
     ports:
       - "9002:9002"
+    network_mode: host
