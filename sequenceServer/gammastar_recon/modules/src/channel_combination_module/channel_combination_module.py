@@ -1,119 +1,70 @@
 """!
-@brief Channel combination module.
+@brief Channel combination module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
          The software is not qualified for use as a medical product or as part
          thereof. No bugs or restrictions are known.
 """
+
 import logging
-from concurrent.futures import ThreadPoolExecutor
 import numpy as np
-import mrpy_coil_tools as coil_tools
 import mrpy_ismrmrd_tools as ismrmrd_tools
+
 
 class ChannelCombinationModule:
     """!
-    @brief This module applies coil combination along the channel dimension of data with the "NP_IS_IMAGING" key
-           by using sum-of-squares or adaptive combination.
+    @brief This module applies coil reduction to the first channel.
     """
 
     @staticmethod
-    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
-        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return ChannelCombinationModule.apply(connection_buffer, book_keeper)
+        return ChannelCombinationModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
-        @brief Applies either sum-of-squares or adaptive coil combination to the data with "NP_IS_IMAGING" key,
-               based on the config string as stored in the connection buffer object. Note that the default is
-               sum-of-squares if no valid string is received.
+        @brief Applies coil reduction to the first channel.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
-        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
-        if connection_buffer.meas_data('NP_IS_IMAGING', 'CHA') > 1:
+        if 'NP_IS_IMAGING' not in con_buff.meas_data.data:
+            logging.warning("gs-recon: No imaging data available for channel combination, skipping")
+            return con_buff, book_keeper
 
-            if connection_buffer.meas_data.is_propeller:
-                logging.info("GSTAR Recon: Applying adaptive coil combination")
-            else:
-                logging.info("GSTAR Recon: Applying sum-of-squares coil combination")
+        if con_buff.meas_data('NP_IS_IMAGING', 'CHA') > 1:
 
-            def process_combination(args):
-
-                (i_rep, i_phase, i_set, i_con, i_slc, i_par) = args
-                par_image = np.transpose(
-                    np.squeeze(
-                        connection_buffer.meas_data.data['NP_IS_IMAGING'][:, :, :, i_par, i_slc, i_set, i_phase, i_con,
-                        i_rep, 0, 0]
-                    ),
-                    [0, 2, 1]
-                )
-
-                if connection_buffer.meas_data.is_propeller:
-
-                    sens = coil_tools.estimate_sens(par_image, 1)
-                    cha_combined, _ = coil_tools.combine_channels(par_image, sens)
-
-                else:
-                    par_image = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(par_image, axes=0), axis=0), axes=0)
-                    par_image = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(par_image, axes=1), axis=1), axes=1)
-                    cha_combined = coil_tools.sum_of_squares_combination(par_image)
-
-                # Write result back to the shared array
-                connection_buffer.meas_data.data['NP_IS_IMAGING'][:, 0, :, i_par, i_slc, i_set, i_phase, i_con, i_rep,
-                0, 0] = cha_combined
-
-            indices = [
-                (i_rep, i_phase, i_set, i_con, i_slc, i_par)
-                for i_rep in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'REP'))
-                for i_phase in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PHS'))
-                for i_set in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'SET'))
-                for i_con in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'CON'))
-                for i_slc in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'SLC'))
-                for i_par in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PE2'))
-            ]
-
-            with ThreadPoolExecutor() as executor:
-                executor.map(process_combination, indices)
-
-            if not connection_buffer.meas_data.is_propeller:
-                connection_buffer.meas_data.is_ro_ft = True
-                connection_buffer.meas_data.is_pe_ft = True
-
-            connection_buffer.meas_data.data['NP_IS_IMAGING'] = (
-                connection_buffer.meas_data.data)['NP_IS_IMAGING'][:, 0, :, :, :, :, :, :, :, :, :]
-
-            connection_buffer.meas_data.data['NP_IS_IMAGING'] = (
-                np.expand_dims(connection_buffer.meas_data.data['NP_IS_IMAGING'], 1))
+            # Taking just the first channel in sim only version
+            con_buff.meas_data.data['NP_IS_IMAGING'] = np.expand_dims(
+                np.take(con_buff.meas_data.data['NP_IS_IMAGING'], indices=0, axis=1), axis=1
+            )
 
             book_keeper.recon_history += "_ChannelsCombined"
 
-        return connection_buffer, book_keeper
+        return con_buff, book_keeper

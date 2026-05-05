@@ -1,5 +1,5 @@
 """!
-@brief Init file for book keeper.
+@brief Init file for book_keeper.
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 

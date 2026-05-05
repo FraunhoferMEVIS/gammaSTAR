@@ -1,5 +1,5 @@
 """!
-@brief Book keeping module
+@brief Book keeping module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -8,6 +8,8 @@
 """
 
 import logging
+import mrpy_ismrmrd_tools as ismrmrd_tools
+
 
 class BookKeeper:
     """!
@@ -43,18 +45,18 @@ class BookKeeper:
         # A dictionary which contains information about the reconstruction history
         self.recon_history = ""
 
-    def register_patient(self, connection_buffer):
+    def register_patient(self, con_buffer: ismrmrd_tools.ConnectionBuffer):
         """!
         @brief Registers a patient and updates experimental conditions based on the provided connection buffer.
 
-        @param connection_buffer: The buffer containing headers with patient and experiment information.
+        @param con_buffer: The buffer containing headers with patient and experiment information.
 
         @author Jörn Huber
         """
 
         cur_subject_id = ''
         try:
-            cur_subject_id = connection_buffer.headers[0].subjectInformation.patientID
+            cur_subject_id = con_buffer.headers[0].subjectInformation.patientID
         except:
             logging.warning("Could not read subject ID from measurement header")
             cur_subject_id = 'Unknown'

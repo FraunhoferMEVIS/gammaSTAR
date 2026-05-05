@@ -8,11 +8,105 @@
 """
 
 import unittest
-import math
 import numpy as np
 import sigpy
 import mrpy_epi_tools as epi_tools
 import matplotlib.pyplot as plt
+
+
+def generate_test_data(shift, shape, k_axes, ro_axis=0, pe_axis=2, rep_axis=5, dir_axis=10):
+    """!
+    @brief Create artificial Shepp-Logan k-space dataset with Nyquist-ghosting.
+
+    @param shape: (tuple) Shape of the test data
+    @param k_axes: (tuple) Axes corresponding to the frequency (k-space) dimensions.
+
+    @return
+        - (np.ndarray) k-space data
+        - (np.ndarray) image data
+        - (np.ndarray) Coil sensitivities
+
+    @author Jörn Huber, Tom Lütjen
+    """
+
+    # Create phantom
+    phantom_shape = [shape[k] for k in k_axes]
+    if shape[k_axes[-1]] == 1:
+        phantom = sigpy.shepp_logan(phantom_shape[:2], dtype=complex)
+        phantom = np.expand_dims(phantom, axis=-1)
+    else:
+        phantom = sigpy.shepp_logan(phantom_shape, dtype=complex)
+
+    # Expand phamtom to shape
+    im = np.expand_dims(
+        phantom, axis=[ax for ax in range(len(shape)) if ax not in k_axes]
+    )
+    im = np.broadcast_to(im, shape)
+
+    # Simulate k-space data
+    data = np.fft.fftshift(
+        np.fft.fftn(np.fft.ifftshift(im, axes=k_axes), axes=k_axes),
+        axes=k_axes,
+    )
+
+    # Compute projections for phase shift simulation
+    data_proj = np.fft.fftshift(
+        np.fft.ifft(np.fft.ifftshift(data, axes=ro_axis), axis=ro_axis),
+        axes=ro_axis,
+    )
+
+    # Simulate phase correction data (data_proj*phase_shift)
+    phasecor = data_proj.copy()
+
+    broadcast_shape = [
+        data_proj.shape[ax]
+        if ax in range(len(data_proj.shape)) and ax not in [rep_axis, dir_axis]
+        else 2
+        for ax in range(len(data_proj.shape))
+    ]
+
+    phasecor = np.broadcast_to(phasecor, broadcast_shape) # Broadcast data to new shape which has 2 at rep_axis and
+                                                          # dir_axis
+
+    for ax in k_axes:
+        if ax != ro_axis:
+
+            if ax == pe_axis:
+                phasecor = np.expand_dims(np.take(phasecor, indices=phasecor.shape[pe_axis]/2, axis=ax), axis=ax)
+            else:
+                phasecor = np.expand_dims(np.take(phasecor, indices=0, axis=ax), axis=ax)
+
+    # Linear phase shift
+    phase_shift = np.exp(
+        -2j
+        * shift
+        * np.pi
+        * (np.arange(-data_proj.shape[ro_axis] // 2, data_proj.shape[ro_axis] // 2))
+        / data_proj.shape[ro_axis]
+    )
+    phase_shift = np.expand_dims(
+        phase_shift, axis=[ax for ax in range(len(data_proj.shape)) if ax != ro_axis]
+    )
+    slices = [slice(None)] * phasecor.ndim
+    slices[dir_axis] = 0
+    phasecor[tuple(slices)] *= phase_shift[tuple(slices)]
+
+    # Back projection to k-space
+    phasecor = np.fft.fftshift(
+        np.fft.fft(np.fft.ifftshift(phasecor, axes=ro_axis), axis=ro_axis),
+        axes=ro_axis,
+    )
+    slices = [slice(None)] * data.ndim
+    slices[pe_axis] = slice(None, None, 2)
+    data[tuple(slices)] = np.fft.fftshift(
+        np.fft.fft(
+            np.fft.ifftshift(data_proj[tuple(slices)] * phase_shift, axes=ro_axis),
+            axis=ro_axis,
+        ),
+        axes=ro_axis,
+    )
+
+    return data, im, phasecor, phase_shift
 
 
 class TestEPITools(unittest.TestCase):
@@ -20,139 +114,132 @@ class TestEPITools(unittest.TestCase):
     Unit test class for mrpy_epi_tools
     """
 
-    def test_calc_linear_phase_correction(self):
+    def test_calculate_phase_shifts(self, debug_plot:bool = True):
         """!
-        @brief UT which validates the correct functionality of calc_linear_phase_correction
-        @details We first create an artifical shepp logan dataset. We manipulate every other k-space line of that
-                 dataset to contain a small linear phase drift. Afterwards, we estimate the phase drift.
+        @brief Unit Test for calculate_phase_shifts
+        @details We simulate phase shifted k-space data and calculate the phase shifts and compare to the
+                 simulated phase shifts. Criteria: Calculated and simulated shifts need to be close with a tolerance of
+                 0.06.
         @param self: Reference to object
 
-        @author: Jörn Huber
+        @author: Jörn Huber, Tom Lütjen
         """
-        print("\nTesting mrpy_epi_tools: calc_linear_phase_correction")
 
-        # Create a shepp logan k-space dataset which suffers from epi specific nyquist ghosting
-        num_col = 64
-        num_lin = 64
+        print("Testing calculate_phase_shifts")
 
-        sl = sigpy.shepp_logan((num_col, num_lin), dtype=complex)
-        sl_ksp = np.fft.fftshift(np.fft.fftn(sl))
-        sl_ksp_up = np.zeros(sl.shape, dtype=complex)
-        sl_ksp_down = np.zeros(sl.shape, dtype=complex)
-        sl_ksp_up[:, 0::2] = sl_ksp[:, 0::2]
-        sl_ksp_down[:, 1::2] = sl_ksp[:, 1::2]
-        sl_phasecor_up = sl_ksp_up[:, int(num_col/2)]
-        sl_phasecor_down = sl_ksp_up[:, int(num_lin/2)]
+        _, _, phasecor_one_vox, phase_shift_one_vox = generate_test_data(
+            1.0,
+            (64, 1, 64, 1, 1, 1, 1),
+            k_axes=(0, 2, 3),
+            ro_axis=0,
+            pe_axis=2,
+            rep_axis=5,
+            dir_axis=6,
+        )
 
-        # Apply epi-like linear phase drifts
-        phase_drift = np.empty(sl.shape[0], dtype=complex)
-        for pos in range(num_col):
-            arg = -math.pi*(pos-sl.shape[0]/2)/sl.shape[0]
-            phase_drift[pos] = math.cos(arg) + 1j*math.sin(arg)
-        for i_line in range(0, num_lin):
-            proj_line = np.fft.fftshift(np.fft.ifft(sl_ksp_down[:, i_line]))
-            proj_line = np.multiply(proj_line, phase_drift)
-            sl_ksp_down[:, i_line] = np.fft.fft(np.fft.fftshift(proj_line))
+        _, _, phasecor_half_vox, phase_shift_half_vox = generate_test_data(
+            0.5,
+            (64, 1, 64, 1, 1, 1, 1),
+            k_axes=(0, 2, 3),
+            ro_axis=0,
+            pe_axis=2,
+            rep_axis=5,
+            dir_axis=6,
+        )
 
-            proj_line = np.fft.fftshift(np.fft.ifft(sl_ksp_up[:, i_line]))
-            sl_ksp_up[:, i_line] = np.fft.fft(np.fft.fftshift(proj_line))
+        _, _, phasecor_quarter_vox, phase_shift_quarter_vox = generate_test_data(
+            0.25,
+            (64, 1, 64, 1, 1, 1, 1),
+            k_axes=(0, 2, 3),
+            ro_axis=0,
+            pe_axis=2,
+            rep_axis=5,
+            dir_axis=6,
+        )
 
-        sl_phasecor_down = np.fft.fftshift(np.fft.ifft(sl_phasecor_down))
-        sl_phasecor_down = np.multiply(sl_phasecor_down, phase_drift)
-        sl_phasecor_down = np.fft.fft(np.fft.fftshift(sl_phasecor_down))
+        phasecor_processing = np.zeros((64, 1, 1, 3, 1, 2, 2), dtype=complex)
+        phasecor_processing[:, 0, 0, 0, 0, 0, 1] = phasecor_one_vox[:, 0, 0, 0, 0, 0, 1]
+        phasecor_processing[:, 0, 0, 0, 0, 0, 0] = phasecor_one_vox[:, 0, 0, 0, 0, 0, 0]
+        phasecor_processing[:, 0, 0, 0, 0, 1, 1] = phasecor_one_vox[:, 0, 0, 0, 0, 1, 1]
 
-        sl_phasecor_up = np.fft.fftshift(np.fft.ifft(sl_phasecor_up))
-        sl_phasecor_up = np.fft.fft(np.fft.fftshift(sl_phasecor_up))
+        phasecor_processing[:, 0, 0, 1, 0, 0, 1] = phasecor_half_vox[:, 0, 0, 0, 0, 0, 1]
+        phasecor_processing[:, 0, 0, 1, 0, 0, 0] = phasecor_half_vox[:, 0, 0, 0, 0, 0, 0]
+        phasecor_processing[:, 0, 0, 1, 0, 1, 1] = phasecor_half_vox[:, 0, 0, 0, 0, 1, 1]
 
-        # Combine to final data
-        data_sl = np.zeros((num_col, num_lin, 2), dtype=complex)  # 2 due to up/down
-        data_sl[:, :, 0] = sl_ksp_up
-        data_sl[:, :, 1] = sl_ksp_down
-        data_sl_phasecor = np.zeros((num_col, 3), dtype=complex)
-        data_sl_phasecor[:, 0] = sl_phasecor_up
-        data_sl_phasecor[:, 1] = sl_phasecor_down
-        data_sl_phasecor[:, 2] = sl_phasecor_up
-        epi_drift_corr = epi_tools.calc_linear_phase_correction(data_sl_phasecor)
+        phasecor_processing[:, 0, 0, 2, 0, 0, 1] = phasecor_quarter_vox[:, 0, 0, 0, 0, 0, 1]
+        phasecor_processing[:, 0, 0, 2, 0, 0, 0] = phasecor_quarter_vox[:, 0, 0, 0, 0, 0, 0]
+        phasecor_processing[:, 0, 0, 2, 0, 1, 1] = phasecor_quarter_vox[:, 0, 0, 0, 0, 1, 1]
 
-        self.assertLess(np.mean(np.abs(np.angle(epi_drift_corr)-np.angle(phase_drift))), 0.1)
+        estimated_phase_shift = epi_tools.calculate_phase_shifts(phasecor_processing, ro_axis=0, rep_axis=5, dir_axis=6)
 
-    def test_correct_linear_phase_drift(self):
+        self.assertEqual(np.allclose(
+            np.abs(estimated_phase_shift[:,0,0,0,0,0,0]), np.abs(phase_shift_one_vox), atol=0.06
+        ), True)
+        self.assertEqual(np.allclose(
+            np.abs(estimated_phase_shift[:,0,0,1,0,0,0]), np.abs(phase_shift_half_vox), atol=0.06
+        ), True)
+        self.assertEqual(np.allclose(
+            np.abs(estimated_phase_shift[:,0,0,2,0,0,0]), np.abs(phase_shift_quarter_vox), atol=0.06
+        ), True)
+
+
+    def test_remove_phase_shifts(self, debug_plot=True):
         """!
-        @brief UT which validates the correct functionality of correct_linear_phase_drift
-        @details We first create an artifical shepp logan dataset. We manipulate every other k-space line of that
-                 dataset to contain a small linear phase drift. Afterwards, we correct that linear drift. Finally, we
-                 validate whether the amount of ghosting signal is lower after the correction routine.
+        @brief Unit Test for remove_phase_shifts
+        @details We simulate phase shifted k-space data and remove the phase shifts and compare to the original data.
+                 Criteria: All elements in reconstructed in simulated images need to be close with a tolerance of 2e-2.
         @param self: Reference to object
 
-        @author: Jörn Huber
+        @author: Jörn Huber, Tom Lütjen
         """
-        print("\nTesting mrpy_epi_tools: correct_linear_phase_drift")
+        print("Testing remove_phase_shifts")
 
-        # Create a shepp logan k-space dataset which suffers from epi specific nyquist ghosting
-        num_col = 64
-        num_lin = 64
+        data, im, phasecor, phase_shift = generate_test_data(
+            1.0,
+            (64, 1, 64, 1, 1, 1, 1),
+            k_axes=(0, 2, 3),
+            ro_axis=0,
+            pe_axis=2,
+            rep_axis=5,
+            dir_axis=6,
+        )
 
-        sl = sigpy.shepp_logan((num_col, num_lin), dtype=complex)
-        sl_ksp = np.fft.fftshift(np.fft.fftn(sl))
-        sl_ksp_up = np.zeros(sl.shape, dtype=complex)
-        sl_ksp_down = np.zeros(sl.shape, dtype=complex)
-        sl_ksp_up[:, 0::2] = sl_ksp[:, 0::2]
-        sl_ksp_down[:, 1::2] = sl_ksp[:, 1::2]
-        sl_phasecor_up = sl_ksp_up[:, int(num_col/2)]
-        sl_phasecor_down = sl_ksp_up[:, int(num_lin/2)]
+        estimated_phase_shift = epi_tools.calculate_phase_shifts(
+            phasecor, ro_axis=0, rep_axis=5, dir_axis=6
+        )
 
-        # Apply epi-like linear phase drifts
-        phase_drift = np.empty(sl.shape[0], dtype=complex)
-        for pos in range(num_col):
-            arg = -math.pi*(pos-sl.shape[0]/2)/sl.shape[0]
-            phase_drift[pos] = math.cos(arg) + 1j*math.sin(arg)
-        for i_line in range(0, num_lin):
-            proj_line = np.fft.fftshift(np.fft.ifft(sl_ksp_down[:, i_line]))
-            proj_line = np.multiply(proj_line, phase_drift)
-            sl_ksp_down[:, i_line] = np.fft.fft(np.fft.fftshift(proj_line))
+        slices = [slice(None)] * data.ndim
+        slices[2] = slice(None, None, 2)
+        data_corrected = data.copy()
 
-            proj_line = np.fft.fftshift(np.fft.ifft(sl_ksp_up[:, i_line]))
-            sl_ksp_up[:, i_line] = np.fft.fft(np.fft.fftshift(proj_line))
+        data_corrected[tuple(slices)] = epi_tools.remove_phase_shifts(
+            data[tuple(slices)], estimated_phase_shift, ro_axis=0
+        )
 
-        sl_phasecor_down = np.fft.fftshift(np.fft.ifft(sl_phasecor_down))
-        sl_phasecor_down = np.multiply(sl_phasecor_down, phase_drift)
-        sl_phasecor_down = np.fft.fft(np.fft.fftshift(sl_phasecor_down))
+        reco = np.fft.fftshift(
+            np.fft.ifftn(np.fft.ifftshift(data, axes=(0, 2, 3)), axes=(0, 2, 3)),
+            axes=(0, 2, 3),
+        )
+        reco_corrected = np.fft.fftshift(
+            np.fft.ifftn(
+                np.fft.ifftshift(data_corrected, axes=(0, 2, 3)), axes=(0, 2, 3)
+            ),
+            axes=(0, 2, 3),
+        )
 
-        sl_phasecor_up = np.fft.fftshift(np.fft.ifft(sl_phasecor_up))
-        sl_phasecor_up = np.fft.fft(np.fft.fftshift(sl_phasecor_up))
+        if debug_plot:
+            fig, axs = plt.subplots(2, 2)
+            axs[0, 0].imshow(np.abs(reco[:, 0, :, 0, 0, 0, 0]), cmap="gray")
+            axs[0, 0].set_title("Uncorrected Reconstruction")
+            axs[0, 1].imshow(np.abs(reco_corrected[:, 0, :, 0, 0, 0, 0]), cmap="gray")
+            axs[0, 1].set_title("Corrected Reconstruction")
+            axs[1, 0].imshow(np.log(np.abs(data[:, 0, :, 0, 0, 0, 0])), cmap="gray")
+            axs[1, 0].set_title("Uncorrected k-space")
+            axs[1, 1].imshow(np.log(np.abs(data_corrected[:, 0, :, 0, 0, 0, 0])), cmap="gray")
+            axs[1, 1].set_title("Corrected k-space")
+            plt.show()
 
-        # Combine to final data
-        data_sl = np.zeros((num_col, num_lin, 2), dtype=complex)  # 2 due to up/down
-        data_sl[:, :, 0] = sl_ksp_up
-        data_sl[:, :, 1] = sl_ksp_down
-        data_sl_phasecor = np.zeros((num_col, 3), dtype=complex)
-        data_sl_phasecor[:, 0] = sl_phasecor_up
-        data_sl_phasecor[:, 1] = sl_phasecor_down
-        data_sl_phasecor[:, 2] = sl_phasecor_up
-
-        epi_drift_corr = epi_tools.calc_linear_phase_correction(data_sl_phasecor)
-        data_sl_cor = epi_tools.correct_linear_phase_drift(data_sl[:, :, 1], epi_drift_corr)
-
-        im_sl_corr = np.fft.fftn(np.squeeze(data_sl[:, :, 0]) + np.squeeze(data_sl_cor))
-        im_sl_uncorr = np.fft.fftn(np.squeeze(data_sl[:, :, 0] + data_sl[:, :, 1]))
-
-        # Plot results
-        fig, axs = plt.subplots(2, 2)
-        axs[0, 0].imshow(np.log(np.abs(data_sl[:, :, 0] + data_sl[:, :, 1])), cmap='gray')
-        axs[0, 0].title.set_text('Uncorrected k-space')
-        axs[0, 1].imshow(np.abs(im_sl_uncorr), cmap='gray')
-        axs[0, 1].title.set_text('Uncorrected image space')
-        axs[1, 0].imshow(np.log(np.abs(data_sl[:, :, 0] + data_sl_cor)), cmap='gray')
-        axs[1, 0].title.set_text('Corrected k-space')
-        axs[1, 1].imshow(np.abs(im_sl_corr), cmap='gray')
-        axs[1, 1].title.set_text('Corrected image space')
-        plt.show()
-
-        # We measure the energy of the nyquist ghosts in uncorrected and corrected data. In the corrected case,
-        # the energy should be less
-        sig_ghost_uncorr = np.sum(np.sum(np.abs(im_sl_uncorr[:, 0:5]),1),0)
-        sig_ghost_corr = np.sum(np.sum(np.abs(im_sl_corr[:, 0:5]), 1), 0)
-        self.assertLess(sig_ghost_corr, sig_ghost_uncorr)
+        self.assertEqual(np.allclose(reco_corrected, im, atol=2e-2), True)
 
 
 if __name__ == '__main__':

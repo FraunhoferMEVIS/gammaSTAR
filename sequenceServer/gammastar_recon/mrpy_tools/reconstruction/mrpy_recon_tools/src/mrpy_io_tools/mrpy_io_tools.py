@@ -8,211 +8,14 @@
 """
 
 import os
-import mapvbvd
 import pydicom
-from pydicom.dataset import Dataset, FileMetaDataset, FileDataset
+from pydicom.dataset import Dataset, FileDataset
 from pydicom.sequence import Sequence
 from pydicom.uid import ExplicitVRLittleEndian
 import numpy as np
 from datetime import datetime
-from typing import Any, Tuple
+from typing import Any
 
-def load_from_bart_cfl(filename: str) -> np.ndarray:
-    """!
-    @brief Load a BART .cfl/.hdr file pair into a numpy array.
-
-    @param filename: (string) Base name of the .cfl and .hdr files (without extension)
-
-    @return
-        - (np.ndarray) Complex loaded data
-
-    @author Jörn Huber
-    """
-    # Read the .hdr file
-    hdr_file = f"{filename}.hdr"
-    with open(hdr_file, 'r') as f:
-        lines = f.readlines()
-        if not lines[0].strip() == '# Dimensions':
-            raise ValueError(f"Invalid .hdr file format: {hdr_file}")
-        dims = list(map(int, lines[1].strip().split()))[::-1]
-
-    # Read the .cfl file
-    cfl_file = f"{filename}.cfl"
-    with open(cfl_file, 'rb') as f:
-        num_elements = np.prod(dims)
-        data = np.fromfile(f, dtype=np.float32, count=2 * num_elements)
-        data = data[0::2] + 1j * data[1::2]
-        array = data.reshape(dims)
-    return array
-
-
-def save_to_bart_cfl(filename: str, array: np.ndarray) -> None:
-    """!
-    @brief Save a numpy array to BART's .cfl/.hdr format.
-
-    @param filename: (string) Base name for the .cfl and .hdr files (without extension)
-    @param array: (np.ndarray) NumPy array to save
-
-    @author Jörn Huber
-    """
-    if not np.iscomplexobj(array):
-        raise ValueError("Input array must be complex (real + imaginary parts).")
-
-    # Write the .hdr file
-    hdr_file = f"{filename}.hdr"
-    with open(hdr_file, 'w') as f:
-        # Write the array's dimensions in reverse order (BART expects Fortran order)
-        f.write('# Dimensions\n')
-        f.write(' '.join(map(str, array.shape[::-1])) + '\n')
-
-    # Write the .cfl file
-    cfl_file = f"{filename}.cfl"
-    with open(cfl_file, 'wb') as f:
-        # Interleave real and imaginary parts and write as binary
-        array.astype(np.complex64).ravel().tofile(f)
-
-
-def read_siemens_twix(file_name: str,
-                      unsorted: bool = False,
-                      remove_os: bool = True,
-                      ramp_samp_regrid: bool = True) -> Tuple[np.ndarray, dict, np.ndarray, np.ndarray, np.ndarray, np.ndarray, dict]:
-    """!
-    @brief Reads twix rawdata as exported from the MR system into numpy files
-
-    @param file_name: (string) File path + name of twix rawdata file
-    @param unsorted: (bool) Boolean which indicates that data shall be read in unsorted format
-    @param remove_os: (bool) Boolean indicating that oversampling shall be removed.
-    @param ramp_samp_regrid: (bool) Boolean indicating that regridding of ramp sampling shall be performed.
-
-    @return
-        - (np.ndarray) Numpy object with noise calibration data
-        - (twix_hdr) Header data of noise scan
-        - (np.ndarray) Numpy object with image data
-        - (np.ndarray) Numpy object with phase correction data
-        - (np.ndarray) Numpy object with real time feedback data
-        - (np.ndarray) Numpy object with parallel calibration data
-        - (twix_hdr) Header data of image scan
-
-    @author Jörn Huber
-    """
-    noise = None
-    ksp = None
-    ksp_phasecor = None
-    ksp_rtfeedback = None
-    ksp_paracalib = None
-    noise_hdr = None
-    meas_hdr = None
-
-    twix_obj = mapvbvd.mapVBVD(file_name)
-    if isinstance(twix_obj, mapvbvd._attrdict.AttrDict):
-        print("Single Raid File")
-        twix_obj.image.flagRemoveOS = remove_os
-        twix_obj.image.flagRampSampRegrid = ramp_samp_regrid
-        twix_obj.image.flagDisableReflect = True
-        if unsorted:
-            ksp = twix_obj.image.unsorted()
-        else:
-            ksp = twix_obj.image['']
-
-        if hasattr(twix_obj, 'phasecor'):
-            print('Reading Phasecor Data')
-            twix_obj.phasecor.flagRemoveOS = remove_os
-            twix_obj.phasecor.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj.phasecor.flagDisableReflect = True
-            if unsorted:
-                ksp_phasecor = twix_obj.phasecor.unsorted()
-            else:
-                ksp_phasecor = twix_obj.phasecor['']
-
-        if hasattr(twix_obj, 'refscan'):
-            print('Reading Calibration Data')
-            twix_obj.refscan.flagRemoveOS = remove_os
-            twix_obj.refscan.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj.refscan.flagDisableReflect = True
-            if unsorted:
-                ksp_paracalib = twix_obj.refscan.unsorted()
-            else:
-                ksp_paracalib = twix_obj.refscan['']
-                ksp_paracalib = ksp_paracalib[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-
-        if hasattr(twix_obj, 'rtfeedback'):
-            print('Reading RTFeedback Data')
-            twix_obj.rtfeedback.flagRemoveOS = remove_os
-            twix_obj.rtfeedback.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj.rtfeedback.flagDisableReflect = True
-            if unsorted:
-                ksp_rtfeedback = twix_obj.rtfeedback.unsorted()
-            else:
-                ksp_rtfeedback = twix_obj.rtfeedback['']
-        meas_hdr = twix_obj.hdr
-
-    elif isinstance(twix_obj, list):
-        print("Multi Raid File")
-        twix_obj[0].noise.flagRemoveOS = remove_os
-        #twix_obj[0].noise.flagRampSampRegrid = ramp_samp_regrid
-        if unsorted:
-            noise = twix_obj[0].noise.unsorted()
-        else:
-            noise = twix_obj[0].noise['']
-            noise = noise[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-        noise_hdr = twix_obj[0].hdr
-
-        print('Reading Image Data')
-        twix_obj[1].image.flagRemoveOS = remove_os
-        #twix_obj[1].image.flagRampSampRegrid = ramp_samp_regrid
-        twix_obj[1].image.flagDisableReflect = True
-        if unsorted:
-            ksp = twix_obj[1].image.unsorted()
-        else:
-            ksp = twix_obj[1].image['']
-
-        if hasattr(twix_obj[1], 'phasecor'):
-            print('Reading Phasecor Data')
-            twix_obj[1].phasecor.flagRemoveOS = remove_os
-            #twix_obj[1].phasecor.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj[1].phasecor.flagDisableReflect = True
-            if unsorted:
-                ksp_phasecor = twix_obj[1].phasecor.unsorted()
-            else:
-                ksp_phasecor = twix_obj[1].phasecor['']
-                ksp_phasecor = ksp_phasecor[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-
-        if hasattr(twix_obj[1], 'refscan'):
-            print('Reading Calibration Data')
-            twix_obj[1].refscan.flagRemoveOS = remove_os
-            #twix_obj[1].refscan.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj[1].refscan.flagDisableReflect = True
-            if unsorted:
-                ksp_paracalib = twix_obj[1].refscan.unsorted()
-            else:
-                ksp_paracalib = twix_obj[1].refscan['']
-                ksp_paracalib = ksp_paracalib[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-
-        if hasattr(twix_obj[1], 'rtfeedback'):
-            print('Reading RTFeedback Data')
-            twix_obj[1].rtfeedback.flagRemoveOS = remove_os
-            #twix_obj[1].rtfeedback.flagRampSampRegrid = ramp_samp_regrid
-            twix_obj[1].rtfeedback.flagDisableReflect = True
-            if unsorted:
-                ksp_rtfeedback = twix_obj[1].rtfeedback.unsorted()
-            else:
-                ksp_rtfeedback = twix_obj[1].rtfeedback['']
-                ksp_rtfeedback = ksp_rtfeedback[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-        meas_hdr = twix_obj[1].hdr
-
-    # We remove the user specific flag counters as they are not represented in the ISMRMRD format
-    if not unsorted:
-        ksp = ksp[:, :, :, :, :, :, :, :, :, :, :, 0, 0, 0, 0, 0]
-
-        ksp = np.transpose(ksp, [0, 1, 2, 3, 4, 9, 6, 7, 8, 5, 10])
-        if ksp_phasecor is not None:
-            ksp_phasecor = np.transpose(ksp_phasecor, [0, 1, 2, 3, 4, 9, 6, 7, 8, 5, 10])
-        if ksp_paracalib is not None:
-            ksp_paracalib = np.transpose(ksp_paracalib, [0, 1, 2, 3, 4, 9, 6, 7, 8, 5, 10])
-        if ksp_rtfeedback is not None:
-            ksp_rtfeedback = np.transpose(ksp_rtfeedback, [0, 1, 2, 3, 4, 9, 6, 7, 8, 5, 10])
-
-    return noise, noise_hdr, ksp, ksp_phasecor, ksp_rtfeedback, ksp_paracalib, meas_hdr
 
 def get_folder_name(target_folder: str) -> str:
     """!
@@ -220,7 +23,10 @@ def get_folder_name(target_folder: str) -> str:
     @details The function checks whether a folder with the protocol name already exists. If so, it appends an
              increasing number to the folder name until a non-existing folder name is available.
 
-    @param target_folder: (str) Protocol name stored in the ismrmrd header.
+    @param target_folder: Protocol name stored in the ismrmrd header.
+
+    @return
+        - Output folder name for the dicom series
 
     @author Jörn Huber
     """
@@ -235,11 +41,14 @@ def get_folder_name(target_folder: str) -> str:
 
     return out_folder
 
+
 def write_dcm_from_ismrmrd_image(ismrmrd_image: Any, folder_name = None) -> None:
     """!
     @brief Writes an ismrmrd image to dicom format on the harddisk
 
-    @param ismrmrd_image: (ismrmrd.Image) Image in ismrmrd format which shall be written to dicom
+    @param ismrmrd_image: Image in ismrmrd format which shall be written to dicom
+    @param folder_name: Optional name of the output folder. If not provided, the protocol name from the ismrmrd header
+                        is used as folder name.
 
     @author Jörn Huber
     """

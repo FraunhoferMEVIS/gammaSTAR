@@ -23,10 +23,7 @@ import mrpy_ismrmrd_tools as ismrmrd_tools
 def test_server():
     """!
     @brief Helper function which implements a test server, which accepts a client connection and sends some data back.
-    @details Partly based on AI generated code (GPT-4.1) with adaptions using the following prompt: "Hello, can you give
-             me a python code snippet which uses a single script to first opens a socket connection on localhost and
-             port 9002 and then connects with a client sending a dummy text message? The call to the server shall be
-             non-blocking."
+    @details
 
     @author: Jörn Huber
     """
@@ -127,6 +124,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(ismrmrd_image.meta['protocolName'], 'DummyProtocol')
         self.assertEqual(ismrmrd_image.meta['FrameOfReference'], '1.3.12.2.1107.5.2.19.45098.1.20210319161139496.0.0.0')
         self.assertEqual(ismrmrd_image.meta['DataRole'], 'Image')
+
 
     def test_numpy_array_to_ismrmrd_acqs(self):
         """!
@@ -229,6 +227,7 @@ class TestISMRMRDTools(unittest.TestCase):
             acq.position[1] = -2  # pylint: disable=maybe-no-member
             acq.position[2] = -3  # pylint: disable=maybe-no-member
 
+
     def test_create_dummy_ismrmrd_header(self):
         """!
         @brief UT which validates the correct functionality of create_dummy_ismrmrd_header.
@@ -244,6 +243,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual("<acquisitionSystemInformation><systemVendor>Vendor</systemVendor><systemModel>Model</systemModel><systemFieldStrength_T>2.89362001</systemFieldStrength_T><receiverChannels>16</receiverChannels><institutionName>Institution</institutionName></acquisitionSystemInformation>" in dummy_header, True)
         self.assertEqual("<experimentalConditions><H1resonanceFrequency_Hz>123251770</H1resonanceFrequency_Hz></experimentalConditions>" in dummy_header, True)
         self.assertEqual("</ismrmrdHeader>" in dummy_header, True)
+
 
     def test_send_text(self):
         """!
@@ -285,6 +285,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
 
+
     def test_send_config_text(self):
         """!
         @brief UT which validates the correct functionality of send_config_text.
@@ -324,6 +325,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.images), 0)
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
+
 
     def test_send_metadata(self):
         """!
@@ -380,6 +382,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
 
+
     def test_send_config_file(self):
         """!
         @brief UT which validates the correct functionality of send_config_file.
@@ -422,6 +425,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.images), 0)
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
+
 
     def test_send_image(self):
         """!
@@ -473,6 +477,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
 
+
     def test_send_close(self):
         """!
         @brief UT which validates the correct functionality of send_close.
@@ -517,6 +522,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.headers), 0)
         self.assertEqual(len(server_con.meas_data.data.keys()), 0)
         self.assertEqual(len(server_con.waveforms), 0)
+
 
     def test_send_acquisition(self):
         """!
@@ -568,6 +574,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.images), 0)
         self.assertEqual(len(server_con.waveforms), 0)
         self.assertEqual(server_con.messages_received[1], ismrmrd_tools.IsmrmrdConstants.ID_MESSAGE_CLOSE)
+
 
     def test_gstar_recon_emitter(self):
         """!
@@ -642,6 +649,7 @@ class TestISMRMRDTools(unittest.TestCase):
         # Finally, we test an invalid configuration
         self.assertRaises(ValueError, ismrmrd_tools.gstar_recon_emitter, 'localhost', 9002, list_of_acqs, header, 1.2, "GstarReconTest")
 
+
     def test_gstar_recon_injector(self):
         """!
         @brief UT which validates the correct functionality of gstar_recon_injector.
@@ -673,6 +681,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(np.all(client_con.images[1].data == 2.0), True)
         self.assertEqual(np.all(client_con.images[2].data == 3.0), True)
         client_socket.close()
+
 
     def test_gstar_recon_server(self):
         """!
@@ -752,6 +761,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(server_con.headers[0].measurementInformation.protocolName,
                          'DummyProtocol')
 
+
     def test_read_config_file(self):
         """!
         @brief UT which validates the correct functionality of read_config_file.
@@ -798,6 +808,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
 
         self.assertEqual(server_con.config_files[0], 'test_send_message_config_file')
+
 
     def test_read_text(self):
         """!
@@ -847,6 +858,7 @@ class TestISMRMRDTools(unittest.TestCase):
 
         self.assertEqual(server_con.texts[0], 'test_send_message_text')
 
+
     def test_read_config_text(self):
         """!
         @brief UT which validates the correct functionality of read_config_text.
@@ -894,6 +906,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
 
         self.assertEqual(server_con.config_texts[0], 'test_read_config_text')
+
 
     def test_read_metadata(self):
         """!
@@ -953,6 +966,7 @@ class TestISMRMRDTools(unittest.TestCase):
                          'HFS')
         self.assertEqual(server_con.headers[0].measurementInformation.protocolName,
                          'DummyProtocol')
+
 
     def test_read_acquisition(self):
         """!
@@ -1018,6 +1032,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(np.all(server_con.meas_data.data['ACQ_IS_IMAGING'][0].data == 1.0), True)
         self.assertEqual(np.all(server_con.meas_data.data['ACQ_IS_PARALLEL_CALIBRATION'][0].data == 1.0), True)
 
+
     def test_read_message_image(self):
         """!
         @brief UT which validates the correct functionality of read_message_image.
@@ -1067,6 +1082,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(len(server_con.waveforms), 0)
 
         self.assertEqual(np.all(server_con.images[0].data == 1.0), True)
+
 
     def test_read_close(self):
         """!
@@ -1129,6 +1145,7 @@ class TestISMRMRDTools(unittest.TestCase):
 
         self.assertTrue(con_buffer.is_exhausted)
 
+
     def test_ismrmrd_flags_to_bitmask(self):
         """!
         @brief UT which validates the correct functionality of ismrmrd_flags_to_bitmask.
@@ -1146,6 +1163,7 @@ class TestISMRMRDTools(unittest.TestCase):
         list_of_flags = ["ACQ_FIRST_IN_REPETITION", "ACQ_IS_PARALLEL_CALIBRATION", "ACQ_IS_RTFEEDBACK_DATA"]
         bitmask = ismrmrd_tools.ismrmrd_flags_to_bitmask(list_of_flags)
         self.assertEqual(bitmask, 134746112)
+
 
     def test_bitmask_to_flags(self):
         """!
@@ -1170,6 +1188,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual("ACQ_FIRST_IN_REPETITION" in list_of_flags, True)
         self.assertEqual("ACQ_IS_PARALLEL_CALIBRATION" in list_of_flags, True)
         self.assertEqual("ACQ_IS_RTFEEDBACK_DATA" in list_of_flags, True)
+
 
     def test_receive_messages(self):
         """!
@@ -1249,22 +1268,6 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(server_con.headers[0].measurementInformation.protocolName,
                          'DummyProtocol')
 
-    def test_noise_scan_to_acq(self):
-        """!
-        @brief UT which validates the correct functionality of noise_scan_to_acq.
-        @details The test creates an acquisition object from a numpy array. Afterwards, the correct noise flag
-                 in the acquisition object is validated.
-
-        @param self: Reference to object
-
-        @author: Jörn Huber
-        """
-        print("\nTesting mrpy_ismrmrd_tools: noise_scan_to_acq")
-        test_np_array = np.ones((128, 20), dtype=complex)
-        noise_acq = ismrmrd_tools.noise_scan_to_acq(test_np_array)
-
-        acq_flags = ismrmrd_tools.bitmask_to_flags(noise_acq.getHead().flags)
-        self.assertEqual(acq_flags[0], 'ACQ_IS_NOISE_MEASUREMENT')
 
     def test_gstar_to_ismrmrd_hdr(self):
         """!
@@ -1411,6 +1414,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(ismrmrd_header_part2.acquisitionSystemInformation.systemFieldStrength_T, 3.0)
         self.assertEqual(ismrmrd_header_part2.acquisitionSystemInformation.institutionName, 'Mevis')
 
+
     def test_twix_hdr_to_ismrmrd_hdr(self):
         """!
         @brief UT which validates the correct functionality of twix_hdr_to_ismrmrd_hdr.
@@ -1510,6 +1514,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(ismrmrd_header.subjectInformation.patientID, '123456')
         self.assertEqual(ismrmrd_header.subjectInformation.patientName, 'John Doe')
         self.assertEqual(ismrmrd_header.subjectInformation.patientWeight_kg, 70.0)
+
 
     def test_identify_readout_type_from_acqs(self):
         """!
@@ -1783,6 +1788,7 @@ class TestISMRMRDTools(unittest.TestCase):
         self.assertEqual(is_rampsamp, False)
         self.assertEqual(is_propeller, True)
         self.assertEqual(blade_dim, 'SET')
+
 
 if __name__ == '__main__':
     print("---Running unit tests for mrpy_ismrmrd_tools---")

@@ -27,6 +27,7 @@ from ifft_module import IFFTModule
 from image_scaling_module import ImageScaleModule
 from finalize_out_image_module import FinalizeOutImageModule
 
+
 def print_info():
 
     build_date_time = "N/A"
@@ -35,7 +36,7 @@ def print_info():
             build_date_time = f.read().strip()
 
     print("########################################################\n\n"
-          "gammaSTAR Reconstructions v1.1.0 Release")
+          "gammaSTAR Reconstructions v1.1.1 Sim. Only Version")
     print("Build Time: " + build_date_time + "\n")
 
     print("The software is not qualified for use as a medical product or as part\n"
@@ -46,19 +47,19 @@ def print_info():
 
     print("List of included third-party software\n"
           "-\n"
-          "MRI Nufft (BSD-3-Clause License)\n"
+          "MRI Nufft v1.4.0 (BSD-3-Clause License)\n"
           "Python ISMRMRD Server (MIT License)\n"   
-          "pymapvbvd (MIT License)\n"
-          "pydicom (MIT-based License)\n"
-          "ismrmrd (ISMRMRD SOFTWARE LICENSE JULY 2013)\n"
-          "sigpy (BSD-2-Clause License)\n"
-          "xmltodict (MIT License)\n"
-          "numpy (NumPy License)\n"
-          "scikit-learn (MIT License)\n"
+          "pydicom v2.4.5 (MIT-based License)\n"
+          "ismrmrd v1.14.2 (ISMRMRD SOFTWARE LICENSE JULY 2013)\n"
+          "sigpy v0.1.27 (BSD-2-Clause License)\n"
+          "xmltodict v0.14.2 (MIT License)\n"
+          "numpy v2.2.6 (NumPy License)\n"
+          "scikit-learn v1.7.2 (MIT License)\n"
           "-\n"
           "Detailed information about third-party licence conditions can\n"
           "be found in the 'third_party_licenses' folder.\n\n"
           "########################################################\n")
+
 
 if __name__ == "__main__":
 
@@ -96,7 +97,7 @@ if __name__ == "__main__":
             con_buffer, book_keeper = segment_combination_module(con_buffer, book_keeper)
             con_buffer, book_keeper = parallel_imaging_module(con_buffer, book_keeper)
             con_buffer, book_keeper = partial_fourier_module(con_buffer, book_keeper)
-            con_buffer, book_keeper = ifft_module('PE2', con_buffer, book_keeper)
+            con_buffer, book_keeper = ifft_module(con_buffer, book_keeper, 'PE2')
             con_buffer, book_keeper = phase_correction_module(con_buffer, book_keeper)
             con_buffer, book_keeper = channel_combination_module(con_buffer, book_keeper)
             con_buffer, book_keeper = prop_module(con_buffer, book_keeper)
@@ -105,7 +106,6 @@ if __name__ == "__main__":
             ##################################################
             #     Scaling and Appending to Output Buffer     #
             ##################################################
-
             book_keeper = image_scaling_module(con_buffer, book_keeper)
             book_keeper = finalize_out_image_module(con_buffer, book_keeper)
 

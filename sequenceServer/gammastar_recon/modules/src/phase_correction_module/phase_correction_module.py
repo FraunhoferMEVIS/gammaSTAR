@@ -1,5 +1,5 @@
 """!
-@brief PROPELLER phase correction module
+@brief Phase correction module for PROPELLER data of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -8,9 +8,8 @@
 """
 
 import logging
-from concurrent.futures import ThreadPoolExecutor
-import mrpy_noncart_tools as noncart_tools
 import mrpy_ismrmrd_tools as ismrmrd_tools
+import mrpy_helpers as helpers
 
 
 class PhaseCorModule:
@@ -20,69 +19,56 @@ class PhaseCorModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    @staticmethod
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return PhaseCorModule.apply(connection_buffer, book_keeper)
+        return PhaseCorModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
-        @brief Applies either sum-of-squares or adaptive coil combination to the data with "NP_IS_IMAGING" key,
-               based on the config string as stored in the connection buffer object. Note that the default is
-               sum-of-squares if no valid string is received. 
+        @brief Applies phase correction to PROPELLER data, e.g. removes slowly varying phase inconsistencies between
+               blades.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
-        if connection_buffer.meas_data.is_propeller:
+        if 'NP_IS_IMAGING' not in con_buff.meas_data.data:
+            logging.warning("gs-recon: No imaging data available for phase correction, skipping")
+            return con_buff, book_keeper
+
+        if con_buff.meas_data.is_propeller:
 
             logging.info("gs-recon: Applying PROPELLER phase correction")
-
-            def process_phase_correction(args):
-                (i_rep, i_phase, i_set, i_con, i_slc, i_par, i_cha, connection_buffer) = args
-                data = connection_buffer.meas_data.data['NP_IS_IMAGING']
-                data[:, i_cha, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0] = (
-                    noncart_tools.prop_phase_correction_2D(
-                        data[:, i_cha, :, i_par, i_slc, i_set, i_phase, i_con, i_rep, 0, 0]))
-
-            indices = [
-                (i_rep, i_phase, i_set, i_con, i_slc, i_par, i_cha, connection_buffer)
-                for i_rep in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'REP'))
-                for i_phase in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PHS'))
-                for i_set in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'SET'))
-                for i_con in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'CON'))
-                for i_slc in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'SLC'))
-                for i_par in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'PE2'))
-                for i_cha in range(0, connection_buffer.meas_data('NP_IS_IMAGING', 'CHA'))
-            ]
-
-            with ThreadPoolExecutor() as executor:
-                list(executor.map(process_phase_correction, indices))
+            con_buff.meas_data.data['NP_IS_IMAGING'], _ = helpers.filter_low_order_phase(
+                ksp_data = con_buff.meas_data.data['NP_IS_IMAGING'],
+                k_axes = (0, 2)
+            )
 
             book_keeper.recon_history += "_PROPELLERPhaseCorrection"
 
-        return connection_buffer, book_keeper
+        return con_buff, book_keeper

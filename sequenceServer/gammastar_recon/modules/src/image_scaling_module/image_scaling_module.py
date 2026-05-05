@@ -1,5 +1,5 @@
 """!
-@brief Image scaling module
+@brief Image scaling module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -21,44 +21,44 @@ class ImageScaleModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return ImageScaleModule.apply(connection_buffer, book_keeper)
+        return ImageScaleModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Calculates the scaling factor from the reconstructed image series.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
         applied_scaling_factor = 1.0
-        max_val_images = np.max(np.abs(connection_buffer.meas_data.data['NP_IS_IMAGING']).flatten())
+        max_val_images = np.max(np.abs(con_buff.meas_data.data['NP_IS_IMAGING']).flatten())
 
         if max_val_images == 0.0:
             logging.warning("gs-recon: Maximum value of reconstructed images is 0.0")

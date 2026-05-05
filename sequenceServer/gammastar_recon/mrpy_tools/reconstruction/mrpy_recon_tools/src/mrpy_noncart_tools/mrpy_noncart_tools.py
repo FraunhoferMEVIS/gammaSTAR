@@ -7,356 +7,243 @@
          thereof. No bugs or restrictions are known.
 """
 
-import math
 import numpy as np
-from typing import Tuple, List
+import mrinufft
+from mrinufft.density import voronoi
 
-def prep_kaiser_bessel_kernel(n_samples: int, beta: float) -> np.ndarray:
+
+def calc_equidistant_propeller_trajectory(
+        ksp_data: np.ndarray,
+        ro_axis: int,
+        pe_axis: int,
+        acq_axis: int | None,
+        acq_angle_incr: float,
+) -> np.ndarray:
     """!
-    @brief Function which prepares kaiser-bessel values as used during gridding routine. Note: A beta value of 18.557 is
-           recommended for an oversampling factor of 2 and a window width of 4.
+    @brief Calculates the trajectory of propeller samples. Assumes equidistant spacing in sampled k-space data.
 
-    @param n_samples: (int) Number of desired samples
-    @param beta: (float) Beta value to control kernel shape
+    @param ksp_data: k-space data array for which the gridding trajectory shall be calculated
+    @param ro_axis: Integer, indicating the readout axis of the k-space array
+    @param pe_axis: Integer, indicating the phase encoded axis of the k-space array
+    @param acq_axis: Integer, indicating the acquisition axis of the kspace array
+    @param acq_angle_incr: Angular increment
 
     @return
-        - (np.ndarray) prepared kaiser-bessel values in array of size n_samples
+        - Numpy array with same dimensions as ksp_data with additional dimensions at -1 of size 2, containing grid
+          positions
 
     @author Jörn Huber
     """
-    if n_samples == 0:
-        raise ValueError("Number of input samples needs to be larger than 0")
-    if beta <= 0:
-        raise ValueError("Beta needs to be positive > 0")
-    return np.kaiser(n_samples, beta)[int(n_samples/2):-1]
+
+    traj_shape = list(ksp_data.shape)
+    traj_shape.append(2)
+    traj_shape = tuple(traj_shape)
+    traj = np.zeros(traj_shape)
+
+    center_x = traj.shape[ro_axis] / 2
+    center_y = traj.shape[pe_axis] / 2
+
+    traj_x = np.arange(-center_x, center_x)
+    traj_y = np.arange(-center_y, center_y)
+
+    traj_orig = np.zeros((2, traj.shape[ro_axis], traj.shape[pe_axis]))
+    traj_orig[0, :, :] = np.repeat(traj_x[:, None], traj.shape[pe_axis], 1)
+    traj_orig[1, :, :] = np.repeat(traj_y[None, :], traj.shape[ro_axis], 0)
+
+    traj_reshaped = np.expand_dims(np.moveaxis(traj, ro_axis, -1), ro_axis)
+    traj_reshaped = np.expand_dims(np.moveaxis(traj_reshaped, pe_axis, -1), pe_axis)
+    traj_reshaped = np.expand_dims(np.moveaxis(traj_reshaped, acq_axis, -1), acq_axis)
+    moved_shape = traj_reshaped.shape
+    traj_reshaped = np.reshape(
+        traj_reshaped, [-1, 2, traj_reshaped.shape[-3], traj_reshaped.shape[-2], traj_reshaped.shape[-1]]
+    )
+
+    traj_rot = np.zeros_like(traj_orig)
+    for i_acq in range(traj_reshaped.shape[-1]):
+        rad_ang = (acq_angle_incr * float(i_acq))/180.0*np.pi
+        traj_rot[0, :, :] = traj_orig[0, :, :] * np.cos(rad_ang) - traj_orig[1, :, :] * np.sin(rad_ang)
+        traj_rot[1, :, :] = traj_orig[0, :, :] * np.sin(rad_ang) + traj_orig[1, :, :] * np.cos(rad_ang)
+        traj_reshaped[:, 0, :, :, i_acq] = np.repeat(traj_rot[None, 0, :, :], traj_reshaped.shape[0], 0)
+        traj_reshaped[:, 1, :, :, i_acq] = np.repeat(traj_rot[None, 1, :, :], traj_reshaped.shape[0], 0)
+
+    traj_reshaped = np.reshape(traj_reshaped, moved_shape)
+    traj_reshaped = np.squeeze(np.moveaxis(traj_reshaped, -1, acq_axis), acq_axis + 1)
+    traj_reshaped = np.squeeze(np.moveaxis(traj_reshaped, -1, pe_axis), pe_axis + 1)
+    traj_reshaped = np.squeeze(np.moveaxis(traj_reshaped, -1, ro_axis), ro_axis + 1)
+
+    return traj_reshaped
 
 
-def calc_equidistant_radial_trajectory_2D(radial_data_dims: np.ndarray, radial_acq_angle: float) -> np.ndarray:
+def apply_nufft(
+        ksp_data: np.ndarray,
+        traj_data: np.ndarray,
+        ro_axis: int,
+        ch_axis: int,
+        acq_axis: int,
+        mat_size: int,
+        pe1_axis: int | None = None,
+        pe2_axis: int | None = None,
+        density_method = 'voronoi'
+) -> np.ndarray:
     """!
-    @brief Calculates the trajectory of radial samples. Assumes equidistant spacing in sampled k-space data.
+    @brief Applies non-Cartesian image reconstruction using functionality from MRI Nufft
 
-    @param radial_data_dims: (np.ndarray) 2D vector (num_col, num_lin) containing the dimensions of the acquired
-                             spoke/blade e.g., (64, 1) for a radial spoke with 64 equidistant samples or (64, 16) for a
-                             propeller blade of size 64 (RO)x16 (PE).
-    @param radial_acq_angle: (float) Angle of acquisition in k-space in radians
+    @param ksp_data: k-space data array which contains non-Cartesian raw data which shall be used during image recon.
+    @param traj_data: Trajectory data array which contains the sample points for corresponding data samples. Note that
+                      the sample positions need to be stored in the "channel" axis of the kspace data array. All other
+                      dims need to correspond to the ksp_data dims.
+    @param ro_axis: RO axis of the k-space data.
+    @param ch_axis: Channel axis of the k-space data.
+    @param acq_axis: Acquisition axis of the k-space data.
+    @param mat_size: Size of the target matrix after reconstruction.
+    @param pe1_axis: PE1 axis of the k-space data (if applicable e.g. in 2D PROPELLER readouts).
+    @param pe2_axis: PE2 axis of the k-space data (if applicable e.g. in 3D PROPELLER readouts).
+    @param density_method: Voronoi density will be used automatically, if "cell_count" is not provided. "cell_count"
+                           should be used for PROPELLER applications.
 
     @return
-        - (np.ndarray) 3D vector of size (num_col, num_lin, 2), containing x- and y- sampling positions of the spoke
-                       blade, e.g., (:,0,0) contains x coordinates for a radial spoke and (:,:,0) contains x-coordinates
-                       of a 2D blade.
+        - Reconstructed image space data.
+
 
     @author Jörn Huber
     """
-    if not isinstance(radial_data_dims, np.ndarray) or not len(radial_data_dims) == 2:
-        raise ValueError("Expected radial_data_dims array with two entries")
-    if radial_data_dims.dtype == complex:
-        raise ValueError("Expected real values for radial_data_dims array")
-    if isinstance(radial_acq_angle, complex):
-        raise ValueError("Expected a real value for radial_acq_angle")
 
-    traj = np.zeros((radial_data_dims[0], radial_data_dims[1], 2))
-    center_x = radial_data_dims[0] / 2
-    if np.mod(radial_data_dims[1],2) == 1:
-        center_y = (radial_data_dims[1]-1) / 2 #Radial Spoke, we do not want the center to be located at float positions
+    nufft_operator = mrinufft.get_operator("finufft")
+
+    # We create a data batch to avoid nested loops
+    source_data = np.copy(ksp_data)
+    source_data = np.expand_dims(np.moveaxis(source_data, ro_axis, -1), ro_axis)
+    if pe1_axis is not None:
+        source_data = np.expand_dims(np.moveaxis(source_data, pe1_axis, -1), pe1_axis)
+    if pe2_axis is not None:
+        source_data = np.expand_dims(np.moveaxis(source_data, pe2_axis, -1), pe2_axis)
+    pe_merged_shape = list(source_data.shape)
+    if pe1_axis is not None:
+        pe_merged_shape.pop()
+    if pe2_axis is not None:
+        pe_merged_shape.pop()
+    if pe1_axis is not None and pe2_axis is not None:
+        pe_merged_shape[-1] = ksp_data.shape[ro_axis] * ksp_data.shape[pe1_axis] * ksp_data.shape[pe2_axis]
+    elif pe1_axis is not None and pe2_axis is None:
+        pe_merged_shape[-1] = ksp_data.shape[ro_axis] * ksp_data.shape[pe1_axis]
+    elif pe1_axis is None and pe2_axis is not None:
+        pe_merged_shape[-1] = ksp_data.shape[ro_axis] * ksp_data.shape[pe2_axis]
+
+    source_data = np.reshape(source_data, pe_merged_shape)
+    source_data = np.expand_dims(np.moveaxis(source_data, ch_axis, -1), ch_axis)
+    source_data = np.expand_dims(np.moveaxis(source_data, acq_axis, -1), acq_axis)
+    batch_data = np.reshape(
+        source_data,
+        shape = [-1, source_data.shape[-3], source_data.shape[-2], source_data.shape[-1]]
+    ) # Format: [BATCHDIM, RO, CHA, ACQ]
+    batch_data = np.transpose(batch_data, [0, 2, 3, 1])  # Format expected by mrinufft: [BATCHDIM, CHA, ACQ, RO]
+
+    # We create the corresponding trajectory batch
+    source_traj = np.copy(traj_data)
+    source_traj = np.expand_dims(np.moveaxis(source_traj, ro_axis, -1), ro_axis)
+    if pe1_axis is not None:
+        source_traj = np.expand_dims(np.moveaxis(source_traj, pe1_axis, -1), pe1_axis)
+    if pe2_axis is not None:
+        source_traj = np.expand_dims(np.moveaxis(source_traj, pe2_axis, -1), pe2_axis)
+    pe_merged_shape = list(source_traj.shape)
+    if pe1_axis is not None:
+        pe_merged_shape.pop()
+    if pe2_axis is not None:
+        pe_merged_shape.pop()
+    if pe1_axis is not None and pe2_axis is not None:
+        pe_merged_shape[-1] = traj_data.shape[ro_axis] * traj_data.shape[pe1_axis] * traj_data.shape[pe2_axis]
+    elif pe1_axis is not None and pe2_axis is None:
+        pe_merged_shape[-1] = traj_data.shape[ro_axis] * traj_data.shape[pe1_axis]
+    elif pe1_axis is None and pe2_axis is not None:
+        pe_merged_shape[-1] = traj_data.shape[ro_axis] * traj_data.shape[pe2_axis]
+    source_traj = np.reshape(source_traj, pe_merged_shape)
+
+    source_traj = np.expand_dims(np.moveaxis(source_traj, ch_axis, -1), ch_axis)
+    source_traj = np.expand_dims(np.moveaxis(source_traj, acq_axis, -3), acq_axis)
+    batch_traj = np.reshape(
+        source_traj,
+        shape = [-1, source_traj.shape[-3], source_traj.shape[-2], source_traj.shape[-1]]
+    ) # Format expected by mrinufft: [BATCHDIM, ACQ, RO, POS]
+
+    # Prepare nufft arrays
+    nufft_dim = batch_traj.shape[-1]
+    if nufft_dim == 2:
+        target_batch_shape = [batch_data.shape[0], batch_data.shape[1], mat_size, mat_size]
     else:
-        center_y = radial_data_dims[1] / 2
-    for i_x in range(0, radial_data_dims[0]):
-        for i_y in range(0, radial_data_dims[1]):
-            traj[i_x, i_y, 0] = (np.cos(radial_acq_angle)*(i_x - center_x)
-                                 - np.sin(radial_acq_angle)*(i_y - center_y) + center_x)
-            traj[i_x, i_y, 1] = (np.sin(radial_acq_angle)*(i_x - center_x)
-                                 + np.cos(radial_acq_angle)*(i_y - center_y) + center_x)
-    return traj
+        target_batch_shape = [batch_data.shape[0], batch_data.shape[1], mat_size, mat_size, mat_size]
+    target_data = np.zeros(tuple(target_batch_shape), dtype=complex)
+    nufft_shape = (mat_size, mat_size) if nufft_dim == 2 else (mat_size, mat_size, mat_size)
+
+    # Process batch
+    for batch_idx in range(batch_data.shape[0]):
+
+        grid_data = np.reshape(batch_data[batch_idx,], (batch_data.shape[1], -1))
+        samples_loc = batch_traj[batch_idx,] / np.max(batch_traj[batch_idx,]) * np.pi
+
+        if density_method == 'cell_count':
+            density = mrinufft.density.geometry_based.cell_count(
+                samples_loc.reshape(-1, nufft_dim),
+                shape=nufft_shape,
+                osf=0.5
+            )
+        else:
+            density = voronoi(samples_loc.reshape(-1, nufft_dim))
+
+        nufft = nufft_operator(
+            samples_loc.reshape(-1, nufft_dim),
+            shape = nufft_shape,
+            density=density,
+            n_coils=ksp_data.shape[ch_axis]
+        )
+
+        if ksp_data.shape[ch_axis] == 1:
+            target_data[batch_idx,] = np.expand_dims(nufft.adj_op(grid_data), 0)
+        else:
+            target_data[batch_idx,] = nufft.adj_op(grid_data)
+
+    # Back to unbatched structure
+    if nufft_dim == 2:
+        target_data = np.flip(np.transpose(target_data, [0, 1, 3, 2]), 2)
+    else:
+        target_data = np.flip(np.transpose(target_data, [0, 1, 4, 3, 2]), 3)
+    unbatched_shape = list(ksp_data.shape)
+    unbatched_shape[ro_axis] = mat_size
+
+    if pe1_axis is None:
+        unbatched_shape[acq_axis] = mat_size
+    else:
+        unbatched_shape[acq_axis] = 1
+        unbatched_shape[pe1_axis] = mat_size
+    if nufft_dim == 3:
+        unbatched_shape[pe2_axis] = mat_size
+
+    if nufft_dim == 2:
+        target_resh_data = np.reshape(np.transpose(target_data, [3, 1, 2, 0]), unbatched_shape)
+    else:
+        target_resh_data = np.reshape(np.transpose(target_data, [4, 1, 3, 2, 0]), unbatched_shape)
+
+    return target_resh_data
 
 
-def grid_data_to_matrix_2D(data: np.ndarray,
-                           traj: np.ndarray,
-                           os_factor: float,
-                           window_width: float,
-                           kernel: np.ndarray) -> Tuple[np.ndarray, np.ndarray]:
-    """!
-    @brief Applies gridding routine to acquired data.
-
-    @param data: (np.ndarray) containing complex k-space data of size (num_col, num_lin, num_acq)
-    @param traj: (np.ndarray) 4D numpy array of size (num_col, num_lin, 2, num_acq) containing real valued
-                 trajectory data
-    @param os_factor: (float) Oversampling factor of target grid, 2.0 is recommended
-    @param window_width: (float) Width of gridding window (4 recommended for best quality)
-    @param kernel: (np.ndarray) Precalculated kernel values
-
-    @return
-        - (np.ndarray) gridded data of size (num_col*os_factor, num_col*os_factor)
-
-    @author Jörn Huber
-    """
-    if not isinstance(data, np.ndarray) or not len(data.shape) == 3:
-        raise ValueError("data needs to be a 3D numpy ndarray with complex entries")
-    if not isinstance(traj, np.ndarray) or data.dtype is complex or not len(traj.shape) == 4:
-        raise ValueError("traj needs to be a 4D numpy ndarray with real-valued entries")
-    if not isinstance(os_factor, float):
-        raise ValueError("os_factor needs to be of type float (e.g. 2.0)")
-    if not isinstance(window_width, float):
-        raise ValueError("window_width factor needs to be of type float (e.g. 4.0)")
-    if not isinstance(kernel, np.ndarray) or data.dtype is complex:
-        raise ValueError("kernel needs to be a numpy array with real-valued entries!")
-
-    num_ro, num_pe, num_acq = data.shape
-    gridded_cplx = np.zeros((int(num_ro*os_factor), int(num_ro*os_factor)), dtype=complex)
-    post_dens = np.zeros((int(num_ro*os_factor), int(num_ro*os_factor)))
-    for i_acq in range(0, num_acq):
-        for i_ro in range(0, num_ro):
-            for i_pe in range(0, num_pe):
-                x_coord = traj[i_ro, i_pe, 0, i_acq] * os_factor
-                y_coord = traj[i_ro, i_pe, 1, i_acq] * os_factor
-                x_min = int(np.ceil(x_coord - window_width * os_factor / 2))
-                x_max = int(np.ceil(x_coord + window_width * os_factor / 2))
-                y_min = int(np.ceil(y_coord - window_width * os_factor / 2))
-                y_max = int(np.ceil(y_coord + window_width * os_factor / 2))
-
-                x_min = max(x_min, 0)
-                x_max = min(x_max, gridded_cplx.shape[0])
-                y_min = max(y_min, 0)
-                y_max = min(y_max, gridded_cplx.shape[0])
-
-                for x_counter in range(x_min, x_max):
-                    dist_x = np.abs(x_coord - x_counter)
-                    weight_ind_x = int(dist_x / (window_width * os_factor / 2) * kernel.shape[0])
-                    if weight_ind_x >= kernel.shape[0]:
-                        weight_ind_x = kernel.shape[0]-1
-
-                    for y_counter in range(y_min, y_max):
-                        dist_y = np.abs(y_coord - y_counter)
-                        weight_ind_y = int(dist_y / (window_width * os_factor / 2) * kernel.shape[0])
-                        if weight_ind_y >= kernel.shape[0]:
-                            weight_ind_y = kernel.shape[0]-1
-
-                        weight = kernel[weight_ind_x]*kernel[weight_ind_y]
-                        gridded_cplx[x_counter, y_counter] = (gridded_cplx[x_counter, y_counter] +
-                                                              weight*data[i_ro, i_pe, i_acq])
-                        post_dens[x_counter, y_counter] = post_dens[x_counter, y_counter] + weight
-
-    # Post density compensation
-    gridded_cplx_dens = np.copy(gridded_cplx)
-    for i_ro in range(0, gridded_cplx.shape[0]):
-        for i_pe in range(0, gridded_cplx.shape[1]):
-            if post_dens[i_ro, i_pe] > 0.0:
-                gridded_cplx_dens[i_ro, i_pe] = gridded_cplx[i_ro, i_pe]/post_dens[i_ro, i_pe]
-
-    return gridded_cplx_dens, gridded_cplx
-
-
-def get_deconvolution_matrix_2D(matrix_size: int,
-                                os_factor: float,
-                                window_width: int,
-                                kernel: np.ndarray) -> np.ndarray:
-    """!
-    @brief Calculates the deconvolution matrix by gridding a delta pulse and calculating the FFT.
-
-    @param matrix_size: (int) Original size of matrix e.g. 64 for spokes of size (64, 1)
-    @param os_factor: (float) Oversampling factor of target grid, 2.0 is recommended
-    @param window_width: (int) Width of gridding window (4 recommended for best quality)
-    @param kernel: (np.ndarray) Precalculated kernel values
-
-    @return
-        - (np.ndarray) Real-valued deconvolution matrix of size (num_col*os_factor, num_col*os_factor)
-
-    @author Jörn Huber
-    """
-    traj = np.ones((matrix_size, 1, 2, 1))
-    for i_sample in range(0, matrix_size):
-        traj[i_sample, 0, 0, 0] = i_sample
-        traj[i_sample, 0, 1, 0] = matrix_size/2
-    data = np.zeros((matrix_size, 1, 1), dtype=complex)
-    data[int(matrix_size/2), 0, 0] = 1
-    delta_pulse_gridded_dens, delta_pulse_gridded = grid_data_to_matrix_2D(data, traj, os_factor, window_width, kernel)
-    decon_mat = np.abs(np.fft.fftshift(np.fft.ifft2(np.squeeze(delta_pulse_gridded))))
-    #decon_mat = decon_mat / np.max(decon_mat)
-    return decon_mat
-
-
-def apply_deconvolution_2D(data_grid: np.ndarray,
-                           decon_mat: np.ndarray,
-                           os_factor: float) -> np.ndarray:
-    """!
-    @brief Applies deconvolution to gridded data using a precalculated deconvolution matrix.
-
-    @param data_grid: (np.ndarray) gridded complex k-space data (num_col, num_lin)
-    @param decon_mat: (np.ndarray) real_valued deconvolution matrix
-    @param os_factor: (float) Applied oversampling factor during gridding
-
-    @return
-        - (np.ndarray) image space (num_col/os_factor, num_lin/os_factor) with applied deconvolution
-
-    @author Jörn Huber
-    """
-    num_col, num_lin = data_grid.shape
-    im = np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(data_grid)))
-    im_origfov = im[int(num_col / os_factor / 2):-int(num_col / os_factor / 2),
-                    int(num_lin / os_factor / 2):-int(num_lin / os_factor / 2)]
-    decon_mat_origfov = decon_mat[int(num_col / os_factor / 2):-int(num_col / os_factor / 2),
-                                  int(num_lin / os_factor / 2):-int(num_lin / os_factor / 2)]
-    num_col_orig, num_lin_orig = im_origfov.shape
-    for i_col in range(0, num_col_orig):
-        for i_lin in range(0, num_lin_orig):
-            im_origfov[i_col, i_lin] = im_origfov[i_col, i_lin] / decon_mat_origfov[i_col, i_lin]
-    return im_origfov
-
-
-def prop_cut_kspace_edges_2D(data: np.ndarray) -> None:
-    """!
-    @brief Cuts outer edges of k-space. Needed for e.g. rotation correction.
-
-    @param data: (np.ndarray) 3D ndarray of gridded blade data (num_col, num_col, num_acq)
-
-    @return
-        - (np.ndarray) data but with edges set to zero
-
-    @author Jörn Huber
-    """
-    num_col, num_lin, num_acq = data.shape
-    if not num_col == num_lin:
-        raise ValueError("Number of columns and lines in data must match")
-    for i_col in range(0, num_col):
-        for i_lin in range(0, num_lin):
-            dist = np.sqrt((i_col - num_col/2)**2 + (i_lin - num_lin/2)**2)
-            if dist > num_col/2:
-                data[i_col, i_lin, :] = np.zeros(num_acq)
-
-
-def prop_phase_correction_2D(data: np.ndarray,
-                             filter_type: str = "rhomb",
-                             fov: List[float] = [1, 1]) -> np.ndarray:
-    """!
-    @brief Removes low order phase shifts from blade image data, which is the result from eddy currents etc.
-    @details Phase correction is needed as blades need to share a common k-space center before gridding. Therefore,
-             k-space frequencies are low-pass filtered such that low order phase variation is preserved in image space
-             and such phase variation is removed from individual blades by multiplication with the filtered complex
-             conjugate.
-
-    @param data: (np.ndarray) 2D (num_col, num_lin) numpy array of complex kspace blade data
-    @param filter_type: (str) Type of filter to be used. Either "rhomb" or "square".
-    @param fov: (list) Field of view for square filter calculation (only relevant if FOV is not quadratic).
-
-    @return
-        - (np.ndarray) 2D complex numpy array of phase corrected k-space data
-
-    @author Jörn Huber, Tom Lütjen
-    """
-    if len(data.shape) != 2:
-        raise ValueError("Data needs to be a 2D numpy ndarray with complex entries")
-
-    num_col, num_lin = data.shape
-    triang_filter = np.zeros((num_col, num_lin))
-    for i_col in range(0, num_col):
-        for i_lin in range(0, num_lin):
-            if filter_type == "rhomb":
-                triang_filter[i_col, i_lin] = ((num_col / 2 - np.abs(i_col - num_col / 2))
-                                            * (num_lin / 2 - np.abs(i_lin - num_lin / 2)))
-            elif filter_type == "square":
-                triang_filter[i_col, i_lin] = ((max(num_col/fov[0], num_lin/fov[1])/(num_col/fov[0]))*num_col / 2
-                                               - np.abs(i_col - num_col / 2)) \
-                                            * ((max(num_col/fov[0], num_lin/fov[1])/(num_lin/fov[1]))*num_lin / 2
-                                               - np.abs(i_lin - num_lin / 2))
-            else:
-                raise ValueError("Unknown filter type. Only rhomb and square are supported.")
-    
-    triang_filter = triang_filter / np.amax(triang_filter)
-
-    im = np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(np.squeeze(data))))
-    data_filt = np.multiply(np.squeeze(data), triang_filter)
-    im_filt = np.fft.fftshift(np.fft.ifft2(np.fft.fftshift(data_filt)))
-    im_filt = im_filt / np.abs(im_filt)
-    im = np.multiply(im, np.conj(im_filt))
-    data_corr = np.fft.fftshift(np.fft.fft2(np.fft.fftshift(im)))
-
-    return data_corr
-
-def prop_calc_ksp_coverage(traj: np.ndarray,
-                           num_grid_points_per_axis: int) -> float:
-    """!
-    @brief Calculates k-space coverage of PROPELLER trajectory.
-    @details Calculates fraction of k-space covered by all PROPELLER blades compared to a full k-space coverage, i.e.
-             infinite number of blades with arbitrary small blade angle increment.
-
-    @param traj: (np.ndarray) 4D numpy array of size (num_col, num_lin, 2, num_acq) containing real valued
-                 trajectory data centered around 0.
-    @param num_grid_points_per_axis: (int) Number of grid points per axis to determine the accuracy of the k-space coverage.
-    
-    @return
-        - (float) k-space coverage in percent
-
-    @author Tom Lütjen
-    """
-    num_col = traj.shape[0]
-    num_lin = traj.shape[1]
-    num_acq = traj.shape[3]
-    grid_points_x = np.linspace(-num_col//2, num_col//2, num_grid_points_per_axis)
-    grid_points_y = np.linspace(-num_col//2, num_col//2, num_grid_points_per_axis)
-    rad = np.sqrt((num_col//2)**2 + (num_lin//2)**2)
-    
-    dummy_part = np.zeros((num_grid_points_per_axis, num_grid_points_per_axis))
-    dummy_full = np.zeros((num_grid_points_per_axis, num_grid_points_per_axis))
-    for count_x, x_idx in enumerate(grid_points_x):
-        for count_y, y_idx in enumerate(grid_points_y):
-            coor_cur = np.array([x_idx, y_idx])
-            if np.sqrt((x_idx) ** 2 + (y_idx) ** 2) <= rad:
-                dummy_full[count_x, count_y] = 1
-            for blade_idx in range(num_acq):
-                if ((len(tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].min()))) == num_col) and (
-                    len(tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].max()))) == num_col) and (
-                    len(tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].min()))) == num_lin) and (
-                    len(tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].max()))) == num_lin)) or (
-                    (len(tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].min()))) == num_lin) and (
-                    len(tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].max()))) == num_lin) and (
-                    len(tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].min()))) == num_col) and (
-                    len(tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].max()))) == num_col)):
-
-                    min_idx_x = (0, 0)
-                    max_idx_x = (num_col-1, num_lin-1)
-                    min_idx_y = (num_col-1, 0)
-                    #max_idx_y = (0, num_lin-1)
-                else:
-                    min_idx_x = tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].min())[0])
-                    max_idx_x = tuple(np.argwhere(traj[:,:, 1, blade_idx] == traj[:,:, 1, blade_idx].max())[-1])
-                    min_idx_y = tuple(np.argwhere(traj[:,:, 0, blade_idx] == traj[:,:, 0, blade_idx].min())[0])
-
-                x_min_x = traj[:,:, 0, blade_idx][min_idx_x]
-                x_min_y = traj[:,:, 1, blade_idx][min_idx_x]
-                x_max_x = traj[:,:, 0, blade_idx][max_idx_x]
-                x_max_y = traj[:,:, 1, blade_idx][max_idx_x]
-                y_min_x = traj[:,:, 0, blade_idx][min_idx_y]
-                y_min_y = traj[:,:, 1, blade_idx][min_idx_y]
-
-                a = np.array([y_min_x, y_min_y])
-                b = np.array([x_min_x, x_min_y])
-                d = np.array([x_max_x, x_max_y])
-
-                val_1 = 0 < np.dot(coor_cur - a, b - a) < np.dot(b - a, b - a)
-                val_2 = 0 < np.dot(coor_cur - a, d - a) < np.dot(d - a, d - a)
-
-                if val_1 and val_2:
-                    dummy_part[count_x, count_y] = 1
-    
-    cover = 100 * np.count_nonzero(dummy_part) / np.count_nonzero(dummy_full)
-    return cover
-
-def calc_propeller_blade_increment_from_trajs(trajectory_line_blade_1: np.ndarray,
-                                              trajectory_line_blade_2: np.ndarray) -> float:
+def calc_propeller_blade_increment_from_trajs(
+        trajectory_line_blade_1: np.ndarray,
+        trajectory_line_blade_2: np.ndarray
+) -> float:
     """!
     @brief Calculates the PROPELLER blade angle from two trajectory lines between two PROPELLER blades based on the
            scalar product of two direction vectors which are extracted from the trtajectory.
 
-    @param trajectory_line_blade_1: (np.ndarray) 2D numpy array of size (num_col, 2) containing real valued
-                                                 trajectory data for first blade.
-    @param trajectory_line_blade_2: (np.ndarray) 2D numpy array of size (num_col, 2) containing real valued
-                                                 trajectory data for second blade.
+    @param trajectory_line_blade_1: 2D numpy array of size (num_col, 2) containing real valued
+                                    trajectory data for first blade.
+    @param trajectory_line_blade_2: 2D numpy array of size (num_col, 2) containing real valued
+                                    trajectory data for second blade.
 
     @return
-        - (float) Angle between the two blades in degrees.
+        - Angle between the two blades in degrees.
 
     @author Jörn Huber
     """
 
     vec_1 = trajectory_line_blade_1[0, :]
     vec_2 = trajectory_line_blade_2[0, :]
-    return np.arccos(vec_1 @ vec_2/(np.linalg.norm(vec_1)*np.linalg.norm(vec_2)))/math.pi*180.0
+    return np.arccos(vec_1 @ vec_2/(np.linalg.norm(vec_1)*np.linalg.norm(vec_2)))/np.pi*180.0

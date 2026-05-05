@@ -10,7 +10,6 @@
 from .mrpy_ismrmrd_tools import numpy_array_to_ismrmrd_acqs
 from .mrpy_ismrmrd_tools import numpy_and_raw_rep_to_acq
 from .mrpy_ismrmrd_tools import numpy_array_to_ismrmrd_image
-from .mrpy_ismrmrd_tools import noise_scan_to_acq
 from .mrpy_ismrmrd_tools import gstar_recon_emitter
 from .mrpy_ismrmrd_tools import gstar_recon_injector
 from .mrpy_ismrmrd_tools import gstar_recon_server

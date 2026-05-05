@@ -20,6 +20,7 @@ import random
 from datetime import datetime
 from typing import Any, List, Optional, Dict, Tuple, Union
 
+
 class MeasIDX:
     """!
     @brief Class which capsules idx counters.
@@ -259,6 +260,7 @@ class ConnectionBuffer:
             IsmrmrdConstants.ID_MESSAGE_IMAGE:       self.read_image
         }
 
+
     def receive_messages(self) -> None:
         """!
         @brief Using an established tcp connection, this function receives all incoming messages and handles appropriate
@@ -297,6 +299,7 @@ class ConnectionBuffer:
                 self.read_close()
                 break
 
+
     # --> Based on python-ismrmrd-server (see third_party_licenses.txt)
     def read(self, nbytes: int) -> bytes:
         """!
@@ -307,6 +310,7 @@ class ConnectionBuffer:
         @author Kelvin Chow, Jörn Huber
         """
         return self.socket.recv(nbytes, socket.MSG_WAITALL)
+
 
     def shutdown_close(self) -> None:
         """!
@@ -320,6 +324,7 @@ class ConnectionBuffer:
             pass
         self.socket.close()
         logging.info("Socket closed")
+
 
     def read_mrd_message_identifier(self) -> Optional[int]:
         """!
@@ -345,6 +350,7 @@ class ConnectionBuffer:
         self.messages_received.append(ident)
         return ident
 
+
     def send_config_file(self, filename: str) -> None:
         """!
         @brief Send a config file name text message encoded using the ismrmrd protocol to the stream.
@@ -364,6 +370,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_CONFIG_FILE))
             self.socket.send(struct.Struct('<1024s').pack(filename.encode()))
 
+
     def read_config_file(self) -> None:
         """!
         @brief Reads an incoming configuration file name from stream.
@@ -381,6 +388,7 @@ class ConnectionBuffer:
         config_file = struct.unpack('<1024s', config_file_bytes)[0].split(b'\x00', 1)[0].decode('utf-8')
         self.config_files.append(config_file)
         logging.info("<--  " + str(config_file))
+
 
     def send_config_text(self, contents: str) -> None:
         """!
@@ -404,6 +412,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
 
+
     def read_config_text(self) -> None:
         """!
         @brief Reads an incoming configuration text file from stream.
@@ -423,6 +432,7 @@ class ConnectionBuffer:
         config_text = self.read(length)
         config_text = config_text.split(b'\x00',1)[0].decode('utf-8')  # Strip off null teminator
         self.config_texts.append(config_text)
+
 
     def send_metadata(self, contents: str) -> None:
         """!
@@ -446,6 +456,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_HEADER))
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
+
 
     def read_metadata(self) -> None:
         """!
@@ -471,6 +482,7 @@ class ConnectionBuffer:
         except:
             logging.warning("Could not deserialize header, maybe the encoding is not valid:\n" + metadata)
 
+
     def send_close(self) -> None:
         """!
         @brief Send a close message encoded using the ismrmrd protocol to the stream.
@@ -482,6 +494,7 @@ class ConnectionBuffer:
         with self.lock:
             logging.info("--> Sending MRD_MESSAGE_CLOSE (4)")
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_CLOSE))
+
 
     def read_close(self) -> None:
         """!
@@ -527,6 +540,7 @@ class ConnectionBuffer:
 
         self.is_exhausted = True
 
+
     def send_text(self, contents: str) -> None:
         """!
         @brief Send a text message encoded using the ismrmrd protocol to the stream.
@@ -548,6 +562,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<I').pack(len(contents_with_nul.encode())))
             self.socket.send(contents_with_nul.encode())
 
+
     def read_text(self) -> None:
         """!
        @brief Reads a text message encoded using the ismrmrd protocol from the stream.
@@ -566,6 +581,7 @@ class ConnectionBuffer:
         config_text = self.read(length)
         config_text = config_text.split(b'\x00',1)[0].decode('utf-8')  # Strip off null teminator
         self.texts.append(config_text)
+
 
     def send_acquisition(self, acquisition: Any) -> None:
         """!
@@ -589,6 +605,7 @@ class ConnectionBuffer:
 
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_ACQUISITION))
             acquisition.serialize_into(self.socket.send)
+
 
     def read_acquisition(self) -> None:
         """!
@@ -650,6 +667,7 @@ class ConnectionBuffer:
                 self.meas_data.data[key_string] = []
             self.meas_data.data[key_string].append(acq)
 
+
     def send_image(self, images: Any) -> None:
         """!
         @brief Send an image message encoded using the ismrmrd protocol to the stream.
@@ -680,6 +698,7 @@ class ConnectionBuffer:
                 self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_IMAGE))
                 image.serialize_into(self.socket.send)
 
+
     def read_image(self) -> None:
         """!
         @brief Reads an image message encoded using the ismrmrd protocol from the stream.
@@ -697,6 +716,7 @@ class ConnectionBuffer:
         self.recvImages += 1
         logging.info("<-- Received MRD_MESSAGE_ISMRMRD_IMAGE (1022)")
         self.images.append(ismrmrd.Image.deserialize_from(self.read))
+
 
     def send_waveform(self, waveform: Any) -> None:
         """!
@@ -719,6 +739,7 @@ class ConnectionBuffer:
             self.socket.send(struct.Struct('<H').pack(IsmrmrdConstants.ID_MESSAGE_WAVEFORM))
             waveform.serialize_into(self.socket.send)
 
+
     def read_waveform(self) -> None:
         """!
         @brief Reads a waveform message encoded using the ismrmrd protocol from the stream.
@@ -738,16 +759,18 @@ class ConnectionBuffer:
         waveform = ismrmrd.Waveform.deserialize_from(self.read)
 
         self.waveforms.append(waveform)
-
     # <-- Based on python-ismrmrd-server (see third_party_licenses.txt)
 
-def gstar_to_ismrmrd_hdr(prot: dict,
-                         info: dict,
-                         expo: dict,
-                         sys: dict,
-                         root: dict,
-                         opt_meas_info: dict | None = None,
-                         opt_seq_json: str | None = None) -> str:
+
+def gstar_to_ismrmrd_hdr(
+        prot: dict,
+        info: dict,
+        expo: dict,
+        sys: dict,
+        root: dict,
+        opt_meas_info: dict | None = None,
+        opt_seq_json: str | None = None
+) -> str:
     """!
     @brief This function transfers header entries from gammastar to the corresponding ismrmrd header.
 
@@ -760,7 +783,7 @@ def gstar_to_ismrmrd_hdr(prot: dict,
     @param opt_seq_json: (string) JSON string which contains exported sequence
 
     @return
-        - (string) ISMRMRD header in xml format but serialized into string
+        - ISMRMRD header in xml format but serialized into string
 
     @author Daniel Hoinkiss, Jörn Huber
     """
@@ -1189,32 +1212,12 @@ def twix_hdr_to_ismrmrd_hdr(twix_hdr: Dict[str, Any]) -> str:
     return xml_str
 
 
-def noise_scan_to_acq(numpy_noise_array: np.ndarray) -> ismrmrd.Acquisition:
-    """!
-    @brief A method, which creates an acquisition object from a numpy array, containing noise correlation scans
-           from multiple channels.
-
-    @param numpy_noise_array: (np.ndarray) Numpy array (num_col, num_channel) which contains individual
-                                           noise data for different channels.
-
-    @return
-        - (ismrmrd.Acquisition) Acquisition object which contains the reformatted noise data.
-
-    @author Jörn Huber
-    """
-
-    acq = ismrmrd.Acquisition.from_array(np.transpose(numpy_noise_array, [1, 0]))
-    inv_flags = {v: k for k, v in IsmrmrdConstants.ISMRMRD_ACQ_FLAGS.items()}
-    acq.set_flag(inv_flags['ACQ_IS_NOISE_MEASUREMENT'])
-    # TODO: Add additional flags and idx etc
-
-    return acq
-
-
-def numpy_and_raw_rep_to_acq(numpy_array: np.ndarray,
-                             raw_adc_representations: List[Dict[str, Any]],
-                             traj_info: Optional[Dict[str, Any]] = None,
-                             reverse_lineflip: bool = False) -> List[Any]:
+def numpy_and_raw_rep_to_acq(
+        numpy_array: np.ndarray,
+        raw_adc_representations: List[Dict[str, Any]],
+        traj_info: Optional[Dict[str, Any]] = None,
+        reverse_lineflip: bool = False
+) -> List[Any]:
     """!
     @brief A method, which creates a list of ISMRMRD acquisition objects from a three-dimensional numpy array based
            on the gammastar raw representations and trajectory information which are provided as a list.
@@ -1413,12 +1416,14 @@ def create_dummy_ismrmrd_header() -> str:
     return xml_str
 
 
-def gstar_recon_emitter(host_address: str,
-                        port: int,
-                        list_of_acqs: List[ismrmrd.Acquisition],
-                        ismrmrd_header: str,
-                        protocol: float = 1.0,
-                        config_message: str = "") -> Union[ConnectionBuffer, bool]:
+def gstar_recon_emitter(
+        host_address: str,
+        port: int,
+        list_of_acqs: List[ismrmrd.Acquisition],
+        ismrmrd_header: str,
+        protocol: float = 1.0,
+        config_message: str = ""
+) -> Union[ConnectionBuffer, bool]:
     """!
     @brief ISMRMRD client which sends ismrmrd.Acquisition objects together with respective text messages to the stream.
 
@@ -1433,7 +1438,7 @@ def gstar_recon_emitter(host_address: str,
                            provided, a dummy header is used.
 
     @return
-        - (ConnectionBuffer) Returns the connection buffer object.
+        - Returns the connection buffer object.
 
     @author Jörn Huber, Kelvin Chow
     """
@@ -1571,13 +1576,15 @@ def bitmask_to_flags(flag_value: int) -> List[str]:
     return active_flags
 
 
-def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
-                                list_of_ksp_array_flags: list[list[str]],
-                                read_dir: np.ndarray,
-                                phase_dir: np.ndarray,
-                                slice_dir: np.ndarray,
-                                position: np.ndarray,
-                                list_of_trajectories: list[np.ndarray] = None) -> list[ismrmrd.Acquisition]:
+def numpy_array_to_ismrmrd_acqs(
+        list_of_np_ksp_arrays: list[np.ndarray],
+        list_of_ksp_array_flags: list[list[str]],
+        read_dir: np.ndarray,
+        phase_dir: np.ndarray,
+        slice_dir: np.ndarray,
+        position: np.ndarray,
+        list_of_trajectories: list[np.ndarray] = None
+) -> list[ismrmrd.Acquisition]:
     """!
     @brief Transforms k-space data which is given in form of numpy arrays into acquisiton objects, which can be sent
            to a server using client_to_stream.
@@ -1598,7 +1605,7 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
     @param list_of_trajectories: (list) A list, containing trajectory information for each data point
 
     @return
-        - (list[ismrmrd.Acquisition]) A list of acquisition objects, ready to be sent to the stream.
+        - A list of acquisition objects, ready to be sent to the stream.
 
     @author Jörn Huber
     """
@@ -1626,24 +1633,19 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
         for i_seg in range(num_segment):
             for i_ave in range(num_ave):
                 for i_rep in range(num_rep):
-                    for i_contrast in range(num_contrast):
+                    for i_con in range(num_contrast):
                         for i_pha in range(num_pha):
                             for i_set in range(num_set):
                                 for i_slc in range(num_slice):
                                     for i_par in range(num_par):
                                         for i_lin in range(num_lin):
 
-                                            acq_data = np.transpose(np_ksp_array_expand[:,
-                                                                                        :,
-                                                                                        i_lin,
-                                                                                        i_par,
-                                                                                        i_slc,
-                                                                                        i_set,
-                                                                                        i_pha,
-                                                                                        i_contrast,
-                                                                                        i_rep,
-                                                                                        i_ave,
-                                                                                        i_seg], [1, 0])
+                                            acq_data = np.transpose(
+                                                np_ksp_array_expand[
+                                                    :, :, i_lin, i_par, i_slc, i_set, i_pha, i_con, i_rep, i_ave, i_seg
+                                                ],
+                                                axes = [1, 0]
+                                            )
 
                                             if not acq_data.all() == 0:
 
@@ -1655,7 +1657,7 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
                                                                                i_slc,
                                                                                i_set,
                                                                                i_pha,
-                                                                               i_contrast,
+                                                                               i_con,
                                                                                i_rep,
                                                                                i_ave,
                                                                                i_seg,
@@ -1667,7 +1669,7 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
                                                 acq.acquisition_time_stamp = i_acq_time_stamp
                                                 acq.idx.repetition = i_rep  # pylint: disable=maybe-no-member
                                                 acq.idx.average = i_ave  # pylint: disable=maybe-no-member
-                                                acq.idx.contrast = i_contrast  # pylint: disable=maybe-no-member
+                                                acq.idx.contrast = i_con  # pylint: disable=maybe-no-member
                                                 acq.idx.phase = i_pha  # pylint: disable=maybe-no-member
                                                 acq.idx.set = i_set  # pylint: disable=maybe-no-member
                                                 acq.idx.segment = i_seg  # pylint: disable=maybe-no-member
@@ -1737,41 +1739,41 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
                                                 # Acquisition flags for contrast encoding
                                                 # direction
                                                 if all(x == 0 for x in
-                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_contrast)):
+                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_con)):
                                                     ismrmrd_flags.append("ACQ_FIRST_IN_CONTRAST")
                                                 elif (i_lin == num_lin - 1
                                                       and i_par == num_par - 1
                                                       and i_slc == num_slice - 1
                                                       and i_set == num_set - 1
                                                       and i_pha == num_pha - 1
-                                                      and i_contrast == num_contrast - 1):
+                                                      and i_con == num_contrast - 1):
                                                     ismrmrd_flags.append("ACQ_LAST_IN_CONTRAST")
 
                                                 # Acquisition flags for repetition encoding
                                                 # direction
                                                 if all(x == 0 for x in
-                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_contrast, i_rep)):
+                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_con, i_rep)):
                                                     ismrmrd_flags.append("ACQ_FIRST_IN_REPETITION")
                                                 elif (i_lin == num_lin - 1
                                                       and i_par == num_par - 1
                                                       and i_slc == num_slice - 1
                                                       and i_set == num_set - 1
                                                       and i_pha == num_pha - 1
-                                                      and i_contrast == num_contrast - 1
+                                                      and i_con == num_contrast - 1
                                                       and i_rep == num_rep - 1):
                                                     ismrmrd_flags.append("ACQ_LAST_IN_REPETITION")
 
                                                 # Acquisition flags for average encoding
                                                 # direction
                                                 if all(x == 0 for x in
-                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_contrast, i_rep, i_ave)):
+                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_con, i_rep, i_ave)):
                                                     ismrmrd_flags.append("ACQ_FIRST_IN_AVERAGE")
                                                 elif (i_lin == num_lin - 1
                                                       and i_par == num_par - 1
                                                       and i_slc == num_slice - 1
                                                       and i_set == num_set - 1
                                                       and i_pha == num_pha - 1
-                                                      and i_contrast == num_contrast - 1
+                                                      and i_con == num_contrast - 1
                                                       and i_rep == num_rep - 1
                                                       and i_ave == num_ave - 1):
                                                     ismrmrd_flags.append("ACQ_LAST_IN_AVERAGE")
@@ -1779,14 +1781,14 @@ def numpy_array_to_ismrmrd_acqs(list_of_np_ksp_arrays: list[np.ndarray],
                                                 # Acquisition flags for segment encoding
                                                 # direction
                                                 if all(x == 0 for x in
-                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_contrast, i_rep, i_ave, i_seg)):
+                                                       (i_lin, i_par, i_slc, i_set, i_pha, i_con, i_rep, i_ave, i_seg)):
                                                     ismrmrd_flags.append("ACQ_FIRST_IN_SEGMENT")
                                                 elif (i_lin == num_lin - 1
                                                       and i_par == num_par - 1
                                                       and i_slc == num_slice - 1
                                                       and i_set == num_set - 1
                                                       and i_pha == num_pha - 1
-                                                      and i_contrast == num_contrast - 1
+                                                      and i_con == num_contrast - 1
                                                       and i_rep == num_rep - 1
                                                       and i_ave == num_ave - 1
                                                       and i_seg == num_segment - 1):
@@ -1909,14 +1911,16 @@ def identify_readout_type_from_acqs(list_of_acqs: List[ismrmrd.Acquisition]) -> 
 
     return readout_type, is_ramp_samp, is_propeller, blade_dim
 
-def numpy_array_to_ismrmrd_image(nd_image: np.ndarray,
-                                 list_of_acqs: list[ismrmrd.Acquisition],
-                                 xml_header,
-                                 image_series_index: int,
-                                 meas_idx: MeasIDX,
-                                 add_series_string: str = '',
-                                 recon_history: str = '',
-                                 scaling_factor: float = 1.0) -> ismrmrd.Image:
+def numpy_array_to_ismrmrd_image(
+        nd_image: np.ndarray,
+        list_of_acqs: list[ismrmrd.Acquisition],
+        xml_header,
+        image_series_index: int,
+        meas_idx: MeasIDX,
+        add_series_string: str = '',
+        recon_history: str = '',
+        scaling_factor: float = 1.0
+) -> ismrmrd.Image:
     """!
     @brief Sort k-space data from acquisitions into numpy array structures for further processing.
     @details The function first analyzes the maximum idx indices which are available in the list of provided
@@ -1933,7 +1937,7 @@ def numpy_array_to_ismrmrd_image(nd_image: np.ndarray,
     @param scaling_factor: (float) Scaling factor applied to the image data.
 
     @return
-        - (ismrmrd.Image) ISMRMRD image object.
+        - ISMRMRD image object.
 
     @author Jörn Huber
     """

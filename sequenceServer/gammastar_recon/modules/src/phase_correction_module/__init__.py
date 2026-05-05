@@ -1,5 +1,5 @@
 """!
-@brief Init file for phase correction module
+@brief Init file for phase_correction_module
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 

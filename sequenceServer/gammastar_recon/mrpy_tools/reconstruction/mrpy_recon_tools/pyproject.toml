@@ -1,0 +1,29 @@
+[build-system]
+requires = ["setuptools>=61.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "mrpy_recon_tools"
+version = "1.1.1"
+description = "FME collection of basic MRI reconstruction algorithms"
+authors = [
+    { name = "Joern Huber" },
+    { name = "Vincent Kuhlen" },
+    { name = "Tom Luetjen" }
+]
+license = { file = "LICENSE" }
+requires-python = ">=3.7"
+dependencies = [
+    "numpy==2.2.6",
+    "matplotlib==3.10.8",
+    "scikit-learn==1.7.2",
+    "pydicom==2.4.5",
+    "sigpy==0.1.27",
+    "opencv-python==4.13.0.92",
+    "xmltodict==0.14.2",
+    "ismrmrd==1.14.2",
+    "mri-nufft[finufft]==1.4.0"
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]

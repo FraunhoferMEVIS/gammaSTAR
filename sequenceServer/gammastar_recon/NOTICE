@@ -14,7 +14,6 @@ Included third-party libraries:
 
 - MRI Nufft (BSD-3-Clause License)
 - Python ISMRMRD Server (MIT License)
-- pymapvbvd (MIT License)
 - pydicom (MIT-based License)
 - ismrmrd (ISMRMRD SOFTWARE LICENSE JULY 2013)
 - sigpy (BSD-2-Clause License)

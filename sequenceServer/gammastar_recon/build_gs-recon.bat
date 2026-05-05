@@ -7,3 +7,4 @@ FOR /F "tokens=1-2 delims=: " %%a IN ("%time%") DO (
 )
 SET BUILD_DATETIME=%BUILD_DATE%_%BUILD_TIME%
 docker build --build-arg buildDateTime=%BUILD_DATETIME% --tag gs-recon -f docker/Dockerfile .
+pause

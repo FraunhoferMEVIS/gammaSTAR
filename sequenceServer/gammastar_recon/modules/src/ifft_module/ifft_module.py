@@ -1,5 +1,5 @@
 """!
-@brief FFT Module
+@brief FFT Module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -18,61 +18,62 @@ class IFFTModule:
     """
 
     @staticmethod
-    def __call__(dim_str: str,
-                 connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper"):
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper",
+            dim_str: str
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
+        @param dim_str: String containing desired fft dimension
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return IFFTModule.apply(connection_buffer, book_keeper, dim_str)
+        return IFFTModule.apply(con_buff, book_keeper, dim_str)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper",
-              dim_str: str):
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper",
+            dim_str: str
+    ):
         """!
         @brief Applies FFT along a specified image dimension
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
-        @param dim_str: (String) Dimension string as defined in the mrpy_ismrmrd_tools.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
-        if not connection_buffer.meas_data.is_ro_ft:
+        if not con_buff.meas_data.is_ro_ft:
 
-            if connection_buffer.meas_data('NP_IS_IMAGING', dim_str) > 1:
+            if con_buff.meas_data('NP_IS_IMAGING', dim_str) > 1:
 
                 logging.info("gs-recon: " + dim_str + " IFFT")
                 dim_ind = ismrmrd_tools.IsmrmrdConstants.IDX_MAP[dim_str]
 
-                connection_buffer.meas_data.data['NP_IS_IMAGING'] = np.fft.fftshift(
-                    np.fft.ifft(np.fft.fftshift(connection_buffer.meas_data.data['NP_IS_IMAGING'], axes=dim_ind),
+                con_buff.meas_data.data['NP_IS_IMAGING'] = np.fft.fftshift(
+                    np.fft.ifft(np.fft.fftshift(con_buff.meas_data.data['NP_IS_IMAGING'], axes=dim_ind),
                                 axis=dim_ind), axes=dim_ind)
 
                 if dim_str == 'COL':
-                    connection_buffer.is_ro_ft = True
+                    con_buff.is_ro_ft = True
                 if dim_str == 'PE1':
-                    connection_buffer.is_pe_ft = True
+                    con_buff.is_pe_ft = True
                 if dim_str == 'PE2':
-                    connection_buffer.is_par_ft = True
+                    con_buff.is_par_ft = True
                     book_keeper.recon_history += "_FFTPAR"
 
-        return connection_buffer, book_keeper
+        return con_buff, book_keeper

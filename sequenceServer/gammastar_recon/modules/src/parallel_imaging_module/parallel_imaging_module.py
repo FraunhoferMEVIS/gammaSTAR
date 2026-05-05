@@ -1,5 +1,5 @@
 """!
-@brief Parallel imaging module
+@brief Parallel imaging module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -13,56 +13,52 @@ import mrpy_ismrmrd_tools as ismrmrd_tools
 
 class ParallelImagingModule:
     """!
-    @brief This module reconstructs missing data lines in the "NP_IS_IMAGING" data for 2D/3D Cartesian acquisitions
-           using appropriate Grappa/Caipirinha functionality and reference lines from the "NP_IS_PARALLEL_CALIBRATION"
-           data.
+    @brief This module applies parallel imaging solutions. This public version just prints a hint to the user.
     """
 
     @staticmethod
-    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return ParallelImagingModule.apply(connection_buffer, book_keeper)
+        return ParallelImagingModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
-        @brief Reconstructs missing data lines in the "NP_IS_IMAGING" data for 2D/3D Cartesian acquisitions
-               using appropriate Grappa/Caipirinha functionality and reference lines from the "NP_IS_PARALLEL_CALIBRATION"
-               data.
+        @brief Applies parallel imaging solutions. This public version just prints a hint to the user.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
-        if connection_buffer.meas_data.accel_pe1 > 1 or connection_buffer.meas_data.accel_pe2 > 1:
+        if con_buff.meas_data.accel_pe1 > 1 or con_buff.meas_data.accel_pe2 > 1:
 
-            if connection_buffer.meas_data('NP_IS_IMAGING', 'CHA') == 1:
+            if con_buff.meas_data('NP_IS_IMAGING', 'CHA') == 1:
                 logging.warning("gs-recon: Cannot perform parallel imaging tasks in single channel experiments!")
             else:
-                logging.warning("gs-recon: Parallel imaging functionality currently not implemented, "
+                logging.warning("gs-recon: Parallel imaging functionality not available in sim only version, "
                                 "contact the developers for personalized solutions!")
 
-        return connection_buffer, book_keeper
+        return con_buff, book_keeper

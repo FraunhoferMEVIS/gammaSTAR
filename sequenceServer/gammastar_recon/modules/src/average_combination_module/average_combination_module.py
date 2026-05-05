@@ -1,5 +1,5 @@
 """!
-@brief Average combination module
+@brief Average combination module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -18,48 +18,48 @@ class AverageCombinationModule:
     """
 
     @staticmethod
-    def __call__(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
-        return AverageCombinationModule.apply(connection_buffer, book_keeper)
+        return AverageCombinationModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(connection_buffer: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief Applies the modules functionality by averaging data along the average dimension. 
 
-        @param connection_buffer: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            - (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            - (BookKeeper) BookKeeper object, holding patient information and reconstruction history.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
         is_applied = False
-        for data_key in connection_buffer.meas_data.data:
-            if "NP" in data_key and "PHASECORR" not in data_key and connection_buffer.meas_data(data_key, 'AVE') > 1:
+        for data_key in con_buff.meas_data.data:
+            if "NP" in data_key and "PHASECORR" not in data_key and con_buff.meas_data(data_key, 'AVE') > 1:
                 logging.info("gs-recon: Averaging " + data_key)
-                ave_sig = np.mean(connection_buffer.meas_data.data[data_key], 9)
-                connection_buffer.meas_data.data[data_key] = np.expand_dims(ave_sig, 9)
+                ave_sig = np.mean(con_buff.meas_data.data[data_key], 9)
+                con_buff.meas_data.data[data_key] = np.expand_dims(ave_sig, 9)
 
                 if not is_applied:
                     is_applied = True
@@ -67,4 +67,4 @@ class AverageCombinationModule:
         if is_applied:
             book_keeper.recon_history += "_SummedAverages"
 
-        return connection_buffer, book_keeper
+        return con_buff, book_keeper

@@ -22,39 +22,12 @@ class TestIOTools(unittest.TestCase):
     Unit test class for mrpy_io_tools
     """
 
-    # def test_unit_read_siemens_twix(self):
-    #     """!@brief UT which validates the correct functionality of read_siemens_twix
-    #
-    #     @param self: Reference to object
-    #
-    #     """
-    #     print("\nTesting twix data loading of single raid data")
-    #     noise, noise_hdr, ksp, ksp_phasecor, ksp_rtfeedback, ksp_paracalib, meas_hdr = io_tools.read_siemens_twix(
-    #         path_to_testdata + "/read_siemens_twix/meas_MID00045_FID39253_t2_blade_tra_p2.dat")
-    #     self.assertTrue(noise is None)
-    #     self.assertTrue(noise_hdr is None)
-    #     self.assertTrue(ksp.shape == (320, 16, 28, 10, 28, 18))
-    #     self.assertTrue(ksp_phasecor is None)
-    #     self.assertTrue(ksp_rtfeedback is None)
-    #     self.assertTrue(ksp_paracalib is None)
-    #     self.assertTrue(meas_hdr is not None)
-    #
-    #     print("\nTesting twix data loading of multi raid data")
-    #     noise, noise_hdr, ksp, ksp_phasecor, ksp_rtfeedback, ksp_paracalib, meas_hdr = io_tools.read_siemens_twix(
-    #         path_to_testdata + "/read_siemens_twix/meas_MID00065_FID39123_t2_blade_tra_p2_single_pos.dat")
-    #     self.assertTrue(noise.shape == (256, 10, 128, 2))
-    #     self.assertTrue(noise_hdr is not None)
-    #     self.assertTrue(ksp.shape == (320, 10, 16, 16, 32))
-    #     self.assertTrue(ksp_phasecor is None)
-    #     self.assertTrue(ksp_rtfeedback is None)
-    #     self.assertTrue(ksp_paracalib is None)
-    #     self.assertTrue(meas_hdr is not None)
 
     def test_get_folder_name(self):
         """!
         @brief UT which validates the correct functionality of get_folder_name
         @details The test writes a dicom file with defined header entries. The created dicom file is loaded and
-                 correct header entries are analyzed.
+                 correct header entries are analyzed. Criteria: folder name needs to correspond to target string.
         @param self: Reference to object
 
         @author: Jörn Huber
@@ -63,12 +36,12 @@ class TestIOTools(unittest.TestCase):
         folder_name = io_tools.get_folder_name("test_protocol_123")
         self.assertEqual(folder_name, "test_protocol_123/0")
 
+
     def test_write_dcm_from_ismrmrd_image(self):
         """!
         @brief UT which validates the correct functionality of write_dcm_from_ismrmrd_image
         @details The test first creates an ismrmrd image from a numpy array. Afterwards, the ismrmrd image is written
-                 to DICOM. We validate that the dicom file exists. TODO: We should add a test which validates the
-                 pixel contents of the DICOM file.
+                 to DICOM. Criteria: Target dicom file exists.
         @param self: Reference to object
 
         @author: Jörn Huber
@@ -113,39 +86,6 @@ class TestIOTools(unittest.TestCase):
             is_available = False
         self.assertEqual(is_available, True)
 
-    def test_save_to_bart_cfl(self):
-        """!
-        @brief UT which validates the correct functionality of save_to_bart_cfl
-        @details The test writes a numpy array filled with zeros to a bart file. Afterwards, it is validated whether
-                 respective files are present.
-        @param self: Reference to object
-
-        @author: Jörn Huber
-        """
-        print("\nTesting mrpy_io_tools: save_to_bart_cfl")
-        test_im = np.zeros((64, 64), dtype=complex)
-        self.assertRaises(ValueError, io_tools.save_to_bart_cfl, "test_im", np.real(test_im))
-
-        io_tools.save_to_bart_cfl("test_im", test_im)
-        self.assertTrue(os.path.isfile("test_im.cfl"))
-        self.assertTrue(os.path.isfile("test_im.hdr"))
-        os.remove("test_im.cfl")
-        os.remove("test_im.hdr")
-
-    def test_load_from_bart_cfl(self):
-        """!
-        @brief UT which validates the correct functionality of load_from_bart_cfl.
-        @details The test first writes a bart file filled with zeros to the hard disk. Afterwards, the file is loaded
-                 and resulting image values are compared to zero.
-        @param self: Reference to object
-
-        @author: Jörn Huber
-        """
-        print("\nTesting mrpy_io_tools: load_from_bart_cfl")
-        io_tools.save_to_bart_cfl("test_im", np.zeros((64, 64), dtype=complex))
-        test_im = io_tools.load_from_bart_cfl("test_im")
-        self.assertTrue(test_im.shape == (64, 64))
-        self.assertEqual(np.max(np.abs(test_im).flatten()), 0.0)
 
 if __name__ == '__main__':
     print("---Running unit tests for mrpy_io_tools---")

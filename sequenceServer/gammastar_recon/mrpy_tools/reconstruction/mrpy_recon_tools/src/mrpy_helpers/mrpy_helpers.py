@@ -1,5 +1,5 @@
 """!
-@brief Collection of tools which provide helpful functionality for e.g. testing purposes.
+@brief Collection of tools which provide helpful functionality.
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -7,181 +7,119 @@
          thereof. No bugs or restrictions are known.
 """
 
+from typing import Tuple
 import numpy as np
-import sigpy
 
-def remove_readout_os(ksp_data: np.ndarray, dim: int, os_factor: float) -> np.ndarray:
+
+def remove_os(
+        ksp_data: np.ndarray,
+        os_factor: int,
+        k_axes:Tuple
+) -> np.ndarray:
     """!
-    @brief Removes the readout oversampling which is applied by default.
-    @details Might not correctly preserve the phase information, additional investigation is needed.
+    @brief Removes oversampling along k_axes.
 
-    @param ksp_data: (np.ndarray) N-dimensional kspace data, with readout dimensions in the first index.
-    @param dim: (int) Dimension along which the readout oversampling should be removed.
-    @param os_factor: (float) Oversampling factor which was used during acquisition.
+    @param ksp_data: N-dimensional kspace data
+    @param os_factor: Oversampling factor
+    @param k_axes: Axes over which to remove the oversampling
 
     @return
-        - (np.ndarray) 1D readout line of kspace with removed oversampling
+        - k-space array with removed oversampling
 
     @author Jörn Huber
     """
-    num_samples = ksp_data.shape[dim]
-    samples_cutoff = int((num_samples-num_samples/os_factor)/2)
 
-    ksp_data_fft = np.fft.fftshift(np.fft.ifft(np.fft.fftshift(ksp_data, axes=dim), axis=dim), axes=dim)
-    ksp_data_fft_os_removed = np.take(ksp_data_fft, range(samples_cutoff, int(num_samples-samples_cutoff)), axis=dim)
-    ksp_data_os_removed = np.fft.fftshift(np.fft.fft(np.fft.fftshift(ksp_data_fft_os_removed, axes=dim), axis=dim), axes=dim)
-    return ksp_data_os_removed
+    if os_factor == 1:
+        return ksp_data
 
-def gauss_kern_val(pos_x: float, pos_y: float, pos_z: float, sigma: float) -> float:
+    # Go to image space
+    im_data = np.fft.fftshift(np.fft.ifftn(np.fft.fftshift(ksp_data, axes=k_axes),axes=k_axes),axes=k_axes)
+
+    # Remove OS along k_axes
+    for axis in k_axes:
+        num_samples = im_data.shape[axis]
+        samples_cutoff = int((num_samples - num_samples / os_factor) / 2)
+        im_data = np.take(im_data, range(samples_cutoff, int(num_samples-samples_cutoff)), axis=axis)
+
+    # Back to k-space
+    ksp_data_rem_os = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(im_data,axes=k_axes),axes=k_axes),axes=k_axes)
+
+    return ksp_data_rem_os
+
+
+def filter_low_order_phase(
+    ksp_data: np.ndarray,
+    k_axes: Tuple[int, int, int] | Tuple[int, int]
+) -> Tuple[np.ndarray, np.ndarray]:
     """!
-    @brief Calculates gaussian kernel value for sensitivities
+    @brief Removes low order phase shifts from blade image data, which is the result from eddy currents etc.
+    @details Phase correction is needed as blades need to share a common k-space center before gridding. Therefore,
+             k-space frequencies are low-pass filtered such that low order phase variation is preserved in image space
+             and such phase variation is removed from individual blades by multiplication with the filtered complex
+             conjugate.
 
-    @param pos_x: (float) column position
-    @param pos_y: (float) line position
-    @param pos_z: (float) z position
-    @param sigma: (float) gaussian kernel sigma
+    @param ksp_data: K-space data of arbitrary dimensions.
+    @param k_axes: Axis along which the high-pass filter shall be applied.
 
     @return
-        - (float) kernel value
+        - 2D complex numpy array of phase corrected k-space data
 
-    @author Jörn Huber
+    @author Jörn Huber, Tom Lütjen
     """
-    gauss_x = np.exp(-0.5 * np.square(pos_x) / np.square(sigma))
-    gauss_y = np.exp(-0.5 * np.square(pos_y) / np.square(sigma))
-    gauss_z = np.exp(-0.5 * np.square(pos_z) / np.square(sigma))
-    return gauss_x*gauss_y*gauss_z
 
-def create_sensitivity_test_data_2D(num_col: int, num_lin: int) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
-    """!
-    @brief Creates nine artifical shepp-logan channels for testing purposes
+    num_col = ksp_data.shape[k_axes[0]]
+    num_lin = ksp_data.shape[k_axes[1]]
+    num_par = 0
+    if len(k_axes) == 3:
+        num_par = ksp_data.shape[k_axes[2]]
 
-    @param num_col: (int) number of columns
-    @param num_lin: (int) number of lines
+    r_col = np.arange(num_col)
+    filt_col = (num_col + 1 - np.abs(r_col - r_col[::-1])) / 2
 
-    @return
-        - (np.ndarray) Multichannel kspaces of size (num_col, num_lin, num_cha)
-        - (np.ndarray) Original shepp-logan phantom of size (num_col, num_lin)
-        - (np.ndarray) Original sensitivities of size (num_col, num_lin, num_cha)
+    r_lin = np.arange(num_lin)
+    filt_lin = (num_lin + 1 - np.abs(r_lin - r_lin[::-1])) / 2
 
-    @author Jörn Huber
-    """
-    sl = sigpy.shepp_logan((num_col, num_lin), dtype=complex)
-    sens = np.zeros((num_col, num_lin, 9), dtype=complex)
-    sl_sens = np.zeros((num_col, num_lin, 9), dtype=complex)
-    map_index = 0
-    for center_x in range(0, num_col + 1, int(num_col / 2)):
-        for center_y in range(0, num_lin + 1, int(num_lin / 2)):
-            for ix in range(0, num_col):
-                for iy in range(0, num_lin):
-                    sens[ix, iy, map_index] = gauss_kern_val((ix-center_x)/num_col, (iy-center_y)/num_lin, 0.0, 0.3)
-                    sl_sens[ix, iy, map_index] = sens[ix, iy, map_index]*sl[ix, iy]
-            map_index = map_index + 1
-    sl_ksp_sens = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(sl_sens, axes=(0, 1)),axes=(0, 1)), axes=(0, 1))
-    return sl_ksp_sens, sl, sens
+    filt_par = np.ones(1)
+    if num_par > 0:
+        r_par = np.arange(num_par)
+        filt_par = (num_par + 1 - np.abs(r_par - r_par[::-1])) / 2
 
-def create_partial_fourier_test_data_2D(num_col: int, num_lin: int, pf_fraction: float) -> tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
-    """!
-    @brief Creates nine artifical shepp-logan channels for testing purposes.
-    @details k-space data is created which serves the purpose of testing partial fourier reconstruction algorithms.
-             Therefore, data containing only a fraction of the sampled data is created for partial fourier
-             applications. Note that this currently only supports 2D data.
+    fc, fl, fp = np.ix_(filt_col, filt_lin, filt_par)
+    triang_filter = fc * fl * fp
 
-    @param num_col: (int) number of columns
-    @param num_lin: (int) number of lines
-    @param pf_fraction: (float) Fraction of partial fourier lines. Should be >= 0.5.
+    triang_filter = triang_filter / np.amax(triang_filter)
 
-    @return
-        - (np.ndarray) Multichannel fractional sampled kspaces of size (num_col, num_lin, 9) based on
-                       real valued channel data.
-        - (np.ndarray) Multichannel fractional sampled kspaces of size (num_col, num_lin, 9) based on
-                       cplx valued channel data.
-        - (np.ndarray) Multichannel fully sampled kspaces of size (num_col, num_lin, num_cha) based on
-                       real valued channel data.
-        - (np.ndarray) Multichannel fully sampled kspaces of size (num_col, num_lin, num_cha) based on
-                       cplx valued channel data.
-        - (np.ndarray) Original shepp-logan phantom of size (num_col, num_lin)
+    filter_bc_shape = np.ones(len(ksp_data.shape), dtype=int)
+    filter_bc_shape[k_axes[0]] = num_col
+    filter_bc_shape[k_axes[1]] = num_lin
+    if len(k_axes) == 3:
+        filter_bc_shape[k_axes[2]] = num_par
+    triang_filter = np.reshape(triang_filter, filter_bc_shape)
 
-    @author Jörn Huber
-    """
-    if num_col < 32 or num_lin < 32:
-        raise ValueError("Simulated data should at least have a size of 32x32!")
-    if pf_fraction < 0.5 or pf_fraction > 1.0:
-        raise ValueError("Partial fourier fraction must lie within [0.5, 1.0]")
+    for i_ax in range(0, len(ksp_data.shape)):
+        if i_ax == k_axes[0] or i_ax == k_axes[1] or (len(k_axes) == 3 and i_ax == k_axes[2]):
+            continue
+        else:
+            triang_filter = np.repeat(triang_filter, ksp_data.shape[i_ax], axis=i_ax)
 
-    # Generate sensitivities
-    sl = sigpy.shepp_logan((num_col, num_lin), dtype=complex)
-    sens = np.zeros((num_col, num_lin, 9), dtype=complex)
-    sl_sens = np.zeros((num_col, num_lin, 9), dtype=complex)
-    map_index = 0
-    for center_x in range(0, num_col + 1, int(num_col / 2)):
-        for center_y in range(0, num_lin + 1, int(num_lin / 2)):
-            for ix in range(0, num_col):
-                for iy in range(0, num_lin):
-                    sens[ix, iy, map_index] = (gauss_kern_val((ix-center_x)/num_col, (iy-center_y)/num_lin, 0,0.3)
-                                        + 1j * gauss_kern_val((ix-center_x)/num_col, (iy-center_y)/num_lin, 0,0.3))
-                    sl_sens[ix, iy, map_index] = sens[ix, iy, map_index]*sl[ix, iy]
-            map_index = map_index + 1
-    ksp_sens_cplx = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(sl_sens, axes=(0, 1)), axes=(0, 1)),
-                                    axes=(0, 1))
-    ksp_sens_real = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(np.real(sl_sens), axes=(0, 1)), axes=(0, 1)),
-                                    axes=(0, 1))
+    ksp_data_filt = np.multiply(ksp_data, triang_filter)
 
-    # Generate real and complex partial fourier data
-    ksp_sens_real_pf = np.copy(ksp_sens_real)
-    ksp_sens_cplx_pf = np.copy(ksp_sens_cplx)
-    for i_lin in range(0, num_lin):
-        if i_lin > int(pf_fraction*num_lin):
-            ksp_sens_real_pf[:, i_lin, :] = np.zeros((num_col, 9), dtype=complex)
-            ksp_sens_cplx_pf[:, i_lin, :] = np.zeros((num_col, 9), dtype=complex)
+    im = np.fft.fftshift(
+        np.fft.ifftn(np.fft.ifftshift(ksp_data, axes=k_axes), axes=k_axes), axes=k_axes
+    )
+    im_filt = np.fft.fftshift(
+        np.fft.ifftn(np.fft.ifftshift(ksp_data_filt, axes=k_axes), axes=k_axes), axes=k_axes
+    )
 
-    return ksp_sens_real_pf, ksp_sens_cplx_pf, ksp_sens_real, ksp_sens_cplx, sl
+    if im_filt.any() == 0.0:
+        return ksp_data, triang_filter
 
-def create_partial_fourier_test_data_3D(
-    num_col: int,
-    num_lin: int,
-    num_par: int,
-    pf_fraction_pe1: float,
-    pf_fraction_pe2: float
-) -> tuple[np.ndarray, np.ndarray]:
-    """!
-    @brief Creates nine artifical shepp-logan channels for testing purposes.
-    @details k-space data is created which serves the purpose of testing partial fourier reconstruction algorithms.
-             Therefore, data containing only a fraction of the sampled data is created for partial fourier
-             applications. Note that this currently only supports 2D data. 
+    im_filt = im_filt / np.abs(im_filt)
 
-    @param num_col: (int) number of columns
-    @param num_lin: (int) number of lines
-    @param num_par: (int) number of partitions
-    @param pf_fraction_pe1: (float) Fraction of partial fourier lines in phase encoding direction 1. Should be >= 0.5.
-    @param pf_fraction_pe2: (float) Fraction of partial fourier lines in phase encoding direction 2. Should be >= 0.5.
+    im = np.multiply(im, np.conj(im_filt))
 
-    @return
-        - (np.ndarray) Multichannel fractional sampled kspaces of size (num_col, num_lin, 9) based on
-                       real valued channel data.
-        - (np.ndarray) Image with phase modulation (num_col, num_lin, 9).
+    data_corr = np.fft.fftshift(
+        np.fft.fftn(np.fft.ifftshift(im, axes=k_axes), axes=k_axes), axes=k_axes
+    )
 
-    @author Jörn Huber
-    """
-    if num_col < 32 or num_lin < 32 or num_par < 32:
-        raise ValueError("Simulated data should at least have a size of 32x32!")
-    if pf_fraction_pe1 < 0.5 or pf_fraction_pe1 > 1.0 or pf_fraction_pe2 < 0.5 or pf_fraction_pe2 > 1.0:
-        raise ValueError("Partial fourier fraction must lie within [0.5, 1.0]")
-
-    sl_mag = sigpy.shepp_logan((num_col, num_lin, num_par))
-
-    sl_phase = np.zeros((num_col, num_lin, num_par))
-    center_col = num_col/2
-    center_lin = num_lin/2
-    center_par = num_par/2
-    for i_col in range(0, num_col):
-        for i_pe1 in range(0, num_lin):
-            for i_pe2 in range(0, num_par):
-                sl_phase[i_col, i_pe1, i_pe2] = gauss_kern_val((i_col-center_col)/num_col, (i_pe1-center_lin)/num_lin, (i_pe2-center_par)/num_par,0.3)*np.pi
-    sl_ksp = np.fft.fftshift(np.fft.fftn(np.fft.fftshift(sl_mag*np.exp(sl_phase))))
-
-    for i_pe2 in range(0, num_par):
-        for i_pe1 in range(0, num_lin):
-            if i_pe1 > int(pf_fraction_pe1*num_lin) or i_pe2 > int(pf_fraction_pe2*num_par):
-                sl_ksp[:, i_pe1, i_pe2] = np.zeros(num_col, dtype=complex)
-
-    return sl_ksp, sl_mag*np.exp(sl_phase)
+    return data_corr, triang_filter

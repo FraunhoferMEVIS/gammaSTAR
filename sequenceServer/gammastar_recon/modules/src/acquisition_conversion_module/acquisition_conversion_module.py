@@ -1,5 +1,5 @@
 """!
-@brief Acquisition conversion module
+@brief Acquisition conversion module of gammaSTAR Reconstructions
 @details Copyright (c) Fraunhofer MEVIS, Germany. All rights reserved.
          AGPLv3-clause License
 
@@ -10,13 +10,12 @@
 import logging
 import numpy as np
 import ismrmrd
-import mrinufft
-import math
-from mrinufft.density import voronoi
 from scipy.interpolate import interp1d
 import mrpy_ismrmrd_tools as ismrmrd_tools
+import mrpy_noncart_tools as noncart_tools
 import mrpy_helpers as helpers
-from typing import Tuple  
+from typing import Tuple
+
 
 class AcquisitionConversionModule:
     """!
@@ -26,11 +25,11 @@ class AcquisitionConversionModule:
     """
 
     @staticmethod
-    def ismrmrd_acqs_to_numpy_array(list_of_acqs: list[ismrmrd.Acquisition],
-                                    encoded_space: object | None = None,
-                                    recon_space: object | None = None,
-                                    W: np.ndarray | None = None,
-                                    os_factor: float = 1) -> Tuple[np.ndarray, int]:
+    def ismrmrd_acqs_to_numpy_array(
+            list_of_acqs: list[ismrmrd.Acquisition],
+            encoded_space: object | None = None,
+            os_factor: float = 1.0
+    ) -> Tuple[np.ndarray, int]:
         """!
         @brief Sort k-space data from acquisitions into numpy array structures for further processing.
         @details The function first analyzes the maximum idx indices which are available in the list of provided
@@ -39,16 +38,14 @@ class AcquisitionConversionModule:
                  grid as defined by the encoded space. If data was sampled using ramp sampling, regridding of individual 
                  readouts is first applied.
 
-        @param list_of_acqs: (list) List of ismrmrd.Acquisition objects.
-        @param encoded_space: (ISMRMRD encoded space object) Encoded space dimensions
-        @param recon_space: (ISMRMRD recon space object) Encoded space dimensions
-        @param W: Noise de-correlation matrix of size (num_cha, num_cha).
-        @param os_factor: (float) Readout oversampling factor.
+        @param list_of_acqs: List of ismrmrd.Acquisition objects.
+        @param encoded_space: Encoded space dimensions
+        @param os_factor: Readout oversampling factor.
 
         @return
-            - (np.ndarray) 11-D Numpy array of size (number_of_samples, max_kspace_encoding_pe1, 
-                           max_kspace_encoding_pe2, num_active_channels, max_slice, max_set, max_phase, max_contrast, 
-                           max_repetition, max_average, max_segment) with sorted acquisition.
+            - 11-D Numpy array of size (number_of_samples, max_kspace_encoding_pe1,
+              max_kspace_encoding_pe2, num_active_channels, max_slice, max_set, max_phase, max_contrast,
+              max_repetition, max_average, max_segment) with sorted acquisition.
 
         @author Jörn Huber
         """
@@ -66,12 +63,7 @@ class AcquisitionConversionModule:
             logging.info('gs-recon:   Non-Cartesian 3D readout')
 
         num_active_channels = list_of_acqs[0].active_channels
-        num_compressed_cha = 10
-        target_channels = num_active_channels
-        if num_active_channels > num_compressed_cha:
-            target_channels = num_compressed_cha
-
-        number_of_samples = list_of_acqs[0].number_of_samples  # encoded_space.matrixSize.x
+        number_of_samples = list_of_acqs[0].number_of_samples
         if encoded_space is not None:
             max_kspace_encoding_pe1 = encoded_space.matrixSize.y
             max_kspace_encoding_pe2 = encoded_space.matrixSize.z
@@ -101,9 +93,22 @@ class AcquisitionConversionModule:
                                 max_average,
                                 max_segment), dtype=complex)
 
+        acq_traj_np = np.zeros((3,
+                                number_of_samples,
+                                max_kspace_encoding_pe1,
+                                max_kspace_encoding_pe2,
+                                max_slice,
+                                max_set,
+                                max_phase,
+                                max_contrast,
+                                max_repetition,
+                                max_average,
+                                max_segment))
+
         for acq in list_of_acqs:
             acq_flags = ismrmrd_tools.bitmask_to_flags(acq.getHead().flags)
             data = np.transpose(acq.data, (1, 0))
+            traj = np.transpose(acq.traj, (1, 0))
 
             if any('ACQ_IS_REVERSE' in s for s in acq_flags):
                 data = np.flipud(data)
@@ -120,169 +125,52 @@ class AcquisitionConversionModule:
                         acq.idx.average,
                         acq.idx.segment] = data
 
-        # --> Based on mri-nufft (see third_party_licenses.txt)
+            if traj.shape[0] != 0:
+                acq_traj_np[:,
+                            :,
+                            acq.idx.kspace_encode_step_1,
+                            acq.idx.kspace_encode_step_2,
+                            acq.idx.slice,
+                            acq.idx.set,
+                            acq.idx.phase,
+                            acq.idx.contrast,
+                            acq.idx.repetition,
+                            acq.idx.average,
+                            acq.idx.segment] = traj
 
-        if readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D:
+        if readout_type in [ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D,
+                            ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D]:
 
-            acq_data_np_grid = np.zeros((encoded_space.matrixSize.x,
-                                         num_active_channels,
-                                         encoded_space.matrixSize.x,
-                                         max_kspace_encoding_pe2,
-                                         max_slice,
-                                         max_set,
-                                         max_phase,
-                                         max_contrast,
-                                         max_repetition,
-                                         max_average,
-                                         max_segment), dtype=complex)
+            nufftdim = 2 if readout_type == 3 else 3
+            if nufftdim == 2:
+                acq_traj_np = np.take(acq_traj_np, axis=0, indices=(0, 1))
 
-            # Prepare sampling trajectory
-            samples_loc = mrinufft.initialize_2D_radial(Nc=max_kspace_encoding_pe1,
-                                                        Ns=list_of_acqs[0].number_of_samples)
+            nufft_data = noncart_tools.apply_nufft(
+                ksp_data = acq_data_np,
+                traj_data = np.moveaxis(acq_traj_np, 0, 1),
+                mat_size = encoded_space.matrixSize.x,
+                ro_axis = ismrmrd_tools.IsmrmrdConstants.IDX_MAP['COL'],
+                ch_axis = ismrmrd_tools.IsmrmrdConstants.IDX_MAP['CHA'],
+                acq_axis = ismrmrd_tools.IsmrmrdConstants.IDX_MAP['PE1'],
+                pe2_axis = ismrmrd_tools.IsmrmrdConstants.IDX_MAP['PE2'] if nufftdim == 3 else None,
+            )
 
-            NufftOperator = mrinufft.get_operator("finufft")
-            for i_rep in range(0, max_repetition):
-                for i_ave in range(0, max_average):
-                    for i_con in range(0, max_contrast):
-                        for i_phs in range(0, max_phase):
-                            for i_set in range(0, max_set):
-                                for i_seg in range(0, max_segment):
-                                    for i_slc in range(0, max_slice):
-                                        for i_par in range(0, max_kspace_encoding_pe2):
+            # Back to k-space for further processing
+            axes = (0, 2) if nufftdim == 2 else (0, 2, 3)
+            acq_data_np = np.fft.fftshift(
+                np.fft.ifftn(
+                    np.fft.fftshift(
+                        nufft_data,
+                        axes=axes
+                    ),
+                    axes=axes
+                ),
+                axes=axes
+            )
 
-                                            grid_data = acq_data_np[:, :, :,
-                                            i_par, i_slc, i_set, i_phs, i_con, i_rep,
-                                            i_ave, i_seg]
-
-                                            logging.info(
-                                                'gs-recon:    NUFFT for slice %d set %d phase %d contrast %d '
-                                                'repetition %d average %d segment %d',
-                                                i_slc, i_set, i_phs, i_con, i_rep, i_ave, i_seg)
-                                            for acq in list_of_acqs:
-                                                if (i_slc == acq.idx.slice and i_set == acq.idx.set and
-                                                        i_phs == acq.idx.phase and i_con == acq.idx.contrast and
-                                                        i_rep == acq.idx.repetition and i_ave == acq.idx.average and
-                                                        i_seg == acq.idx.segment and i_par == acq.idx.kspace_encode_step_2):
-                                                    samples_loc[acq.idx.kspace_encode_step_1, :, :] = acq.traj[:, 0:-1]
-
-                                            grid_data = acq_data_np[
-                                                :, :, :, i_par, i_slc, i_set, i_phs, i_con, i_rep, i_ave, i_seg]
-                                            grid_data = np.transpose(grid_data, [1, 2, 0])
-                                            grid_data = np.reshape(grid_data, (grid_data.shape[0], -1))
-
-                                            if num_active_channels > num_compressed_cha:
-                                                grid_data, _ = mrinufft.extras.smaps.coil_compression(
-                                                    kspace_data=grid_data,
-                                                    K=num_compressed_cha)
-
-                                            samples_loc = samples_loc / np.max(samples_loc) * math.pi
-
-                                            samples_loc = samples_loc / np.max(samples_loc) * math.pi
-                                            density = voronoi(samples_loc.reshape(-1, 2))
-                                            nufft = NufftOperator(
-                                                samples_loc.reshape(-1, 2),
-                                                shape=(encoded_space.matrixSize.x, encoded_space.matrixSize.x),
-                                                density=density, n_coils=target_channels
-                                            )
-
-                                            cart_data = nufft.adj_op(grid_data)
-
-                                            if target_channels == 1:
-                                                cart_data = np.reshape(cart_data, [1,
-                                                                                   cart_data.shape[0],
-                                                                                   cart_data.shape[1]])
-
-                                            cart_data = np.fft.fftshift(
-                                                np.fft.ifft(np.fft.fftshift(cart_data, axes=1), axis=1), axes=1)
-                                            cart_data = np.fft.fftshift(
-                                                np.fft.ifft(np.fft.fftshift(cart_data, axes=2), axis=2), axes=2)
-
-                                            cart_data = np.flip(np.transpose(cart_data, [1, 0, 2]), 2)
-
-                                            acq_data_np_grid[:, :, :,
-                                            i_par, i_slc, i_set, i_phs, i_con, i_rep,
-                                            i_ave, i_seg] = cart_data
-
-            acq_data_np = acq_data_np_grid
-
-        elif readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
-
-            acq_data_np_grid = np.zeros((encoded_space.matrixSize.x,
-                                         target_channels,
-                                         encoded_space.matrixSize.x,
-                                         encoded_space.matrixSize.x,
-                                         max_slice,
-                                         max_set,
-                                         max_phase,
-                                         max_contrast,
-                                         max_repetition,
-                                         max_average,
-                                         max_segment), dtype=complex)
-
-            # Prepare NUFFT Operator
-            samples_loc = mrinufft.initialize_3D_golden_means_radial(Nc=max_kspace_encoding_pe1,
-                                                                     Ns=list_of_acqs[0].number_of_samples)
-
-            NufftOperator = mrinufft.get_operator("finufft")
-            for i_rep in range(0, max_repetition):
-                for i_ave in range(0, max_average):
-                    for i_con in range(0, max_contrast):
-                        for i_phs in range(0, max_phase):
-                            for i_set in range(0, max_set):
-                                for i_seg in range(0, max_segment):
-                                    for i_slc in range(0, max_slice):
-
-                                        logging.info(
-                                            'gs-recon:    NUFFT for slice %d set %d phase %d contrast %d '
-                                            'repetition %d average %d segment %d',
-                                            i_slc, i_set, i_phs, i_con, i_rep, i_ave, i_seg)
-                                        for acq in list_of_acqs:
-                                            if (i_slc == acq.idx.slice and i_set == acq.idx.set and
-                                                    i_phs == acq.idx.phase and i_con == acq.idx.contrast and
-                                                    i_rep == acq.idx.repetition and i_ave == acq.idx.average and
-                                                    i_seg == acq.idx.segment):
-                                                samples_loc[acq.idx.kspace_encode_step_1, :, :] = acq.traj
-
-                                        grid_data = acq_data_np[
-                                            :, :, :, 0, i_slc, i_set, i_phs, i_con, i_rep, i_ave, i_seg]
-                                        grid_data = np.transpose(grid_data, [1, 2, 0])
-                                        grid_data = np.reshape(grid_data, (grid_data.shape[0], -1))
-
-                                        if num_active_channels > num_compressed_cha:
-                                            grid_data, _ = mrinufft.extras.smaps.coil_compression(kspace_data=grid_data,
-                                                                                                  K=num_compressed_cha)
-
-                                        samples_loc = samples_loc / np.max(samples_loc) * math.pi
-                                        density = voronoi(samples_loc.reshape(-1, 3))
-                                        nufft = NufftOperator(
-                                            samples_loc.reshape(-1, 3),
-                                            shape=(encoded_space.matrixSize.x, encoded_space.matrixSize.x,
-                                                   encoded_space.matrixSize.x), density=density, n_coils=target_channels
-                                        )
-
-                                        cart_data = nufft.adj_op(grid_data)
-
-                                        if target_channels == 1:
-                                            cart_data = np.reshape(cart_data, [1,
-                                                                               cart_data.shape[0],
-                                                                               cart_data.shape[1],
-                                                                               cart_data.shape[2]])
-
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=1), axis=1), axes=1)
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=2), axis=2), axes=2)
-                                        cart_data = np.fft.fftshift(
-                                            np.fft.ifft(np.fft.fftshift(cart_data, axes=3), axis=3), axes=3)
-
-                                        cart_data = np.flip(np.transpose(cart_data, [1, 0, 2, 3]), 2)
-                                        acq_data_np_grid[:, :, :,
-                                        :, i_slc, i_set, i_phs, i_con, i_rep,
-                                        i_ave, i_seg] = np.flipud(cart_data)
-
-            acq_data_np = acq_data_np_grid
-
-        # <-- Based on mri-nufft (see third_party_licenses.txt)
+            # Remove OS along PE1 and PE2 (if applicable)
+            pe_axes = (2,) if nufftdim == 2 else (2, 3)
+            acq_data_np = helpers.remove_os(acq_data_np, int(os_factor), pe_axes)
 
         elif is_ramp_sample and (readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_CARTESIAN):
 
@@ -297,80 +185,59 @@ class AcquisitionConversionModule:
             else:
                 integer_grid = np.arange(0, list_of_acqs[0].number_of_samples)
 
-            for i_rep in range(0, max_repetition):
-                for i_ave in range(0, max_average):
-                    for i_con in range(0, max_contrast):
-                        for i_phs in range(0, max_phase):
-                            for i_set in range(0, max_set):
-                                for i_seg in range(0, max_segment):
-                                    for i_slc in range(0, max_slice):
-                                        for i_par in range(0, max_kspace_encoding_pe2):
-                                            for i_cha in range(0, num_active_channels):
-                                                for i_pe in range(0, max_kspace_encoding_pe1):
-                                                    data = acq_data_np[:, i_cha, i_pe, i_par, i_slc, i_set, i_phs,
-                                                    i_con, i_rep, i_ave, i_seg]
-
-                                                    regrid_interpolator = interp1d(regrid_traj, np.squeeze(data),
-                                                                                   kind='cubic',
-                                                                                   fill_value='extrapolate')
-                                                    resampled_data = regrid_interpolator(integer_grid)
-
-                                                    acq_data_np[:, i_cha, i_pe, i_par, i_slc, i_set, i_phs, i_con,
-                                                                i_rep, i_ave, i_seg] = resampled_data
+            regrid_interpolator = interp1d(
+                x=regrid_traj,
+                y=acq_data_np,
+                kind='cubic',
+                fill_value='extrapolate',
+                axis=0
+            )
+            acq_data_np = regrid_interpolator(integer_grid)
 
         # Last step: We want to remove the readout oversampling
-        if os_factor > 1:
-
-            acq_data_np = helpers.remove_readout_os(acq_data_np, 0, os_factor)
-
-            if readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_2D:
-                acq_data_np = helpers.remove_readout_os(acq_data_np, 2, os_factor)
-
-            if readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_NONCARTESIAN_3D:
-                acq_data_np = helpers.remove_readout_os(acq_data_np, 2, os_factor)
-                acq_data_np = helpers.remove_readout_os(acq_data_np, 3, os_factor)
+        acq_data_np = helpers.remove_os(acq_data_np, int(os_factor), (0,))
 
         return acq_data_np, readout_type
 
     @staticmethod
-    def __call__(con_buff: ismrmrd_tools.ConnectionBuffer,
-                 book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def __call__(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
         @brief ()-Operator, which applies the modules functionality as defined in the "apply" method.
 
-        @param con_buff: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (book_keeper) Object which stores calibration data etc
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            -  (book_keeper) Object which stores calibration data etc
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
         return AcquisitionConversionModule.apply(con_buff, book_keeper)
 
     @staticmethod
-    def apply(con_buff: ismrmrd_tools.ConnectionBuffer,
-              book_keeper: "BookKeeper") -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
+    def apply(
+            con_buff: ismrmrd_tools.ConnectionBuffer,
+            book_keeper: "BookKeeper"
+    ) -> tuple[ismrmrd_tools.ConnectionBuffer, "BookKeeper"]:
         """!
-        @brief Applies the modules functionality by averaging data along the average dimension. 
+        @brief Applies the modules functionality by converting received ISMRMRD acquisitions into numpy array
+               structures for further processing.
 
-        @param con_buff: (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                                     structures.
-        @param book_keeper: (dict) Dictionary which is used to store image processing results.
+        @param con_buff: ConnectionBuffer object, holding processed "NP_..." data structures.
+        @param book_keeper: Object which stores calibration data etc
 
         @return
-            -  (ConnectionBuffer) ConnectionBuffer object, holding processed "NP_..." data
-                                  structures.
-            -  (dict) Dictionary which is used to store image processing results.
+            -  ConnectionBuffer object, holding processed "NP_..." data structures.
+            -  Object which stores calibration data etc
 
         @author Jörn Huber
         """
 
-        is_process = (any('ACQ' in acq_key for acq_key in con_buff.meas_data.data.keys())
-                      and len(con_buff.headers) > 0)
+        is_process = (any('ACQ' in acq_key for acq_key in con_buff.meas_data.data.keys()) and len(con_buff.headers) > 0)
 
         if is_process:
             logging.info("gs-recon: Processing acquisitions")
@@ -382,9 +249,9 @@ class AcquisitionConversionModule:
             con_buff.meas_data.accel_pe2 = con_buff.headers[0].encoding[
                 0].parallelImaging.accelerationFactor.kspace_encoding_step_2
 
-            fov_x = con_buff.meas_data.encoded_space.fieldOfView_mm.x
-            fov_y = con_buff.meas_data.encoded_space.fieldOfView_mm.y
-            os_factor = fov_x / fov_y
+            fov_x_enc = con_buff.meas_data.encoded_space.fieldOfView_mm.x
+            fov_x_rec = con_buff.meas_data.recon_space.fieldOfView_mm.x
+            os_factor = fov_x_enc / fov_x_rec
 
             if 'ACQ_IS_IMAGING' in con_buff.meas_data.data:
 
@@ -394,7 +261,8 @@ class AcquisitionConversionModule:
                 con_buff.meas_data.is_propeller = res[2]
                 con_buff.meas_data.blade_dim = res[3]
 
-                if con_buff.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_CARTESIAN and not con_buff.meas_data.is_propeller:
+                if (con_buff.meas_data.imaging_readout_type == ismrmrd_tools.IsmrmrdConstants.READOUT_TYPE_CARTESIAN
+                        and not con_buff.meas_data.is_propeller):
                     con_buff.meas_data.pf_factor_pe1 = (con_buff.meas_data.encoded_space.matrixSize.y
                                                                  / con_buff.meas_data.recon_space.matrixSize.y)
                     con_buff.meas_data.pf_factor_pe2 = (con_buff.meas_data.encoded_space.matrixSize.z
@@ -404,10 +272,11 @@ class AcquisitionConversionModule:
                     con_buff.meas_data.pf_factor_pe2 = 1.0  # Non-Cartesian or PROPELLER data
 
             con_buff.meas_data.meas_header = con_buff.headers[0]
-            logging.info("gs-recon:  Partial Fourier PE1xPE2: " + str(con_buff.meas_data.pf_factor_pe1) + "x" + str(
-                con_buff.meas_data.pf_factor_pe2))
-            logging.info("gs-recon:  Parallel Imaging PE1xPE2 " + str(con_buff.meas_data.accel_pe1) + "x" + str(
-                con_buff.meas_data.accel_pe2))
+            pf_str = str(con_buff.meas_data.pf_factor_pe1) + "x" + str(con_buff.meas_data.pf_factor_pe2)
+            logging.info("gs-recon:  Partial Fourier PE1xPE2: " + pf_str)
+
+            pi_str = str(con_buff.meas_data.accel_pe1) + "x" + str(con_buff.meas_data.accel_pe2)
+            logging.info("gs-recon:  Parallel Imaging PE1xPE2 " + pi_str)
 
             acq_keys = list(con_buff.meas_data.data.keys())
             for acq_key in acq_keys:
@@ -415,11 +284,11 @@ class AcquisitionConversionModule:
                 logging.info('gs-recon:  Checking readout type of ' + acq_key + " data")
                 if "IS_IMAGING" in np_key:
 
-                    res = AcquisitionConversionModule.ismrmrd_acqs_to_numpy_array(con_buff.meas_data.data[acq_key],
-                                                                                  con_buff.meas_data.encoded_space,
-                                                                                  con_buff.meas_data.recon_space,
-                                                                                  con_buff.meas_data.W,
-                                                                                  os_factor)
+                    res = AcquisitionConversionModule.ismrmrd_acqs_to_numpy_array(
+                        list_of_acqs = con_buff.meas_data.data[acq_key],
+                        encoded_space = con_buff.meas_data.encoded_space,
+                        os_factor = os_factor
+                    )
                     con_buff.meas_data.data[np_key] = res[0]
                     readout_type = res[1]
 
@@ -429,11 +298,11 @@ class AcquisitionConversionModule:
                         book_keeper.recon_history += "_NUFFT3D"
 
                 elif 'IS_RTFEEDBACK' not in np_key:  # No Processing for RT Feedback data for now
-                    con_buff.meas_data.data[np_key], _ = AcquisitionConversionModule.ismrmrd_acqs_to_numpy_array(con_buff.meas_data.data[acq_key],
-                                                                                                                         None,
-                                                                                                                         None,
-                                                                                                                          con_buff.meas_data.W,
-                                                                                                                          os_factor)
+                    con_buff.meas_data.data[np_key], _ = AcquisitionConversionModule.ismrmrd_acqs_to_numpy_array(
+                        list_of_acqs = con_buff.meas_data.data[acq_key],
+                        encoded_space = None,
+                        os_factor = os_factor
+                    )
 
             if 'NP_IS_PARALLEL_CALIBRATION' in con_buff.meas_data.data:
                 con_buff.meas_data.calib_reg_pe1 = (

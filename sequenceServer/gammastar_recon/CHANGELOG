@@ -1,3 +1,9 @@
+v1.1.1
+- Added temporary fix for multi-slice/multi-partition mix up in encoded space header
+- Code quality improvements
+- Removed redundant functionality for simulation only variant of software
+- Improved reconstruction speed
+
 v1.1.0
 - Introduced generalized client software, which is capable of handling twix as well as hdf5 data
 - Added support for exported gammaSTAR sequences in DICOM tags
