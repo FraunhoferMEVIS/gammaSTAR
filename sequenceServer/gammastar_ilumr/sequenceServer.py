@@ -36,6 +36,9 @@ from typing import Any
 import mrpy_ismrmrd_tools as ismrmrd_tools
 import mrpy_io_tools as io_tools
 
+RECON_SERVER_ADDRESS = "localhost"
+RECON_SERVER_PORT = 9002
+
 def print_info_ilumr():
     print("########################################################\n\n"
           "gammaSTAR ilumr v1.0 Release\n")
@@ -185,7 +188,7 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
        print(sequenceData['name'] + meas_id + '_raw.h5 written')
 
     if 'skipReconstruction' not in sequenceData or sequenceData['skipReconstruction'] != True:
-        con = ismrmrd_tools.gstar_recon_emitter("reconServer", 9002, list_of_acqs, xml_header, 1.0, "")
+        con = ismrmrd_tools.gstar_recon_emitter(RECON_SERVER_ADDRESS, RECON_SERVER_PORT, list_of_acqs, xml_header, 1.0, "")
         if con != False:
             ismrmrd_tools.gstar_recon_injector(con)
             con.shutdown_close()
@@ -221,20 +224,22 @@ def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBuff
 
                 logger.info(f"Sent reconstruction history: {con.images[0].meta['ImageHistory'][2]}")
 
-                dicom_dir = '/data_export/dicom_' + sequenceData['name'].replace(' ', '_') + '_' + meas_id
-                os.makedirs(dicom_dir, exist_ok=True, )
-                zip_filename = os.path.join(dicom_dir, f"{sequenceData['name'].replace(' ', '_')}_{meas_id}_dicom.zip")
-                for recv_image in con.images:
-                    io_tools.write_dcm_from_ismrmrd_image(recv_image, dicom_dir)
+                # TODO: fix DICOM export, io_tools.write_dcm_from_ismrmrd_image only takes one argument!
 
-                dicom_files = os.listdir(dicom_dir)
+                # dicom_dir = '/data_export/dicom_' + sequenceData['name'].replace(' ', '_') + '_' + meas_id
+                # os.makedirs(dicom_dir, exist_ok=True, )
+                # zip_filename = os.path.join(dicom_dir, f"{sequenceData['name'].replace(' ', '_')}_{meas_id}_dicom.zip")
+                # for recv_image in con.images:
+                #     io_tools.write_dcm_from_ismrmrd_image(recv_image, dicom_dir)
 
-                with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
-                    for dicom in dicom_files:
-                        dicom_filename = os.path.join(dicom_dir, dicom)
-                        zipf.write(dicom_filename, arcname=dicom)
+                # dicom_files = os.listdir(dicom_dir)
 
-                response['dicom'] = zip_filename
+                # with zipfile.ZipFile(zip_filename, 'w', compression=zipfile.ZIP_DEFLATED) as zipf:
+                #     for dicom in dicom_files:
+                #         dicom_filename = os.path.join(dicom_dir, dicom)
+                #         zipf.write(dicom_filename, arcname=dicom)
+
+                # response['dicom'] = zip_filename
 
     if imgBufferTrajectory:
         b64Trajectory = base64.b64encode(imgBufferTrajectory.getvalue())
@@ -508,8 +513,17 @@ def deserialize_array(serialized_arr: List[Any]) -> np.ndarray:
 # run sequence for ilumr (TCP version)
 def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
     """Main function to run NMR sequence using TCP communication"""
+
+    # defaults
     host = "192.168.137.2"
     port = 8765
+
+    # override using environment vars if set
+    if 'ILUMR_HOST' in os.environ:
+        host = os.environ['ILUMR_HOST']
+
+    if 'ILUMR_GSTAR_PORT' in os.environ:
+        port = int(os.environ['ILUMR_GSTAR_PORT'])
     
     sock = None
     try:        
@@ -517,6 +531,8 @@ def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         sock.setsockopt(socket.SOL_SOCKET, socket.SO_KEEPALIVE, 1)
         sock.setsockopt(socket.IPPROTO_TCP, socket.TCP_NODELAY, 1)
+
+        logger.info("Connecting to %s:%d", host, port)
         
         # Connect to server
         sock.connect((host, port))
