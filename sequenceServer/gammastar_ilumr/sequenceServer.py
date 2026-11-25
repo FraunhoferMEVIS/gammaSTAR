@@ -593,8 +593,27 @@ def _conv_compat(val):
 def run_ilumr_sequence(sequence: dict[str, Any]):
     logging.info('Run ilumr sequence')
     reconData = sequence.pop('reconstruction_info', {})
-    reconData.pop('trajectory', {})
-    sequence.update(reconData)
+    sequence.update({
+        'name': reconData['name'],
+        'protocol': reconData['prot'],
+        'expo': reconData['expo'],
+        'info': reconData['info'],
+        'root': reconData['root'],
+        'sys': reconData['sys']})
+    traj_old_format = {
+        'adc_points': {
+            'm0x': [],
+            'm0y': [],
+            'm0z': []
+        }
+    }
+    for t in sequence['trajectory']:
+        traj_old_format['adc_points']['m0x'].extend(t['m0x'])
+        traj_old_format['adc_points']['m0y'].extend(t['m0y'])
+        traj_old_format['adc_points']['m0z'].extend(t['m0z'])
+    sequence['sequence'] = None
+    sequence['trajectory'] = traj_old_format
     sequence = _conv_compat(sequence)
+    sequence['raw_reps'] = list(sequence['raw_reps'].values())
     response = run_ilumr(sequence)  
     return response

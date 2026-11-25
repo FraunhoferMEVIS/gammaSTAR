@@ -141,16 +141,7 @@ def default():
     return {'message': 'Hello World'}
 
 # Simulate sequence for simulation
-def reconstruct_image(_sequenceData: dict[str, Any], signal: list[float], imgBufferTrajectory: BytesIO):
-    reconData = _sequenceData['reconstruction_info']
-    del reconData['trajectory']
-    sequenceData = {
-        'raw_reps': _sequenceData['raw_reps'],
-        'trajectory': _sequenceData['trajectory']
-    }
-    sequenceData.update(reconData)
-
-
+def reconstruct_image(sequenceData: dict[str, Any], signal: list[float], imgBufferTrajectory: BytesIO):
     output = []
     raw_adc_representations = []
     for rawRepr in sequenceData['raw_reps']:
@@ -167,14 +158,9 @@ def reconstruct_image(_sequenceData: dict[str, Any], signal: list[float], imgBuf
     read_size = sequenceData['root']['acq_size']['1'] * (sequenceData['protocol']['read_oversampling']) * sequenceData['protocol']['read_partial_fourier']
     np_reshape = np_arr.reshape(-1, 1, sequenceData['expo'].get('adc_samples', read_size)).T
 
-    adc_points = sequenceData['reconstruction_data']['trajectory']['adc_points']
+    adc_points = sequenceData['trajectory']['adc_points']
     list_of_acqs = ismrmrd_tools.numpy_and_raw_rep_to_acq(np_reshape, raw_adc_representations, adc_points)
-    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], 
-                                                    sequenceData['info'], 
-                                                    sequenceData['expo'], 
-                                                    sequenceData['sys'], 
-                                                    sequenceData['root'], 
-                                                    opt_seq_json=sequenceData['sequence'])
+    xml_header = ismrmrd_tools.gstar_to_ismrmrd_hdr(sequenceData['protocol'], sequenceData['info'], sequenceData['expo'], sequenceData['sys'], sequenceData['root'], opt_seq_json=sequenceData['sequence'])
 
     response = {"dicom": "", 
     			"trajectory": [], 
@@ -256,8 +242,7 @@ def reconstruct_image(_sequenceData: dict[str, Any], signal: list[float], imgBuf
 def simulate_mr0(sequenceData):
     output = []
     raw_adc_representations = []
-    for _rawRepr in sequenceData['raw_reps']:
-        rawRepr = _conv_compat(_rawRepr)
+    for rawRepr in sequenceData['raw_reps']:
         output.append(json.dumps(rawRepr))
         if rawRepr['has_adc'] == True:
             raw_adc_representations.append(rawRepr)
@@ -318,9 +303,27 @@ def _conv_compat(val):
 def run_sim(sequenceData: dict[str, Any]):
     logging.info('Run simulation sequence')
     reconData = sequenceData.pop('reconstruction_info', {})
-    reconData.pop('trajectory', {})
-    sequenceData.update(reconData)
+    sequenceData.update({
+        'name': reconData['name'],
+        'protocol': reconData['prot'],
+        'expo': reconData['expo'],
+        'info': reconData['info'],
+        'root': reconData['root'],
+        'sys': reconData['sys']})
+    traj_old_format = {
+        'adc_points': {
+            'm0x': [],
+            'm0y': [],
+            'm0z': []
+        }
+    }
+    for t in sequenceData['trajectory']:
+        traj_old_format['adc_points']['m0x'].extend(t['m0x'])
+        traj_old_format['adc_points']['m0y'].extend(t['m0y'])
+        traj_old_format['adc_points']['m0z'].extend(t['m0z'])
+    sequenceData['sequence'] = None
+    sequenceData['trajectory'] = traj_old_format
     sequenceData = _conv_compat(sequenceData)
-    
+    sequenceData['raw_reps'] = list(sequenceData['raw_reps'].values())
     signal, imgBufferTrajectory = simulate_mr0(sequenceData)
     return reconstruct_image(sequenceData, signal, imgBufferTrajectory)
