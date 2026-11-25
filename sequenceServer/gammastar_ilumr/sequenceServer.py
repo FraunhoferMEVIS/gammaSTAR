@@ -580,9 +580,21 @@ def run_ilumr(sequence: Dict[str, Any]) -> Optional[Dict[str, Any]]:
             except:
                 pass
 
+def _conv_compat(val):
+    if isinstance(val, (list, tuple)):
+        return {str(i+1): _conv_compat(r) for i,r in enumerate(val)}
+    elif isinstance(val, dict):
+        return {k: _conv_compat(r) for k,r in val.items()}
+    else:
+      return val
+
 # Endpoint for running ilumr
 @httpd.post('/run_ilumr')
 def run_ilumr_sequence(sequence: dict[str, Any]):
     logging.info('Run ilumr sequence')
+    reconData = sequence.pop('reconstruction_info', {})
+    reconData.pop('trajectory', {})
+    sequence.update(reconData)
+    sequence = _conv_compat(sequence)
     response = run_ilumr(sequence)  
     return response

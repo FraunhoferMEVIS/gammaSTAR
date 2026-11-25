@@ -285,10 +285,21 @@ async def main_ocra(sequence):
 
     return response
 
+def _conv_compat(val):
+    if isinstance(val, (list, tuple)):
+        return {str(i+1): _conv_compat(r) for i,r in enumerate(val)}
+    elif isinstance(val, dict):
+        return {k: _conv_compat(r) for k,r in val.items()}
+    else:
+      return val
 
 # Endpoint for running ocra
 @httpd.post("/run_ocra")
 def runSequence(sequence: dict[str, Any]):
     logging.info("Run ocra sequence")
+    reconData = sequence.pop('reconstruction_info', {})
+    reconData.pop('trajectory', {})
+    sequence.update(reconData)
+    sequence = _conv_compat(sequence)
     response = asyncio.run(main_ocra(sequence))
     return response
